@@ -16,7 +16,9 @@ import { useEffect, useState } from "react";
 import AccessRequests from "./pages/AccessRequests";
 import Orcamentos from "./pages/Orcamentos";
 import NovoOrcamento from "./pages/NovoOrcamento";
+import VisualizarOrcamento from "./pages/VisualizarOrcamento";
 import Clientes from "./pages/Clientes";
+import ProdutosAcabados from "./pages/ProdutosAcabados";
 
 const queryClient = new QueryClient();
 
@@ -124,11 +126,31 @@ const App = () => {
               }
             />
             <Route
+              path="/orcamentos/:id"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <VisualizarOrcamento />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/clientes"
               element={
                 <ProtectedRoute>
                   <AppLayout>
                     <Clientes />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/produtos-acabados"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ProdutosAcabados />
                   </AppLayout>
                 </ProtectedRoute>
               }

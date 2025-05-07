@@ -1,14 +1,8 @@
 
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
-// Adicionando o tipo ao jsPDF
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
-
+// Tipos
 interface ClienteSimplificado {
   id: number;
   nome: string;
@@ -50,292 +44,255 @@ interface Proposta {
   validade: string;
 }
 
-/**
- * Formata uma data no formato YYYY-MM-DD para DD/MM/YYYY
- */
-const formatDate = (dateString: string): string => {
-  const [year, month, day] = dateString.split('-');
-  return `${day}/${month}/${year}`;
-};
-
-/**
- * Formata um valor numérico para o formato de moeda brasileira
- */
+// Função para formatar moeda
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', { 
     style: 'currency', 
-    currency: 'BRL',
-    minimumFractionDigits: 2
+    currency: 'BRL' 
   }).format(value);
 };
 
-/**
- * Gera um PDF de proposta baseado no modelo VDR
- */
+// Formatação de data
+const formatarData = (dataString: string) => {
+  const data = new Date(dataString);
+  return data.toLocaleDateString('pt-BR');
+};
+
+// Função principal para gerar PDF da proposta
 export const generateProposalPDF = (proposta: Proposta) => {
-  // Criar um novo documento PDF
   const doc = new jsPDF();
   
-  // Definir margens
-  const marginLeft = 20;
-  const marginRight = 20;
-  const marginTop = 20;
+  // Dimensões da página
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const margin = 20;
   
-  // Configurações de cores
+  // Cores
   const azulVDR = [1/255, 53/255, 118/255]; // #013576
   const vermelhoVDR = [252/255, 1/255, 24/255]; // #FC0118
   
-  // Adicionar cabeçalho com logo
-  doc.setFillColor(1, 1, 1);
-  doc.rect(marginLeft, marginTop, 170, 30, 'F');
+  // Fonte padrão
+  doc.setFont("helvetica");
   
-  // Adicionar barra lateral vermelha (simulação)
-  doc.setFillColor(vermelhoVDR[0], vermelhoVDR[1], vermelhoVDR[2]);
-  doc.rect(marginLeft, marginTop, 5, 250, 'F');
-  
-  // Logo VDR (simulação)
+  // Cabeçalho
   doc.setFillColor(azulVDR[0], azulVDR[1], azulVDR[2]);
-  doc.rect(marginLeft + 10, marginTop + 2, 30, 15, 'F');
+  doc.rect(0, 0, pageWidth, 40, 'F');
+  
+  // Logo VDR
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.text("VEDARE", marginLeft + 15, marginTop + 11);
+  doc.setFontSize(28);
+  doc.text("VDR", margin, 25);
+  
+  doc.setFontSize(12);
+  doc.text("SOLUÇÕES EM VIDRO E ALUMÍNIO", margin + 25, 25);
+  
+  // Informações de contato
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text("(62) 3086-5381 | comercial@vdrnova.com.br", pageWidth - margin, 15, { align: "right" });
+  doc.text("Rua 2 Qd 3 Lt 17 e 18, Vila Lucy, Goiânia-GO", pageWidth - margin, 22, { align: "right" });
+  doc.text("CNPJ: 27.913.618/0001-35", pageWidth - margin, 29, { align: "right" });
   
   // Título da proposta
-  doc.setFontSize(12);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "bold");
-  doc.text("PROPOSTA", 100, marginTop + 5, { align: "center" });
-  doc.text(proposta.numero, 100, marginTop + 12, { align: "center" });
-  
-  // Data no canto superior direito
-  const dataFormatada = formatDate(proposta.data);
-  doc.text(`Goiânia, ${dataFormatada.replace(/\//g, ' de ')} de 2025`, 170, marginTop + 5, { align: "right" });
-  
-  // Informações do cliente
-  doc.setFont("helvetica", "bold");
-  doc.text(proposta.cliente.nome, marginLeft, marginTop + 40);
-  doc.setFont("helvetica", "normal");
-  doc.text(`AT.: ${proposta.cliente.empresa || '-'}`, marginLeft, marginTop + 45);
-  doc.text(`CNPJ / CPF: ${proposta.cliente.cnpj || '-'}`, marginLeft, marginTop + 50);
-  doc.text(`TEL: ${proposta.cliente.telefone}`, marginLeft, marginTop + 55);
-  doc.text(`E-MAIL: ${proposta.cliente.email}`, marginLeft, marginTop + 60);
-  doc.text(`OBRA: ISOLAMENTO ACÚSTICO`, marginLeft, marginTop + 65);
-  
-  // Prezado Sr.
-  doc.text("Prezado Sr.", marginLeft, marginTop + 75);
-  
-  // Texto introdutório
-  doc.text("        Atendendo à grata solicitação, vimos apresentar para vossa análise e apreciação, a nossa proposta técnico-comercial para realizarmos o", marginLeft, marginTop + 80);
-  doc.text("tratamento Acústico, nas dependências do vosso empreendimento, localizado em Comando De Operações Especiais - Avenida Salvador Di Bernardi, 270 -", marginLeft, marginTop + 85);
-  doc.text("Guarujázinho Cep: 74675-240 - Goiânia - Go.", marginLeft, marginTop + 90);
-  
-  // APRESENTAÇÃO
-  doc.setFont("helvetica", "bold");
-  doc.text("APRESENTAÇÃO", 100, marginTop + 105, { align: "center" });
-  doc.setFont("helvetica", "normal");
-  doc.text("        A Presente proposta técnica foi elaborada procurando estabelecer uma coerência lógica entre o planejamento geral das instalações e os dados", marginLeft, marginTop + 110);
-  doc.text("fornecidos por V.Sr, em vista disso, o roteiro da proposta obedeceu aos itens que foram fornecidos pelo Contratante, com o intuito de atender do", marginLeft, marginTop + 115);
-  doc.text("material proposto, buscando uma solução que atendesse tanto aos requisitos estéticos quanto acústicos tendo em vista o melhor custo-benefício e dando", marginLeft, marginTop + 120);
-  doc.text("a segurança na execução da obra de acordo com as normas técnicas dos fabricantes dos materiais a serem  utilizadas na obra em questão.", marginLeft, marginTop + 125);
-  
-  // DISPOSIÇÃO DOS VALORES
-  doc.setFont("helvetica", "bold");
-  doc.text("DISPOSIÇÃO DOS VALORES", 100, marginTop + 140, { align: "center" });
-  doc.text("O valor total do investimento apresentado é de:", 100, marginTop + 145, { align: "center" });
-  doc.setFontSize(14);
-  doc.text(formatCurrency(proposta.valorTotal), 100, marginTop + 155, { align: "center" });
-  
-  // INFORMAÇÕES COMERCIAIS
-  doc.setFontSize(12);
-  doc.text("INFORMAÇÕES COMERCIAIS", 100, marginTop + 170, { align: "center" });
-  
-  // Forma de Pagamento
-  doc.setFont("helvetica", "bold");
-  doc.text("Forma de Pagamento:", marginLeft, marginTop + 180);
-  doc.setFont("helvetica", "normal");
-  doc.text(proposta.formaPagamento, marginLeft + 40, marginTop + 180);
-  
-  // Prazo de Entrega
-  doc.setFont("helvetica", "bold");
-  doc.text("Prazo de Entrega do Material:", marginLeft, marginTop + 185);
-  doc.setFont("helvetica", "normal");
-  doc.text(proposta.prazoEntrega, marginLeft + 60, marginTop + 185);
-  
-  // Prazo de Entrega da Obra
-  doc.setFont("helvetica", "bold");
-  doc.text("Prazo de Entrega da Obra:", marginLeft, marginTop + 190);
-  doc.setFont("helvetica", "normal");
-  doc.text(proposta.prazoObra, marginLeft + 55, marginTop + 190);
-  
-  // Validade
-  doc.setFont("helvetica", "bold");
-  doc.text("Validade da proposta:", marginLeft, marginTop + 195);
-  doc.setFont("helvetica", "normal");
-  doc.text(proposta.validade, marginLeft + 45, marginTop + 195);
-  
-  // OBSERVAÇÕES
-  doc.setFont("helvetica", "bold");
-  doc.text("OBSERVAÇÕES", 100, marginTop + 210, { align: "center" });
-  
-  // Quebrar observações em linhas
-  const observacoes = proposta.observacoes.split('\n');
-  let currentY = marginTop + 215;
-  
-  observacoes.forEach(obs => {
-    doc.setFont("helvetica", "normal");
-    doc.text(obs, marginLeft, currentY);
-    currentY += 5;
-  });
-  
-  // Adicionar assinaturas
-  currentY = Math.max(currentY + 10, marginTop + 240);
-  
-  doc.setFont("helvetica", "normal");
-  doc.text("Atenciosamente,", marginLeft, currentY);
-  doc.text("DORI LIMA DOS SANTOS", marginLeft, currentY + 10);
-  doc.text("DIRETOR TÉCNICO COMERCIAL", marginLeft, currentY + 15);
-  
-  doc.text("RAYAN FÁSSIO SANTOS", 170, currentY + 10, { align: "right" });
-  doc.text("DE ACORDO EM ______/______/_______", 170, currentY + 15, { align: "right" });
-  
-  // Adicionar rodapé
-  doc.setFillColor(azulVDR[0], azulVDR[1], azulVDR[2]);
-  doc.rect(marginLeft, 280, 170, 10, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
-  doc.text("Av. Pedro Ludovico Teixeira, Nº 4415, Qd. 142, Lt. 18 - Parque Oeste Industrial, CEP: 74.375-400", 100, 285, { align: "center" });
-  doc.text("Goiânia/GO - Fone/Fax: (62) 3942-1877 - www.vedare.com.br - CNPJ 28.298.757/0001-78", 100, 288, { align: "center" });
-
-  // Nova página para os itens da proposta
-  doc.addPage();
-
-  // Cabeçalho da segunda página (logo + data)
-  doc.setFillColor(1, 1, 1);
-  doc.rect(marginLeft, marginTop, 170, 20, 'F');
-  
-  // Adicionar barra lateral vermelha (simulação)
   doc.setFillColor(vermelhoVDR[0], vermelhoVDR[1], vermelhoVDR[2]);
-  doc.rect(marginLeft, marginTop, 5, 250, 'F');
+  doc.rect(0, 40, pageWidth, 14, 'F');
   
-  // Logo VDR (simulação)
-  doc.setFillColor(azulVDR[0], azulVDR[1], azulVDR[2]);
-  doc.rect(marginLeft + 10, marginTop + 2, 30, 15, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.text("VEDARE", marginLeft + 15, marginTop + 11);
-  
-  // Data no canto superior direito
   doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`PROPOSTA COMERCIAL Nº ${proposta.numero}`, pageWidth / 2, 48, { align: "center" });
+  
+  // Data da proposta
+  const yPos = 70;
   doc.setTextColor(0, 0, 0);
-  doc.text(`Goiânia, ${dataFormatada.replace(/\//g, ' de ')} de 2025`, 170, marginTop + 10, { align: "right" });
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Goiânia, ${formatarData(proposta.data)}`, pageWidth - margin, yPos, { align: "right" });
+  
+  // Dados do cliente
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("DADOS DO CLIENTE", margin, yPos + 10);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  
+  let clienteY = yPos + 20;
+  doc.text(`Cliente: ${proposta.cliente.nome}`, margin, clienteY);
+  clienteY += 7;
+  
+  if (proposta.cliente.empresa) {
+    doc.text(`Empresa: ${proposta.cliente.empresa}`, margin, clienteY);
+    clienteY += 7;
+  }
+  
+  if (proposta.cliente.cnpj) {
+    doc.text(`CNPJ/CPF: ${proposta.cliente.cnpj}`, margin, clienteY);
+    clienteY += 7;
+  }
+  
+  doc.text(`E-mail: ${proposta.cliente.email}`, margin, clienteY);
+  clienteY += 7;
+  doc.text(`Telefone: ${proposta.cliente.telefone}`, margin, clienteY);
+  clienteY += 7;
+  
+  // Linha separadora
+  clienteY += 5;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, clienteY, pageWidth - margin, clienteY);
+  clienteY += 10;
+  
+  // Título da tabela de itens
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(azulVDR[0]*255, azulVDR[1]*255, azulVDR[2]*255);
+  doc.text("DESCRIÇÃO DOS ITENS E SERVIÇOS", margin, clienteY);
+  clienteY += 10;
   
   // Tabela de itens
-  const tableColumn = [
-    "CÓDIGO",
-    "ITEM",
-    "DESCRIÇÃO COMERCIAL",
-    "UNID",
-    "QUANT.",
-    "VALOR UNIT.",
-    "TOTAL"
+  const tableHeaders = [
+    "Cód.", "Descrição", "Un.", "Qtd", "Valor Unit.", "Valor Total"
   ];
   
-  const tableRows = proposta.itens.map(item => [
+  const tableData = proposta.itens.map(item => [
     item.codigo,
-    "", // Item number
     item.descricao,
     item.unidade,
-    item.quantidade,
+    item.quantidade.toString(),
     formatCurrency(item.valorUnitario),
     formatCurrency(item.valorTotal)
   ]);
   
-  doc.autoTable({
-    startY: marginTop + 25,
-    head: [tableColumn],
-    body: tableRows,
-    theme: 'grid',
+  // Adicionar linha de total
+  tableData.push([
+    "",
+    "",
+    "",
+    "",
+    "TOTAL:",
+    formatCurrency(proposta.valorTotal)
+  ]);
+  
+  autoTable(doc, {
+    startY: clienteY,
+    head: [tableHeaders],
+    body: tableData,
+    theme: 'striped',
     headStyles: {
-      fillColor: azulVDR,
+      fillColor: [1, 53, 118],
       textColor: [255, 255, 255],
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      halign: 'center'
     },
     columnStyles: {
-      0: { cellWidth: 15 }, // CÓDIGO
-      1: { cellWidth: 10 }, // ITEM
-      2: { cellWidth: 80 }, // DESCRIÇÃO COMERCIAL
-      3: { cellWidth: 12 }, // UNID
-      4: { cellWidth: 15 }, // QUANT
-      5: { cellWidth: 20 }, // VALOR UNIT
-      6: { cellWidth: 20 }  // TOTAL
+      0: { cellWidth: 30 },
+      1: { cellWidth: 'auto' },
+      2: { cellWidth: 20, halign: 'center' },
+      3: { cellWidth: 25, halign: 'center' },
+      4: { cellWidth: 35, halign: 'right' },
+      5: { cellWidth: 35, halign: 'right' }
     },
     styles: {
-      fontSize: 9,
-      cellPadding: 2
-    }
+      fontSize: 9
+    },
+    foot: [[
+      {
+        content: 'Total da Proposta: ' + formatCurrency(proposta.valorTotal),
+        colSpan: 6,
+        styles: {
+          halign: 'right',
+          fillColor: [240, 240, 240],
+          fontStyle: 'bold'
+        }
+      }
+    ]],
   });
   
-  // Adicionar subtotal da tabela
-  const finalY = (doc as any).lastAutoTable.finalY;
+  // Nova posição Y após a tabela
+  let newY = (doc as any).lastAutoTable.finalY + 15;
   
+  // Verificar se precisamos de uma nova página
+  if (newY > pageHeight - 100) {
+    doc.addPage();
+    newY = 40;
+  }
+  
+  // Condições comerciais
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(255, 255, 255);
-  doc.setFillColor(azulVDR[0], azulVDR[1], azulVDR[2]);
-  doc.rect(marginLeft, finalY, 170, 8, 'F');
-  doc.text("VALOR DOS ITENS:", 150, finalY + 5.5, { align: "right" });
-  doc.text(formatCurrency(proposta.valorTotal), 182, finalY + 5.5, { align: "right" });
+  doc.setFontSize(11);
+  doc.setTextColor(azulVDR[0]*255, azulVDR[1]*255, azulVDR[2]*255);
+  doc.text("CONDIÇÕES COMERCIAIS", margin, newY);
   
-  // Tabela de custos extras (M.O., Projeto, Execução)
+  newY += 10;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  doc.autoTable({
-    startY: finalY + 15,
-    head: [['DESCRIÇÃO', 'VALOR']],
-    body: [
-      ['# # # #', '-']
-    ],
-    theme: 'grid',
-    headStyles: {
-      fillColor: [240, 240, 240],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold'
-    }
+  
+  // Grid de condições
+  const condicoes = [
+    { label: "Forma de Pagamento:", value: proposta.formaPagamento },
+    { label: "Prazo de Entrega do Material:", value: proposta.prazoEntrega },
+    { label: "Prazo de Execução da Obra:", value: proposta.prazoObra },
+    { label: "Validade da proposta:", value: proposta.validade }
+  ];
+  
+  condicoes.forEach((condicao, index) => {
+    doc.setFont("helvetica", "bold");
+    doc.text(`${condicao.label}`, margin, newY);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${condicao.value}`, margin + 60, newY);
+    newY += 8;
   });
   
-  // Total do investimento
-  const custosFinalY = (doc as any).lastAutoTable.finalY;
+  // Verificar se precisamos de uma nova página
+  if (newY > pageHeight - 80) {
+    doc.addPage();
+    newY = 40;
+  }
   
-  doc.setFillColor(azulVDR[0], azulVDR[1], azulVDR[2]);
-  doc.rect(marginLeft, custosFinalY + 5, 170, 8, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.text("TOTAL DO INVESTIMENTO", 100, custosFinalY + 10.5, { align: "center" });
-  doc.text(formatCurrency(proposta.valorTotal), 182, custosFinalY + 10.5, { align: "right" });
+  // Observações
+  newY += 10;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(azulVDR[0]*255, azulVDR[1]*255, azulVDR[2]*255);
+  doc.text("OBSERVAÇÕES", margin, newY);
+  newY += 10;
   
-  // Assinaturas na parte inferior
-  let signatureY = 260;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
-  doc.text("Atenciosamente,", marginLeft, signatureY);
-  doc.text("DORI LIMA DOS SANTOS", marginLeft, signatureY + 10);
-  doc.text("DIRETOR TÉCNICO COMERCIAL", marginLeft, signatureY + 15);
   
-  doc.text("RAYAN FÁSSIO SANTOS", 170, signatureY + 10, { align: "right" });
-  doc.text("DE ACORDO EM ______/______/_______", 170, signatureY + 15, { align: "right" });
+  // Dividir observações em linhas
+  const linhasObs = doc.splitTextToSize(proposta.observacoes, pageWidth - (margin * 2));
   
-  // Adicionar rodapé
-  doc.setFillColor(azulVDR[0], azulVDR[1], azulVDR[2]);
-  doc.rect(marginLeft, 280, 170, 10, 'F');
-  doc.setTextColor(255, 255, 255);
+  // Verificar se as observações não ultrapassarão a página
+  if (newY + (linhasObs.length * 5) > pageHeight - 60) {
+    doc.addPage();
+    newY = 40;
+  }
+  
+  doc.text(linhasObs, margin, newY);
+  newY += (linhasObs.length * 5) + 15;
+  
+  // Assinaturas
+  const assinaturaY = pageHeight - 50;
+  
+  // Linha para assinatura do cliente
+  doc.setDrawColor(0, 0, 0);
+  doc.line(margin, assinaturaY, pageWidth / 2 - 10, assinaturaY);
+  doc.text("Assinatura do Cliente", margin, assinaturaY + 10);
+  
+  // Linha para assinatura da VDR
+  doc.line(pageWidth / 2 + 10, assinaturaY, pageWidth - margin, assinaturaY);
+  doc.text("Assinatura VDR", pageWidth / 2 + 10, assinaturaY + 10);
+  
+  // Rodapé
+  const rodapeY = pageHeight - 15;
   doc.setFontSize(8);
-  doc.text("Av. Pedro Ludovico Teixeira, Nº 4415, Qd. 142, Lt. 18 - Parque Oeste Industrial, CEP: 74.375-400", 100, 285, { align: "center" });
-  doc.text("Goiânia/GO - Fone/Fax: (62) 3942-1877 - www.vedare.com.br - CNPJ 28.298.757/0001-78", 100, 288, { align: "center" });
-
-  // Salvar o PDF
-  const pdfName = `proposta_${proposta.numero.replace(/\./g, '_')}.pdf`;
-  doc.save(pdfName);
+  doc.setTextColor(100, 100, 100);
+  doc.text("VDR - Soluções em Vidro e Alumínio", pageWidth / 2, rodapeY, { align: "center" });
   
-  return pdfName;
-};
-
-// Exportar função de geração de PDF
-export default {
-  generateProposalPDF
+  // Salvar o PDF
+  doc.save(`Proposta_${proposta.numero}.pdf`);
 };

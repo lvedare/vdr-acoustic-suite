@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Plus, Save, Trash, ChevronLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FileText, Plus, Save, Trash, ChevronLeft, Search, Package } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 
 // Tipos
@@ -52,6 +53,18 @@ interface Proposta {
   prazoEntrega: string;
   prazoObra: string;
   validade: string;
+}
+
+interface ProdutoAcabado {
+  id: number;
+  codigo: string;
+  nome: string;
+  descricao: string;
+  categoria: string;
+  unidadeMedida: string;
+  valorBase: number;
+  quantidadeEstoque: number;
+  dataCadastro: string;
 }
 
 // Dados iniciais
@@ -125,12 +138,22 @@ const NovoOrcamento = () => {
     descricao: "",
     valor: 0
   });
-  
+
+  const [produtosAcabados, setProdutosAcabados] = useState<ProdutoAcabado[]>([]);
+  const [filtroProduto, setFiltroProduto] = useState("");
+  const [dialogProdutosAberto, setDialogProdutosAberto] = useState(false);
+
   // Carregar clientes do localStorage, se houver
   useEffect(() => {
     const savedClientes = localStorage.getItem("clientes");
     if (savedClientes) {
       setClientes(JSON.parse(savedClientes));
+    }
+
+    // Carregar produtos acabados
+    const savedProdutos = localStorage.getItem("produtosAcabados");
+    if (savedProdutos) {
+      setProdutosAcabados(JSON.parse(savedProdutos));
     }
   }, []);
   
@@ -202,6 +225,20 @@ const NovoOrcamento = () => {
     });
     
     toast.success("Item adicionado com sucesso!");
+  };
+
+  // Handler para adicionar produto da lista de produtos acabados
+  const handleAdicionarProdutoAcabado = (produto: ProdutoAcabado) => {
+    setNovoItem({
+      codigo: produto.codigo,
+      descricao: produto.nome,
+      unidade: produto.unidadeMedida,
+      quantidade: 1,
+      valorUnitario: produto.valorBase
+    });
+
+    setDialogProdutosAberto(false);
+    toast.success("Produto selecionado, ajuste a quantidade se necessário");
   };
   
   // Handler para adicionar um novo custo
@@ -278,6 +315,17 @@ const NovoOrcamento = () => {
     // Redirecionar para a página de listagem de propostas
     navigate("/orcamentos");
   };
+
+  // Filtrar produtos para o diálogo de seleção
+  const produtosFiltrados = produtosAcabados.filter(produto => {
+    const termoBusca = filtroProduto.toLowerCase();
+    return (
+      produto.nome.toLowerCase().includes(termoBusca) ||
+      produto.codigo.toLowerCase().includes(termoBusca) ||
+      produto.descricao.toLowerCase().includes(termoBusca) ||
+      produto.categoria.toLowerCase().includes(termoBusca)
+    );
+  });
   
   return (
     <div className="space-y-6">
@@ -406,11 +454,88 @@ const NovoOrcamento = () => {
                 
                 <div className="col-span-4">
                   <Label htmlFor="descricao">Descrição</Label>
-                  <Input 
-                    id="descricao" 
-                    value={novoItem.descricao}
-                    onChange={(e) => setNovoItem(prev => ({ ...prev, descricao: e.target.value }))}
-                  />
+                  <div className="flex space-x-2">
+                    <Input 
+                      id="descricao" 
+                      value={novoItem.descricao}
+                      onChange={(e) => setNovoItem(prev => ({ ...prev, descricao: e.target.value }))}
+                      className="flex-1"
+                    />
+                    <Dialog open={dialogProdutosAberto} onOpenChange={setDialogProdutosAberto}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="icon">
+                          <Package className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[700px]">
+                        <DialogHeader>
+                          <DialogTitle>Selecionar Produto Acabado</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4">
+                          <div className="relative mb-4">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Buscar produto por nome, código ou categoria..."
+                              className="pl-8"
+                              value={filtroProduto}
+                              onChange={(e) => setFiltroProduto(e.target.value)}
+                            />
+                          </div>
+                          
+                          <div className="rounded-md border max-h-[400px] overflow-y-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Código</TableHead>
+                                  <TableHead>Produto</TableHead>
+                                  <TableHead>Categoria</TableHead>
+                                  <TableHead>Un.</TableHead>
+                                  <TableHead>Valor</TableHead>
+                                  <TableHead className="w-[100px]"></TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {produtosFiltrados.length === 0 ? (
+                                  <TableRow>
+                                    <TableCell colSpan={6} className="h-24 text-center">
+                                      Nenhum produto encontrado.
+                                    </TableCell>
+                                  </TableRow>
+                                ) : (
+                                  produtosFiltrados.map((produto) => (
+                                    <TableRow key={produto.id}>
+                                      <TableCell className="font-medium">{produto.codigo}</TableCell>
+                                      <TableCell>
+                                        <div>
+                                          <div>{produto.nome}</div>
+                                          {produto.descricao && (
+                                            <div className="text-xs text-muted-foreground truncate max-w-xs">
+                                              {produto.descricao}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>{produto.categoria}</TableCell>
+                                      <TableCell>{produto.unidadeMedida}</TableCell>
+                                      <TableCell>{formatCurrency(produto.valorBase)}</TableCell>
+                                      <TableCell>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleAdicionarProdutoAcabado(produto)}
+                                        >
+                                          <Plus className="h-4 w-4 mr-1" /> Selecionar
+                                        </Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
                 
                 <div className="col-span-1">
