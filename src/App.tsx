@@ -14,6 +14,9 @@ import PlaceholderPage from "./pages/PlaceholderPage";
 import NotFound from "./pages/NotFound";
 import { useEffect, useState } from "react";
 import AccessRequests from "./pages/AccessRequests";
+import Orcamentos from "./pages/Orcamentos";
+import NovoOrcamento from "./pages/NovoOrcamento";
+import Clientes from "./pages/Clientes";
 
 const queryClient = new QueryClient();
 
@@ -105,7 +108,17 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <PlaceholderPage />
+                    <Orcamentos />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orcamentos/novo"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <NovoOrcamento />
                   </AppLayout>
                 </ProtectedRoute>
               }
@@ -115,7 +128,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <PlaceholderPage />
+                    <Clientes />
                   </AppLayout>
                 </ProtectedRoute>
               }
