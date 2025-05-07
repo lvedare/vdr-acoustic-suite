@@ -19,7 +19,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Schema de validação para o formulário de solicitação de acesso
+const accessRequestSchema = z.object({
+  fullName: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
+  email: z.string().email({ message: "E-mail inválido" }),
+  role: z.string().min(1, { message: "Selecione um cargo" }),
+  justification: z.string().optional(),
+});
+
+type AccessRequestFormValues = z.infer<typeof accessRequestSchema>;
 
 const Login = () => {
   const navigate = useNavigate();
@@ -27,6 +43,18 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("administrador");
   const [isLoading, setIsLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Form para solicitação de acesso
+  const form = useForm<AccessRequestFormValues>({
+    resolver: zodResolver(accessRequestSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      role: "comercial",
+      justification: "",
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +73,25 @@ const Login = () => {
       }
       setIsLoading(false);
     }, 1000);
+  };
+
+  const onAccessRequest = (data: AccessRequestFormValues) => {
+    // Em uma aplicação real, enviaríamos esta solicitação para o backend
+    console.log("Solicitação de acesso:", data);
+    
+    // Armazenar solicitação localmente (para simulação)
+    const accessRequests = JSON.parse(localStorage.getItem("accessRequests") || "[]");
+    accessRequests.push({
+      ...data,
+      id: Date.now(),
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    });
+    localStorage.setItem("accessRequests", JSON.stringify(accessRequests));
+    
+    toast.success("Solicitação enviada com sucesso! Aguarde a aprovação.");
+    setIsDialogOpen(false);
+    form.reset();
   };
 
   return (
@@ -101,7 +148,7 @@ const Login = () => {
                 </Select>
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-4">
               <Button
                 className="w-full bg-vdr-blue hover:bg-blue-800"
                 type="submit"
@@ -109,6 +156,106 @@ const Login = () => {
               >
                 {isLoading ? "Autenticando..." : "Entrar"}
               </Button>
+              
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    type="button"
+                  >
+                    Solicitar Acesso
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Solicitar Acesso ao Sistema</DialogTitle>
+                    <DialogDescription>
+                      Preencha o formulário abaixo para solicitar acesso ao VDR System.
+                      Sua solicitação será analisada pela equipe administrativa.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onAccessRequest)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="fullName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome Completo</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Digite seu nome completo" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>E-mail Corporativo</FormLabel>
+                            <FormControl>
+                              <Input placeholder="seuemail@empresa.com" type="email" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cargo Desejado</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione um cargo" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="comercial">Comercial</SelectItem>
+                                <SelectItem value="producao">Produção</SelectItem>
+                                <SelectItem value="engenharia">Engenharia</SelectItem>
+                                <SelectItem value="instalacao">Instalação</SelectItem>
+                                <SelectItem value="financeiro">Financeiro</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="justification"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Justificativa ou Observações (opcional)</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Descreva brevemente por que você precisa de acesso..." 
+                                className="resize-none" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <DialogFooter>
+                        <Button type="submit">Enviar Solicitação</Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
             </CardFooter>
           </form>
         </Card>

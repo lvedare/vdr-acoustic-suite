@@ -13,21 +13,29 @@ import Atendimento from "./pages/Atendimento";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import NotFound from "./pages/NotFound";
 import { useEffect, useState } from "react";
+import AccessRequests from "./pages/AccessRequests";
 
 const queryClient = new QueryClient();
 
 // Protected route component
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requiredRole?: string[];
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   // Check if the user is logged in
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const userRole = localStorage.getItem("userRole");
   
   // If not logged in, redirect to the login page
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
+  }
+  
+  // If requiredRole is specified and user doesn't have the role, redirect to dashboard
+  if (requiredRole && userRole && !requiredRole.includes(userRole)) {
+    return <Navigate to="/" replace />;
   }
   
   return <>{children}</>;
@@ -188,6 +196,17 @@ const App = () => {
                 <ProtectedRoute>
                   <AppLayout>
                     <PlaceholderPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Rota para solicitações de acesso (apenas Administrador) */}
+            <Route
+              path="/solicitacoes-acesso"
+              element={
+                <ProtectedRoute requiredRole={["administrador"]}>
+                  <AppLayout>
+                    <AccessRequests />
                   </AppLayout>
                 </ProtectedRoute>
               }
