@@ -1,56 +1,7 @@
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-// Tipos
-interface ClienteSimplificado {
-  id: number;
-  nome: string;
-  email: string;
-  telefone: string;
-  empresa?: string;
-  cnpj?: string;
-}
-
-interface ItemProposta {
-  id: number;
-  codigo: string;
-  descricao: string;
-  unidade: string;
-  quantidade: number;
-  valorUnitario: number;
-  valorTotal: number;
-}
-
-interface CustoProposta {
-  id: number;
-  descricao: string;
-  valor: number;
-}
-
-interface Proposta {
-  id: number;
-  numero: string;
-  data: string;
-  cliente: ClienteSimplificado;
-  status: "rascunho" | "enviada" | "aprovada" | "rejeitada" | "expirada";
-  itens: ItemProposta[];
-  custos: CustoProposta[];
-  observacoes: string;
-  valorTotal: number;
-  formaPagamento: string;
-  prazoEntrega: string;
-  prazoObra: string;
-  validade: string;
-}
-
-// Função para formatar moeda
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', { 
-    style: 'currency', 
-    currency: 'BRL' 
-  }).format(value);
-};
+import { Proposta, formatCurrency } from '@/types/orcamento';
 
 // Formatação de data
 const formatarData = (dataString: string) => {
