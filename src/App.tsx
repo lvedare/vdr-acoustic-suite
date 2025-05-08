@@ -19,6 +19,14 @@ import NovoOrcamento from "./pages/NovoOrcamento";
 import VisualizarOrcamento from "./pages/VisualizarOrcamento";
 import Clientes from "./pages/Clientes";
 import ProdutosAcabados from "./pages/ProdutosAcabados";
+import Producao from "./pages/Producao";
+import Projetos from "./pages/Projetos";
+import Estoque from "./pages/Estoque";
+import Obras from "./pages/Obras";
+import Financeiro from "./pages/Financeiro";
+import Relatorios from "./pages/Relatorios";
+import Cadastros from "./pages/Cadastros";
+import Configuracoes from "./pages/Configuracoes";
 
 const queryClient = new QueryClient();
 
@@ -160,7 +168,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <PlaceholderPage />
+                    <Producao />
                   </AppLayout>
                 </ProtectedRoute>
               }
@@ -170,7 +178,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <PlaceholderPage />
+                    <Projetos />
                   </AppLayout>
                 </ProtectedRoute>
               }
@@ -180,7 +188,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <PlaceholderPage />
+                    <Estoque />
                   </AppLayout>
                 </ProtectedRoute>
               }
@@ -190,7 +198,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <PlaceholderPage />
+                    <Obras />
                   </AppLayout>
                 </ProtectedRoute>
               }
@@ -200,7 +208,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <PlaceholderPage />
+                    <Financeiro />
                   </AppLayout>
                 </ProtectedRoute>
               }
@@ -210,7 +218,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <PlaceholderPage />
+                    <Relatorios />
                   </AppLayout>
                 </ProtectedRoute>
               }
@@ -220,7 +228,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <PlaceholderPage />
+                    <Cadastros />
                   </AppLayout>
                 </ProtectedRoute>
               }
@@ -230,7 +238,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <PlaceholderPage />
+                    <Configuracoes />
                   </AppLayout>
                 </ProtectedRoute>
               }
