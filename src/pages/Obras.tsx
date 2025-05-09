@@ -1,291 +1,208 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Plus, MapPin, Filter, FileText, Calendar } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Building2, 
-  Calendar, 
-  CheckCircle2, 
-  Clock, 
-  MapPin, 
-  Plus, 
-  Search
-} from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-// Sample data
-const obras = [
-  {
-    id: 1,
-    nome: "Tratamento Acústico - Escritório ABC",
-    cliente: "Empresa ABC",
-    endereco: "Av. Paulista, 1000",
-    cidade: "São Paulo",
-    estado: "SP",
-    dataInicio: "2025-05-15",
-    dataPrevisaoTermino: "2025-06-10",
-    responsavel: "João Silva",
-    status: "em_andamento",
-    progresso: 35
-  },
-  {
-    id: 2,
-    nome: "Isolamento Acústico - Studio XYZ",
-    cliente: "Studio XYZ",
-    endereco: "Rua Augusta, 1500",
-    cidade: "São Paulo",
-    estado: "SP",
-    dataInicio: "2025-06-01",
-    dataPrevisaoTermino: "2025-07-15",
-    responsavel: "Maria Oliveira",
-    status: "planejamento",
-    progresso: 0
-  },
-  {
-    id: 3,
-    nome: "Redução de Ruído - Restaurante",
-    cliente: "Restaurante Boa Mesa",
-    endereco: "Av. Brasil, 500",
-    cidade: "Rio de Janeiro",
-    estado: "RJ",
-    dataInicio: "2025-04-15",
-    dataPrevisaoTermino: "2025-04-30",
-    dataTerminoReal: "2025-05-05",
-    responsavel: "Pedro Almeida",
-    status: "concluida",
-    progresso: 100
-  }
-];
 
 const Obras = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filtroStatus, setFiltroStatus] = useState<string | null>(null);
-  const navigate = useNavigate();
-  
-  // Filter obras based on search and filter
-  const obrasFiltradas = obras.filter(obra => {
-    const matchesSearch = 
-      obra.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      obra.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      obra.cidade.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (filtroStatus) {
-      return matchesSearch && obra.status === filtroStatus;
-    }
-    
-    return matchesSearch;
+  const [filter, setFilter] = useState("todos");
+  const [search, setSearch] = useState("");
+
+  const mockObras = [
+    {
+      id: 1,
+      nome: "Edifício Residencial Parque das Flores",
+      endereco: "Av. Principal, 1500, Centro",
+      cliente: "Construtora Prima",
+      status: "em_andamento",
+      dataInicio: "2025-01-10",
+      dataPrevisao: "2025-07-20",
+    },
+    {
+      id: 2,
+      nome: "Complexo Comercial Downtown",
+      endereco: "Rua das Palmeiras, 500, Jardim",
+      cliente: "Incorporadora Visão",
+      status: "planejamento",
+      dataInicio: "2025-04-15",
+      dataPrevisao: "2025-12-30",
+    },
+    {
+      id: 3,
+      nome: "Resort Villa Mar",
+      endereco: "Estrada da Praia, km 5",
+      cliente: "Grupo Hoteleiro Solar",
+      status: "concluido",
+      dataInicio: "2024-06-10",
+      dataPrevisao: "2025-02-28",
+      dataConclusao: "2025-02-20",
+    },
+  ];
+
+  const statusMap: Record<string, { label: string; variant: "default" | "success" | "secondary" | "outline" }> = {
+    planejamento: { label: "Planejamento", variant: "secondary" },
+    em_andamento: { label: "Em Andamento", variant: "default" },
+    concluido: { label: "Concluído", variant: "success" },
+    cancelado: { label: "Cancelado", variant: "outline" },
+  };
+
+  const filteredObras = mockObras.filter(obra => {
+    if (filter !== "todos" && obra.status !== filter) return false;
+    if (search && !obra.nome.toLowerCase().includes(search.toLowerCase()) && 
+        !obra.cliente.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
   });
-  
-  // Format date
+
   const formatarData = (data: string) => {
-    if (!data) return "-";
-    const [ano, mes, dia] = data.split('-');
-    return `${dia}/${mes}/${ano}`;
-  };
-  
-  // Status color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "planejamento":
-        return "bg-blue-100 text-blue-800";
-      case "em_andamento":
-        return "bg-amber-100 text-amber-800";
-      case "pausada":
-        return "bg-purple-100 text-purple-800";
-      case "concluida":
-        return "bg-emerald-100 text-emerald-800";
-      case "atrasada":
-        return "bg-red-100 text-red-800";
-      case "cancelada":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-  
-  // Status text
-  const getStatusTexto = (status: string) => {
-    switch (status) {
-      case "planejamento": return "Planejamento";
-      case "em_andamento": return "Em Andamento";
-      case "pausada": return "Pausada";
-      case "concluida": return "Concluída";
-      case "atrasada": return "Atrasada";
-      case "cancelada": return "Cancelada";
-      default: return status;
-    }
-  };
-  
-  // Count obras by status
-  const contarObras = (status: string) => {
-    return obras.filter(o => o.status === status).length;
+    return new Date(data).toLocaleDateString('pt-BR');
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Obras</h1>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
           Nova Obra
         </Button>
       </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="py-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Card className="flex-1">
+          <CardHeader className="pb-3">
+            <CardTitle>Resumo</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{obras.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="py-2">
-            <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{contarObras("em_andamento")}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="py-2">
-            <CardTitle className="text-sm font-medium">Planejamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{contarObras("planejamento")}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="py-2">
-            <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{contarObras("concluida")}</div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar obras por nome, cliente ou cidade..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Select
-          value={filtroStatus || ""}
-          onValueChange={(value) => setFiltroStatus(value === "" ? null : value)}
-        >
-          <SelectTrigger className="w-[180px]">
-            <div className="flex items-center gap-2">
-              <span>{filtroStatus ? getStatusTexto(filtroStatus) : "Todos os Status"}</span>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-slate-50 p-3 rounded-md text-center">
+                <div className="text-2xl font-bold">{mockObras.length}</div>
+                <div className="text-sm text-muted-foreground">Total</div>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-md text-center">
+                <div className="text-2xl font-bold">{mockObras.filter(p => p.status === "em_andamento").length}</div>
+                <div className="text-sm text-muted-foreground">Em Andamento</div>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-md text-center">
+                <div className="text-2xl font-bold">{mockObras.filter(p => p.status === "planejamento").length}</div>
+                <div className="text-sm text-muted-foreground">Planejamento</div>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-md text-center">
+                <div className="text-2xl font-bold">{mockObras.filter(p => p.status === "concluido").length}</div>
+                <div className="text-sm text-muted-foreground">Concluídas</div>
+              </div>
             </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Todos os Status</SelectItem>
-            <SelectItem value="planejamento">Planejamento</SelectItem>
-            <SelectItem value="em_andamento">Em Andamento</SelectItem>
-            <SelectItem value="pausada">Pausada</SelectItem>
-            <SelectItem value="concluida">Concluída</SelectItem>
-            <SelectItem value="atrasada">Atrasada</SelectItem>
-            <SelectItem value="cancelada">Cancelada</SelectItem>
-          </SelectContent>
-        </Select>
+          </CardContent>
+        </Card>
       </div>
-      
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome da Obra</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Local</TableHead>
-              <TableHead className="hidden md:table-cell">Data Início</TableHead>
-              <TableHead className="hidden md:table-cell">Previsão Término</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden lg:table-cell">Progresso</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {obrasFiltradas.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-16 text-center">
-                  Nenhuma obra encontrada.
-                </TableCell>
-              </TableRow>
-            ) : (
-              obrasFiltradas.map((obra) => (
-                <TableRow key={obra.id}>
-                  <TableCell>{obra.nome}</TableCell>
-                  <TableCell>{obra.cliente}</TableCell>
-                  <TableCell>
-                    {obra.cidade}/{obra.estado}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{formatarData(obra.dataInicio)}</TableCell>
-                  <TableCell className="hidden md:table-cell">{formatarData(obra.dataPrevisaoTermino)}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(obra.status)} variant="secondary">
-                      {getStatusTexto(obra.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <div className="flex items-center gap-2">
-                      <Progress value={obra.progresso} className="h-2" />
-                      <span className="text-xs whitespace-nowrap">{obra.progresso}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                      >
-                        Detalhes
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                      >
-                        Editar
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      
+
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Mapa de Obras
-          </CardTitle>
-          <CardDescription>Visualize a localização das obras ativas</CardDescription>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardTitle>Lista de Obras</CardTitle>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="Buscar obra..." 
+                  className="w-full sm:w-auto" 
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <Select value={filter} onValueChange={setFilter}>
+                  <SelectTrigger className="w-auto">
+                    <div className="flex items-center">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Filtrar" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Status</SelectLabel>
+                      <SelectItem value="todos">Todas</SelectItem>
+                      <SelectItem value="planejamento">Planejamento</SelectItem>
+                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                      <SelectItem value="concluido">Concluídas</SelectItem>
+                      <SelectItem value="cancelado">Canceladas</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] bg-muted rounded-md flex items-center justify-center">
-            <p className="text-muted-foreground">
-              Mapa de obras será implementado em breve
-            </p>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Endereço</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Data Início</TableHead>
+                  <TableHead>Previsão</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[100px]">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredObras.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      Nenhuma obra encontrada com os filtros atuais.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredObras.map((obra) => (
+                    <TableRow key={obra.id}>
+                      <TableCell className="font-medium">{obra.nome}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                          {obra.endereco}
+                        </div>
+                      </TableCell>
+                      <TableCell>{obra.cliente}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                          {formatarData(obra.dataInicio)}
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatarData(obra.dataPrevisao)}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusMap[obra.status].variant}>
+                          {statusMap[obra.status].label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <FileText className="h-4 w-4" />
+                          <span className="sr-only">Ver detalhes</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
