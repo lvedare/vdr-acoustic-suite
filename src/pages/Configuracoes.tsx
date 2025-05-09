@@ -2,112 +2,112 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, ListChecks, Users, Building, Truck, FileText } from "lucide-react";
+import { Settings, Users, Bell, Shield, Globe, Database } from "lucide-react";
 
-const Cadastros = () => {
+const Configuracoes = () => {
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Cadastros</h1>
+      <h1 className="text-3xl font-bold">Configurações</h1>
       
-      <Tabs defaultValue="produtos" className="space-y-4">
+      <Tabs defaultValue="geral" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="produtos">Produtos</TabsTrigger>
-          <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
-          <TabsTrigger value="colaboradores">Colaboradores</TabsTrigger>
-          <TabsTrigger value="unidades">Unidades</TabsTrigger>
-          <TabsTrigger value="transportadoras">Transportadoras</TabsTrigger>
+          <TabsTrigger value="geral">Geral</TabsTrigger>
+          <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+          <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
+          <TabsTrigger value="seguranca">Segurança</TabsTrigger>
+          <TabsTrigger value="integracao">Integrações</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="produtos">
+        <TabsContent value="geral">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Package className="mr-2 h-5 w-5" />
-                Cadastro de Produtos
+                <Settings className="mr-2 h-5 w-5" />
+                Configurações Gerais
               </CardTitle>
               <CardDescription>
-                Gerencie o cadastro de produtos e insumos
+                Configurações gerais do sistema
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar produtos e insumos.
+                Esta seção será implementada em breve. Aqui você poderá configurar as preferências gerais do sistema.
               </p>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="fornecedores">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Truck className="mr-2 h-5 w-5" />
-                Cadastro de Fornecedores
-              </CardTitle>
-              <CardDescription>
-                Gerencie o cadastro de fornecedores
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar fornecedores.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="colaboradores">
+        <TabsContent value="usuarios">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Users className="mr-2 h-5 w-5" />
-                Cadastro de Colaboradores
+                Gerenciamento de Usuários
               </CardTitle>
               <CardDescription>
-                Gerencie o cadastro de colaboradores
+                Configure os usuários e suas permissões
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar colaboradores.
+                Esta seção será implementada em breve. Aqui você poderá gerenciar usuários e suas permissões.
               </p>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="unidades">
+        <TabsContent value="notificacoes">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Building className="mr-2 h-5 w-5" />
-                Cadastro de Unidades
+                <Bell className="mr-2 h-5 w-5" />
+                Notificações
               </CardTitle>
               <CardDescription>
-                Gerencie o cadastro de unidades e filiais
+                Configure as notificações do sistema
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar unidades e filiais.
+                Esta seção será implementada em breve. Aqui você poderá configurar as notificações do sistema.
               </p>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="transportadoras">
+        <TabsContent value="seguranca">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Truck className="mr-2 h-5 w-5" />
-                Cadastro de Transportadoras
+                <Shield className="mr-2 h-5 w-5" />
+                Segurança
               </CardTitle>
               <CardDescription>
-                Gerencie o cadastro de transportadoras
+                Configurações de segurança e privacidade
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar transportadoras.
+                Esta seção será implementada em breve. Aqui você poderá configurar opções de segurança e privacidade.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="integracao">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Database className="mr-2 h-5 w-5" />
+                Integrações
+              </CardTitle>
+              <CardDescription>
+                Integração com outros sistemas e APIs
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                Esta seção será implementada em breve. Aqui você poderá configurar integrações com outros sistemas.
               </p>
             </CardContent>
           </Card>
@@ -117,4 +117,4 @@ const Cadastros = () => {
   );
 };
 
-export default Cadastros;
+export default Configuracoes;
