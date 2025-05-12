@@ -9,14 +9,7 @@ import {
   CardContent 
 } from "@/components/ui/card";
 import { formatCurrency, ProdutoAcabado } from "@/types/orcamento";
-
-interface VendaProduto {
-  id: number;
-  produtoId: number;
-  quantidade: number;
-  valorTotal: number;
-  data: string;
-}
+import { VendaProduto } from "@/contexts/ProdutosContext";
 
 interface ProdutoVendasTableProps {
   produtos: ProdutoAcabado[];
