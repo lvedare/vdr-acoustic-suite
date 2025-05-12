@@ -58,11 +58,11 @@ const Projetos = () => {
     },
   ];
 
-  const statusMap: Record<string, { label: string; variant: "default" | "success" | "secondary" | "outline" }> = {
+  const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
     planejamento: { label: "Planejamento", variant: "secondary" },
     em_andamento: { label: "Em Andamento", variant: "default" },
-    concluido: { label: "Concluído", variant: "success" },
-    cancelado: { label: "Cancelado", variant: "outline" },
+    concluido: { label: "Concluído", variant: "outline" },
+    cancelado: { label: "Cancelado", variant: "destructive" },
   };
 
   const filteredProjetos = mockProjetos.filter(projeto => {
