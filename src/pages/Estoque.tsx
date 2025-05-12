@@ -40,6 +40,14 @@ import {
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
+import { Material } from "@/types/estoque";
+
+// Import the components we just created
+import { EstoqueSummaryCards } from "@/components/estoque/EstoqueSummaryCards";
+import { EstoqueFilterBar } from "@/components/estoque/EstoqueFilterBar";
+import { EstoqueMateriaisTable } from "@/components/estoque/EstoqueMateriaisTable";
+import { EstoqueBaixoAlert } from "@/components/estoque/EstoqueBaixoAlert";
+import { MovimentacoesPlaceholder, RelatoriosPlaceholder } from "@/components/estoque/EstoquePlaceholders";
 
 // Sample data for materials
 const materiaisMock = [
@@ -85,7 +93,7 @@ const materiaisMock = [
 ];
 
 const Estoque = () => {
-  const [materiais, setMateriais] = useState(materiaisMock);
+  const [materiais, setMateriais] = useState<Material[]>(materiaisMock);
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState<string | null>(null);
   const [filtroEstoque, setFiltroEstoque] = useState<string | null>(null);
@@ -141,13 +149,6 @@ const Estoque = () => {
     }
   };
   
-  // Calculate total value in stock
-  const calcularValorTotalEstoque = (): number => {
-    return materiais.reduce((total, material) => {
-      return total + (material.quantidadeEstoque * material.valorUnitario);
-    }, 0);
-  };
-  
   // Count items with low stock
   const contarItensBaixoEstoque = (): number => {
     return materiais.filter(m => m.quantidadeEstoque < m.estoqueMinimo).length;
@@ -169,58 +170,11 @@ const Estoque = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="py-4">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Itens em Estoque</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {materiais.reduce((acc, material) => acc + material.quantidadeEstoque, 0)}
-              <span className="text-sm font-normal text-muted-foreground ml-2">itens</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="py-4">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Valor em Estoque</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatarMoeda(calcularValorTotalEstoque())}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="py-4">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Itens com Estoque Baixo</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center gap-2">
-            <div className="text-2xl font-bold">
-              {contarItensBaixoEstoque()}
-            </div>
-            {contarItensBaixoEstoque() > 0 && (
-              <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-800">
-                Atenção
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="py-4">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Movimentações Recentes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              12
-              <span className="text-sm font-normal text-muted-foreground ml-2">esta semana</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Summary Cards Component */}
+      <EstoqueSummaryCards 
+        materiais={materiais} 
+        formatarMoeda={formatarMoeda} 
+      />
       
       <Tabs defaultValue="inventario" className="space-y-4">
         <TabsList>
@@ -234,191 +188,39 @@ const Estoque = () => {
             <CardHeader>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Materiais em Estoque</CardTitle>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar materiais..."
-                      className="pl-8 w-full sm:w-[250px]"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Select
-                      value={filtroCategoria || "todas"}
-                      onValueChange={(value) => setFiltroCategoria(value === "todas" ? null : value)}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <div className="flex items-center gap-2">
-                          <Filter className="h-4 w-4" />
-                          <span>{filtroCategoria || "Todas as Categorias"}</span>
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todas">Todas as Categorias</SelectItem>
-                        {categorias.map((categoria) => (
-                          <SelectItem key={categoria} value={categoria}>
-                            {categoria}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    <Select
-                      value={filtroEstoque || "todos"}
-                      onValueChange={(value) => setFiltroEstoque(value === "todos" ? null : value)}
-                    >
-                      <SelectTrigger className="w-[150px]">
-                        <div className="flex items-center gap-2">
-                          <span>{filtroEstoque === "baixo" ? "Estoque Baixo" : filtroEstoque === "normal" ? "Estoque Normal" : "Todos"}</span>
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos</SelectItem>
-                        <SelectItem value="baixo">Estoque Baixo</SelectItem>
-                        <SelectItem value="normal">Estoque Normal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                
+                {/* Filter Bar Component */}
+                <EstoqueFilterBar 
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  filtroCategoria={filtroCategoria}
+                  setFiltroCategoria={setFiltroCategoria}
+                  filtroEstoque={filtroEstoque}
+                  setFiltroEstoque={setFiltroEstoque}
+                  categorias={categorias}
+                />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Código</TableHead>
-                      <TableHead>Nome</TableHead>
-                      <TableHead className="hidden md:table-cell">Categoria</TableHead>
-                      <TableHead className="text-right">Qtde.</TableHead>
-                      <TableHead className="hidden lg:table-cell">Estoque Mín.</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="hidden lg:table-cell">Valor Un.</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {materiaisFiltrados.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="h-24 text-center">
-                          Nenhum material encontrado.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      materiaisFiltrados.map((material) => {
-                        const { badge, texto } = getEstoqueStatus(material);
-                        return (
-                          <TableRow key={material.id}>
-                            <TableCell className="font-medium">{material.codigo}</TableCell>
-                            <TableCell>
-                              <div>
-                                {material.nome}
-                                <div className="text-xs text-muted-foreground hidden sm:block">
-                                  {material.descricao.length > 30
-                                    ? `${material.descricao.substring(0, 30)}...`
-                                    : material.descricao}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">{material.categoria}</TableCell>
-                            <TableCell className="text-right">
-                              {material.quantidadeEstoque} {material.unidade}
-                            </TableCell>
-                            <TableCell className="hidden lg:table-cell">{material.estoqueMinimo}</TableCell>
-                            <TableCell>
-                              <Badge className={badge} variant="secondary">
-                                {texto}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="hidden lg:table-cell">{formatarMoeda(material.valorUnitario)}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  title="Registrar Movimentação"
-                                >
-                                  <PackagePlus className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  title="Editar Material"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              {/* Materials Table Component */}
+              <EstoqueMateriaisTable 
+                materiaisFiltrados={materiaisFiltrados}
+                getEstoqueStatus={getEstoqueStatus}
+                formatarMoeda={formatarMoeda}
+              />
               
-              <div className="mt-4">
-                <Card className="border-amber-200 bg-amber-50">
-                  <CardContent className="p-4 flex gap-4 items-center">
-                    <div className="rounded-full bg-amber-100 p-2">
-                      <AlertCircle className="h-5 w-5 text-amber-700" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-amber-800">Atenção para Estoque Baixo</h3>
-                      <p className="text-sm text-amber-700">
-                        {contarItensBaixoEstoque()} itens estão abaixo do estoque mínimo recomendado.
-                        {contarItensBaixoEstoque() > 0 && 
-                          <Button 
-                            variant="link" 
-                            className="p-0 h-auto text-amber-800 font-semibold"
-                            onClick={() => navigate("/financeiro")}
-                          >
-                            É recomendável fazer uma nova compra.
-                          </Button>
-                        }
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Low Stock Alert Component */}
+              <EstoqueBaixoAlert contarItensBaixoEstoque={contarItensBaixoEstoque} />
             </CardContent>
           </Card>
         </TabsContent>
         
         <TabsContent value="movimentacoes">
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Movimentações</CardTitle>
-              <CardDescription>Entradas e saídas de materiais do estoque</CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center h-60">
-              <div className="text-center">
-                <Calendar className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-2 text-muted-foreground">
-                  Histórico de movimentações será implementado em breve
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <MovimentacoesPlaceholder />
         </TabsContent>
         
         <TabsContent value="relatorios">
-          <Card>
-            <CardHeader>
-              <CardTitle>Relatórios de Estoque</CardTitle>
-              <CardDescription>Análise e estatísticas do estoque</CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center h-60">
-              <div className="text-center">
-                <BarChart className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-2 text-muted-foreground">
-                  Relatórios de estoque serão implementados em breve
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <RelatoriosPlaceholder />
         </TabsContent>
       </Tabs>
     </div>
