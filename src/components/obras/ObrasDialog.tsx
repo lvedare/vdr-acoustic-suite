@@ -76,8 +76,7 @@ export function ObrasDialog({ open, onOpenChange, onSave }: ObrasDialogProps) {
     onSave(values);
     form.reset();
     onOpenChange(false);
-    toast({
-      title: "Obra adicionada",
+    toast("Obra adicionada", {
       description: "A obra foi adicionada com sucesso.",
     });
   };
