@@ -6,13 +6,15 @@ import { Plus } from "lucide-react";
 import { ObrasResumoCard } from "@/components/obras/ObrasResumoCard";
 import { ObrasFilterBar } from "@/components/obras/ObrasFilterBar";
 import { ObrasList } from "@/components/obras/ObrasList";
+import { ObrasDialog } from "@/components/obras/ObrasDialog";
 import { Obra, obraStatusMap } from "@/types/obra";
 
 const Obras = () => {
   const [filter, setFilter] = useState("todos");
   const [search, setSearch] = useState("");
-
-  const mockObras: Obra[] = [
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const [mockObras, setMockObras] = useState<Obra[]>([
     {
       id: 1,
       nome: "Edifício Residencial Parque das Flores",
@@ -41,7 +43,7 @@ const Obras = () => {
       dataPrevisao: "2025-02-28",
       dataConclusao: "2025-02-20",
     },
-  ];
+  ]);
 
   const filteredObras = mockObras.filter(obra => {
     if (filter !== "todos" && obra.status !== filter) return false;
@@ -54,11 +56,25 @@ const Obras = () => {
     return new Date(data).toLocaleDateString('pt-BR');
   };
 
+  const handleSaveObra = (values: any) => {
+    const newObra: Obra = {
+      id: mockObras.length + 1,
+      nome: values.nome,
+      cliente: values.cliente,
+      endereco: values.endereco,
+      status: values.status,
+      dataInicio: values.dataInicio.toISOString().split('T')[0],
+      dataPrevisao: values.dataPrevisao.toISOString().split('T')[0],
+    };
+    
+    setMockObras([...mockObras, newObra]);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Obras</h1>
-        <Button>
+        <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Nova Obra
         </Button>
@@ -88,6 +104,12 @@ const Obras = () => {
           />
         </CardContent>
       </Card>
+
+      <ObrasDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen}
+        onSave={handleSaveObra}
+      />
     </div>
   );
 };
