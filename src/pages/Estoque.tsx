@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Card, 
@@ -247,8 +246,8 @@ const Estoque = () => {
                   </div>
                   <div className="flex gap-2">
                     <Select
-                      value={filtroCategoria || ""}
-                      onValueChange={(value) => setFiltroCategoria(value === "" ? null : value)}
+                      value={filtroCategoria || "todas"}
+                      onValueChange={(value) => setFiltroCategoria(value === "todas" ? null : value)}
                     >
                       <SelectTrigger className="w-[180px]">
                         <div className="flex items-center gap-2">
@@ -257,7 +256,7 @@ const Estoque = () => {
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todas as Categorias</SelectItem>
+                        <SelectItem value="todas">Todas as Categorias</SelectItem>
                         {categorias.map((categoria) => (
                           <SelectItem key={categoria} value={categoria}>
                             {categoria}
@@ -267,8 +266,8 @@ const Estoque = () => {
                     </Select>
                     
                     <Select
-                      value={filtroEstoque || ""}
-                      onValueChange={(value) => setFiltroEstoque(value === "" ? null : value)}
+                      value={filtroEstoque || "todos"}
+                      onValueChange={(value) => setFiltroEstoque(value === "todos" ? null : value)}
                     >
                       <SelectTrigger className="w-[150px]">
                         <div className="flex items-center gap-2">
@@ -276,7 +275,7 @@ const Estoque = () => {
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos</SelectItem>
+                        <SelectItem value="todos">Todos</SelectItem>
                         <SelectItem value="baixo">Estoque Baixo</SelectItem>
                         <SelectItem value="normal">Estoque Normal</SelectItem>
                       </SelectContent>
