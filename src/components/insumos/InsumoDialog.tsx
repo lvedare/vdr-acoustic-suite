@@ -13,74 +13,57 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/sonner";
-import { ProdutoAcabado } from "@/types/orcamento";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Layers } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Insumo } from '@/types/insumo';
 
-interface ProdutoDialogProps {
+interface InsumoDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  produtoAtual: ProdutoAcabado | null;
-  novoProduto: Omit<ProdutoAcabado, "id">;
-  setNovoProduto: React.Dispatch<React.SetStateAction<Omit<ProdutoAcabado, "id">>>;
+  insumoAtual: Insumo | null;
+  novoInsumo: Omit<Insumo, "id">;
+  setNovoInsumo: React.Dispatch<React.SetStateAction<Omit<Insumo, "id">>>;
   onSalvar: () => void;
   categorias: string[];
 }
 
-export function ProdutoDialog({
+export function InsumoDialog({
   isOpen,
   onOpenChange,
-  produtoAtual,
-  novoProduto,
-  setNovoProduto,
+  insumoAtual,
+  novoInsumo,
+  setNovoInsumo,
   onSalvar,
   categorias
-}: ProdutoDialogProps) {
-  const handleClose = () => {
-    onOpenChange(false);
-  };
-
+}: InsumoDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>{produtoAtual ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+          <DialogTitle>{insumoAtual ? "Editar Insumo" : "Novo Insumo"}</DialogTitle>
           <DialogDescription>
-            {produtoAtual 
-              ? "Atualize os dados do produto abaixo" 
-              : "Preencha os dados do novo produto abaixo"
+            {insumoAtual 
+              ? "Atualize os dados do insumo abaixo" 
+              : "Preencha os dados do novo insumo abaixo"
             }
           </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4">
-          {produtoAtual && produtoAtual.composicao && (
-            <Alert className="bg-blue-50">
-              <Layers className="h-4 w-4" />
-              <AlertTitle>Produto com composição</AlertTitle>
-              <AlertDescription>
-                Este produto tem uma composição definida. Para editar o valor base, 
-                use o editor de composição após salvar as informações básicas.
-              </AlertDescription>
-            </Alert>
-          )}
-          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="codigo">Código *</Label>
               <Input 
                 id="codigo" 
-                value={novoProduto.codigo}
-                onChange={(e) => setNovoProduto({...novoProduto, codigo: e.target.value})}
+                value={novoInsumo.codigo}
+                onChange={(e) => setNovoInsumo({...novoInsumo, codigo: e.target.value})}
               />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="categoria">Categoria *</Label>
               <Select 
-                value={novoProduto.categoria}
-                onValueChange={(value) => setNovoProduto({...novoProduto, categoria: value})}
+                value={novoInsumo.categoria}
+                onValueChange={(value) => setNovoInsumo({...novoInsumo, categoria: value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma categoria" />
@@ -98,8 +81,8 @@ export function ProdutoDialog({
             <Label htmlFor="nome">Nome *</Label>
             <Input 
               id="nome" 
-              value={novoProduto.nome}
-              onChange={(e) => setNovoProduto({...novoProduto, nome: e.target.value})}
+              value={novoInsumo.nome}
+              onChange={(e) => setNovoInsumo({...novoInsumo, nome: e.target.value})}
             />
           </div>
           
@@ -107,8 +90,8 @@ export function ProdutoDialog({
             <Label htmlFor="descricao">Descrição</Label>
             <Textarea 
               id="descricao" 
-              value={novoProduto.descricao}
-              onChange={(e) => setNovoProduto({...novoProduto, descricao: e.target.value})}
+              value={novoInsumo.descricao}
+              onChange={(e) => setNovoInsumo({...novoInsumo, descricao: e.target.value})}
               className="h-20"
             />
           </div>
@@ -117,8 +100,8 @@ export function ProdutoDialog({
             <div className="space-y-2">
               <Label htmlFor="unidadeMedida">Unidade de Medida</Label>
               <Select 
-                value={novoProduto.unidadeMedida}
-                onValueChange={(value) => setNovoProduto({...novoProduto, unidadeMedida: value})}
+                value={novoInsumo.unidadeMedida}
+                onValueChange={(value) => setNovoInsumo({...novoInsumo, unidadeMedida: value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
@@ -135,19 +118,13 @@ export function ProdutoDialog({
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="valorBase">
-                Valor Base (R$)
-                {produtoAtual && produtoAtual.composicao && (
-                  <span className="text-xs text-muted-foreground ml-1">(definido por composição)</span>
-                )}
-              </Label>
+              <Label htmlFor="valorCusto">Valor de Custo (R$)</Label>
               <Input 
-                id="valorBase" 
+                id="valorCusto" 
                 type="number"
                 step="0.01"
-                value={novoProduto.valorBase || ""}
-                onChange={(e) => setNovoProduto({...novoProduto, valorBase: Number(e.target.value)})}
-                disabled={!!(produtoAtual && produtoAtual.composicao)}
+                value={novoInsumo.valorCusto || ""}
+                onChange={(e) => setNovoInsumo({...novoInsumo, valorCusto: Number(e.target.value)})}
               />
             </div>
             
@@ -156,19 +133,39 @@ export function ProdutoDialog({
               <Input 
                 id="quantidadeEstoque" 
                 type="number"
-                value={novoProduto.quantidadeEstoque || ""}
-                onChange={(e) => setNovoProduto({...novoProduto, quantidadeEstoque: Number(e.target.value)})}
+                value={novoInsumo.quantidadeEstoque || ""}
+                onChange={(e) => setNovoInsumo({...novoInsumo, quantidadeEstoque: Number(e.target.value)})}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fornecedor">Fornecedor</Label>
+              <Input 
+                id="fornecedor" 
+                value={novoInsumo.fornecedor || ""}
+                onChange={(e) => setNovoInsumo({...novoInsumo, fornecedor: e.target.value})}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between space-y-0 pt-5">
+              <Label htmlFor="podeSerRevendido">Pode ser revendido</Label>
+              <Switch 
+                id="podeSerRevendido" 
+                checked={novoInsumo.podeSerRevendido}
+                onCheckedChange={(checked) => setNovoInsumo({...novoInsumo, podeSerRevendido: checked})}
               />
             </div>
           </div>
         </div>
         
         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button onClick={onSalvar}>
-            {produtoAtual ? "Atualizar Produto" : "Salvar Produto"}
+            {insumoAtual ? "Atualizar Insumo" : "Salvar Insumo"}
           </Button>
         </DialogFooter>
       </DialogContent>

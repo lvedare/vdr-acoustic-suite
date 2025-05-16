@@ -41,6 +41,23 @@ export interface Proposta {
   validade: string;
 }
 
+export interface ComposicaoProduto {
+  insumos: {
+    id: number;
+    insumoId: number;
+    nome: string;
+    quantidade: number;
+    valorUnitario: number;
+    valorTotal: number;
+  }[];
+  maoDeObra: {
+    fabricacao: number;
+    instalacao: number;
+  };
+  despesaAdministrativa: number;
+  margemVenda: number;
+}
+
 export interface ProdutoAcabado {
   id: number;
   codigo: string;
@@ -51,6 +68,7 @@ export interface ProdutoAcabado {
   valorBase: number;
   quantidadeEstoque: number;
   dataCadastro: string;
+  composicao?: ComposicaoProduto;
 }
 
 export interface NovoItemInput {

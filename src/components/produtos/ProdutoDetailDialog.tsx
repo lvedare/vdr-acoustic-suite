@@ -18,7 +18,8 @@ import { Button } from "@/components/ui/button";
 import { 
   TagIcon, 
   PackageOpen, 
-  CalculatorIcon
+  CalculatorIcon,
+  Layers
 } from "lucide-react";
 import { formatCurrency } from "@/types/orcamento";
 import { ProdutoAcabado } from "@/types/orcamento";
@@ -28,16 +29,30 @@ interface ProdutoDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   produto: ProdutoAcabado | null;
   formatarData: (data: string) => string;
+  onEditarComposicao: (produto: ProdutoAcabado) => void;
 }
 
 export function ProdutoDetailDialog({
   isOpen,
   onOpenChange,
   produto,
-  formatarData
+  formatarData,
+  onEditarComposicao
 }: ProdutoDetailDialogProps) {
   if (!produto) return null;
   
+  // Detalhes da composição
+  const composicao = produto.composicao;
+  const temComposicao = composicao && (composicao.insumos.length > 0 || 
+                         composicao.maoDeObra.fabricacao > 0 || 
+                         composicao.maoDeObra.instalacao > 0 ||
+                         composicao.despesaAdministrativa > 0);
+  
+  // Cálculos dos subtotais
+  const subtotalInsumos = composicao?.insumos.reduce((acc, insumo) => acc + insumo.valorTotal, 0) || 0;
+  const subtotalMaoDeObra = composicao ? composicao.maoDeObra.fabricacao + composicao.maoDeObra.instalacao : 0;
+  const subtotalDespesasAdm = composicao?.despesaAdministrativa || 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px]">
@@ -122,6 +137,121 @@ export function ProdutoDetailDialog({
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="py-3 flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center text-base">
+                <Layers className="mr-2 h-4 w-4 text-muted-foreground" />
+                Composição do Produto
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  onOpenChange(false);
+                  onEditarComposicao(produto);
+                }}
+              >
+                Editar Composição
+              </Button>
+            </CardHeader>
+            <CardContent className="py-3">
+              {!temComposicao ? (
+                <div className="text-center p-4 text-muted-foreground">
+                  Este produto não possui composição cadastrada.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Insumos</h3>
+                    {composicao && composicao.insumos.length > 0 ? (
+                      <div className="border rounded overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-slate-50 border-b">
+                              <th className="p-2 text-left">Insumo</th>
+                              <th className="p-2 text-right">Qtd</th>
+                              <th className="p-2 text-right">Valor Unit.</th>
+                              <th className="p-2 text-right">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {composicao.insumos.map((insumo, idx) => (
+                              <tr key={idx} className="border-b">
+                                <td className="p-2">{insumo.nome}</td>
+                                <td className="p-2 text-right">{insumo.quantidade}</td>
+                                <td className="p-2 text-right">{formatCurrency(insumo.valorUnitario)}</td>
+                                <td className="p-2 text-right">{formatCurrency(insumo.valorTotal)}</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-slate-50">
+                              <td colSpan={3} className="p-2 font-medium text-right">Subtotal:</td>
+                              <td className="p-2 font-medium text-right">{formatCurrency(subtotalInsumos)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">Nenhum insumo adicionado.</p>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Mão de Obra</h3>
+                      <div className="bg-slate-50 p-3 rounded">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-xs text-muted-foreground">Fabricação</span>
+                            <p className="font-medium">{formatCurrency(composicao?.maoDeObra.fabricacao || 0)}</p>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground">Instalação</span>
+                            <p className="font-medium">{formatCurrency(composicao?.maoDeObra.instalacao || 0)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Despesas Administrativas</h3>
+                      <div className="bg-slate-50 p-3 rounded">
+                        <div>
+                          <span className="text-xs text-muted-foreground">Valor</span>
+                          <p className="font-medium">{formatCurrency(subtotalDespesasAdm)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Margem</h3>
+                    <div className="bg-slate-50 p-3 rounded">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-xs text-muted-foreground">Margem de Venda</span>
+                          <p className="font-medium">{composicao?.margemVenda || 0}%</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Custo Total (sem margem)</span>
+                      <p className="font-medium">{formatCurrency(subtotalInsumos + subtotalMaoDeObra + subtotalDespesasAdm)}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm text-muted-foreground">Preço Final</span>
+                      <p className="text-xl font-bold text-green-600">{formatCurrency(produto.valorBase)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

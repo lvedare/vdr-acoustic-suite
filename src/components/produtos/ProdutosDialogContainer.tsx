@@ -4,8 +4,10 @@ import { ProdutoDialog } from "./ProdutoDialog";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 import { ForceDeleteDialog } from "./ForceDeleteDialog";
 import { ProdutoDetailDialog } from "./ProdutoDetailDialog";
+import { ComposicaoProdutoDialog } from "./ComposicaoProdutoDialog";
 import { useProdutos } from "@/contexts/ProdutosContext";
 import { categorias } from "@/contexts/ProdutosContext";
+import { useInsumos } from "@/contexts/InsumosContext";
 
 export const ProdutosDialogContainer: React.FC = () => {
   const {
@@ -17,13 +19,20 @@ export const ProdutosDialogContainer: React.FC = () => {
     setIsConfirmDialogOpen,
     isProdutoDetailOpen,
     setIsProdutoDetailOpen,
+    isComposicaoDialogOpen,
+    setIsComposicaoDialogOpen,
     produtoAtual,
     novoProduto,
     setNovoProduto,
+    composicaoAtual,
+    setComposicaoAtual,
     handleSalvarProduto,
     handleExcluirProduto,
     handleForceExcluirProduto,
-    formatarData
+    formatarData,
+    calcularValorTotal,
+    handleEditarComposicao,
+    handleSalvarComposicao
   } = useProdutos();
 
   return (
@@ -55,6 +64,18 @@ export const ProdutosDialogContainer: React.FC = () => {
         onOpenChange={setIsProdutoDetailOpen}
         produto={produtoAtual}
         formatarData={formatarData}
+        onEditarComposicao={handleEditarComposicao}
+      />
+
+      {/* Novo diálogo de Composição */}
+      <ComposicaoProdutoDialog
+        isOpen={isComposicaoDialogOpen}
+        onOpenChange={setIsComposicaoDialogOpen}
+        produtoAtual={produtoAtual}
+        composicaoAtual={composicaoAtual}
+        setComposicaoAtual={setComposicaoAtual}
+        onSalvar={handleSalvarComposicao}
+        calcularValorTotal={calcularValorTotal}
       />
     </>
   );

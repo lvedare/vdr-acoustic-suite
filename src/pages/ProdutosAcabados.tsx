@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { ProdutosProvider, useProdutos } from "@/contexts/ProdutosContext";
+import { InsumosProvider } from "@/contexts/InsumosContext";
 import { ProdutosTabsContainer } from "@/components/produtos/ProdutosTabsContainer";
 import { ProdutosDialogContainer } from "@/components/produtos/ProdutosDialogContainer";
 import { ProdutosSummaryCards } from "@/components/produtos/ProdutosSummaryCards";
@@ -47,9 +48,11 @@ const ProdutosContent = () => {
 
 const ProdutosAcabados = () => {
   return (
-    <ProdutosProvider>
-      <ProdutosContent />
-    </ProdutosProvider>
+    <InsumosProvider>
+      <ProdutosProvider>
+        <ProdutosContent />
+      </ProdutosProvider>
+    </InsumosProvider>
   );
 };
 

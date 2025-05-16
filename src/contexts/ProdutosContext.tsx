@@ -1,8 +1,9 @@
-
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { ProdutoAcabado } from '@/types/orcamento';
+import { ProdutoAcabado, ComposicaoProduto } from '@/types/orcamento';
+import { toast } from "@/components/ui/sonner";
+import { useNavigate } from "react-router-dom";
 
-// Dados mockados para produtos acabados
+// Dados mockados para produtos acabados (agora incluindo composição)
 const produtosMock: ProdutoAcabado[] = [
   {
     id: 1,
@@ -13,7 +14,19 @@ const produtosMock: ProdutoAcabado[] = [
     unidadeMedida: "UN",
     valorBase: 195.50,
     quantidadeEstoque: 32,
-    dataCadastro: "2025-01-15"
+    dataCadastro: "2025-01-15",
+    composicao: {
+      insumos: [
+        { id: 101, insumoId: 1, nome: "Madeira MDF 15mm", quantidade: 0.5, valorUnitario: 185.00, valorTotal: 92.50 },
+        { id: 102, insumoId: 3, nome: "Perfil Metálico 30mm", quantidade: 2, valorUnitario: 32.50, valorTotal: 65.00 }
+      ],
+      maoDeObra: {
+        fabricacao: 25.00,
+        instalacao: 35.00
+      },
+      despesaAdministrativa: 15.00,
+      margemVenda: 30
+    }
   },
   {
     id: 2,
@@ -24,7 +37,19 @@ const produtosMock: ProdutoAcabado[] = [
     unidadeMedida: "UN",
     valorBase: 245.90,
     quantidadeEstoque: 28,
-    dataCadastro: "2025-01-20"
+    dataCadastro: "2025-01-20",
+    composicao: {
+      insumos: [
+        { id: 103, insumoId: 1, nome: "Madeira MDF 15mm", quantidade: 1, valorUnitario: 185.00, valorTotal: 185.00 },
+        { id: 104, insumoId: 3, nome: "Perfil Metálico 30mm", quantidade: 1, valorUnitario: 32.50, valorTotal: 32.50 }
+      ],
+      maoDeObra: {
+        fabricacao: 30.00,
+        instalacao: 40.00
+      },
+      despesaAdministrativa: 18.00,
+      margemVenda: 25
+    }
   },
   {
     id: 3,
@@ -136,11 +161,16 @@ interface ProdutosContextProps {
   setIsConfirmDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isProdutoDetailOpen: boolean;
   setIsProdutoDetailOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isComposicaoDialogOpen: boolean;
+  setIsComposicaoDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   novoProduto: ProdutoVazio;
   setNovoProduto: React.Dispatch<React.SetStateAction<ProdutoVazio>>;
+  composicaoAtual: ComposicaoProduto | null;
+  setComposicaoAtual: React.Dispatch<React.SetStateAction<ComposicaoProduto | null>>;
   produtoVazio: ProdutoVazio;
   produtosFiltrados: ProdutoAcabado[];
   formatarData: (data: string) => string;
+  calcularValorTotal: (composicao: ComposicaoProduto) => number;
   handleSalvarProduto: () => void;
   handleEditarProduto: (produto: ProdutoAcabado) => void;
   handlePreExcluirProduto: (produto: ProdutoAcabado) => void;
@@ -148,6 +178,8 @@ interface ProdutosContextProps {
   handleForceExcluirProduto: () => void;
   handleVerDetalhesProduto: (produto: ProdutoAcabado) => void;
   handleCriarItemOrcamento: (produto: ProdutoAcabado) => void;
+  handleEditarComposicao: (produto: ProdutoAcabado) => void;
+  handleSalvarComposicao: () => void;
 }
 
 const ProdutosContext = createContext<ProdutosContextProps | undefined>(undefined);
@@ -162,7 +194,9 @@ export const ProdutosProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isProdutoDetailOpen, setIsProdutoDetailOpen] = useState(false);
+  const [isComposicaoDialogOpen, setIsComposicaoDialogOpen] = useState(false);
   const [produtoAtual, setProdutoAtual] = useState<ProdutoAcabado | null>(null);
+  const [composicaoAtual, setComposicaoAtual] = useState<ComposicaoProduto | null>(null);
 
   // Produto vazio para novo cadastro
   const produtoVazio: ProdutoVazio = {
@@ -173,7 +207,16 @@ export const ProdutosProvider: React.FC<{ children: ReactNode }> = ({ children }
     unidadeMedida: "UN",
     valorBase: 0,
     quantidadeEstoque: 0,
-    dataCadastro: new Date().toISOString().split('T')[0]
+    dataCadastro: new Date().toISOString().split('T')[0],
+    composicao: {
+      insumos: [],
+      maoDeObra: {
+        fabricacao: 0,
+        instalacao: 0
+      },
+      despesaAdministrativa: 0,
+      margemVenda: 20
+    }
   };
 
   const [novoProduto, setNovoProduto] = useState<ProdutoVazio>(produtoVazio);
@@ -199,6 +242,26 @@ export const ProdutosProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!data) return "-";
     const [ano, mes, dia] = data.split('-');
     return `${dia}/${mes}/${ano}`;
+  };
+
+  // Cálculo do valor total com base na composição
+  const calcularValorTotal = (composicao: ComposicaoProduto): number => {
+    // Soma do valor dos insumos
+    const valorInsumos = composicao.insumos.reduce((acc, insumo) => acc + insumo.valorTotal, 0);
+    
+    // Soma mão de obra
+    const valorMaoDeObra = composicao.maoDeObra.fabricacao + composicao.maoDeObra.instalacao;
+    
+    // Despesa administrativa
+    const valorDespesaAdm = composicao.despesaAdministrativa;
+    
+    // Subtotal
+    const subtotal = valorInsumos + valorMaoDeObra + valorDespesaAdm;
+    
+    // Aplicação da margem de venda
+    const valorComMargem = subtotal * (1 + composicao.margemVenda / 100);
+    
+    return parseFloat(valorComMargem.toFixed(2));
   };
 
   // Importando useNavigate do react-router-dom
@@ -246,7 +309,8 @@ export const ProdutosProvider: React.FC<{ children: ReactNode }> = ({ children }
       unidadeMedida: produto.unidadeMedida,
       valorBase: produto.valorBase,
       quantidadeEstoque: produto.quantidadeEstoque,
-      dataCadastro: produto.dataCadastro
+      dataCadastro: produto.dataCadastro,
+      composicao: produto.composicao
     });
     setIsProdutoDialogOpen(true);
   };
@@ -306,6 +370,49 @@ export const ProdutosProvider: React.FC<{ children: ReactNode }> = ({ children }
     navigate('/orcamentos/novo', { state: { produtoSelecionado: produto } });
   };
 
+  // Editar composição do produto
+  const handleEditarComposicao = (produto: ProdutoAcabado) => {
+    setProdutoAtual(produto);
+    if (produto.composicao) {
+      setComposicaoAtual({...produto.composicao});
+    } else {
+      // Se não tiver composição, cria uma nova
+      setComposicaoAtual({
+        insumos: [],
+        maoDeObra: {
+          fabricacao: 0,
+          instalacao: 0
+        },
+        despesaAdministrativa: 0,
+        margemVenda: 20
+      });
+    }
+    setIsComposicaoDialogOpen(true);
+  };
+
+  // Salvar composição do produto
+  const handleSalvarComposicao = () => {
+    if (!produtoAtual || !composicaoAtual) return;
+
+    // Calcula o valor base com base na composição
+    const valorBase = calcularValorTotal(composicaoAtual);
+    
+    // Atualiza o produto
+    const produtosAtualizados = produtos.map(p => 
+      p.id === produtoAtual.id ? { 
+        ...p, 
+        composicao: composicaoAtual,
+        valorBase
+      } : p
+    );
+    
+    setProdutos(produtosAtualizados);
+    setIsComposicaoDialogOpen(false);
+    setProdutoAtual(null);
+    setComposicaoAtual(null);
+    toast.success("Composição do produto atualizada com sucesso!");
+  };
+
   const value = {
     produtos,
     setProdutos,
@@ -327,18 +434,25 @@ export const ProdutosProvider: React.FC<{ children: ReactNode }> = ({ children }
     setIsConfirmDialogOpen,
     isProdutoDetailOpen,
     setIsProdutoDetailOpen,
+    isComposicaoDialogOpen,
+    setIsComposicaoDialogOpen,
     novoProduto,
     setNovoProduto,
+    composicaoAtual,
+    setComposicaoAtual,
     produtoVazio,
     produtosFiltrados,
     formatarData,
+    calcularValorTotal,
     handleSalvarProduto,
     handleEditarProduto,
     handlePreExcluirProduto,
     handleExcluirProduto,
     handleForceExcluirProduto,
     handleVerDetalhesProduto,
-    handleCriarItemOrcamento
+    handleCriarItemOrcamento,
+    handleEditarComposicao,
+    handleSalvarComposicao
   };
 
   return (
