@@ -16,6 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/types/orcamento";
 import { InsumoDialog } from "@/components/insumos/InsumoDialog";
 import { categoriasInsumo } from "@/types/insumo";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Wrapper component that uses the hooks within the provider
 const CadastroProdutosContent = () => {
@@ -279,118 +287,109 @@ const ConfirmDeleteDialog: React.FC<{
 
 const Cadastros = () => {
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Cadastros</h1>
-      
-      <Tabs defaultValue="produtos" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="produtos">Produtos</TabsTrigger>
-          <TabsTrigger value="insumos">Insumos</TabsTrigger>
-          <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
-          <TabsTrigger value="colaboradores">Colaboradores</TabsTrigger>
-          <TabsTrigger value="unidades">Unidades</TabsTrigger>
-          <TabsTrigger value="transportadoras">Transportadoras</TabsTrigger>
-        </TabsList>
+    <InsumosProvider>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Cadastros</h1>
         
-        <TabsContent value="produtos">
-          <ProdutosProvider>
-            <CadastroProdutosContent />
-          </ProdutosProvider>
-        </TabsContent>
+        <Tabs defaultValue="produtos" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="produtos">Produtos</TabsTrigger>
+            <TabsTrigger value="insumos">Insumos</TabsTrigger>
+            <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
+            <TabsTrigger value="colaboradores">Colaboradores</TabsTrigger>
+            <TabsTrigger value="unidades">Unidades</TabsTrigger>
+            <TabsTrigger value="transportadoras">Transportadoras</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="produtos">
+            <ProdutosProvider>
+              <CadastroProdutosContent />
+            </ProdutosProvider>
+          </TabsContent>
 
-        <TabsContent value="insumos">
-          <InsumosProvider>
+          <TabsContent value="insumos">
             <CadastroInsumosContent />
-          </InsumosProvider>
-        </TabsContent>
-        
-        <TabsContent value="fornecedores">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Truck className="mr-2 h-5 w-5" />
-                Cadastro de Fornecedores
-              </CardTitle>
-              <CardDescription>
-                Gerencie o cadastro de fornecedores
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar fornecedores.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="colaboradores">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="mr-2 h-5 w-5" />
-                Cadastro de Colaboradores
-              </CardTitle>
-              <CardDescription>
-                Gerencie o cadastro de colaboradores
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar colaboradores.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="unidades">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Building className="mr-2 h-5 w-5" />
-                Cadastro de Unidades
-              </CardTitle>
-              <CardDescription>
-                Gerencie o cadastro de unidades e filiais
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar unidades e filiais.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="transportadoras">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Truck className="mr-2 h-5 w-5" />
-                Cadastro de Transportadoras
-              </CardTitle>
-              <CardDescription>
-                Gerencie o cadastro de transportadoras
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar transportadoras.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+          </TabsContent>
+          
+          <TabsContent value="fornecedores">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Truck className="mr-2 h-5 w-5" />
+                  Cadastro de Fornecedores
+                </CardTitle>
+                <CardDescription>
+                  Gerencie o cadastro de fornecedores
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar fornecedores.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="colaboradores">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="mr-2 h-5 w-5" />
+                  Cadastro de Colaboradores
+                </CardTitle>
+                <CardDescription>
+                  Gerencie o cadastro de colaboradores
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar colaboradores.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="unidades">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Building className="mr-2 h-5 w-5" />
+                  Cadastro de Unidades
+                </CardTitle>
+                <CardDescription>
+                  Gerencie o cadastro de unidades e filiais
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar unidades e filiais.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="transportadoras">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Truck className="mr-2 h-5 w-5" />
+                  Cadastro de Transportadoras
+                </CardTitle>
+                <CardDescription>
+                  Gerencie o cadastro de transportadoras
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar transportadoras.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </InsumosProvider>
   );
 };
 
 export default Cadastros;
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
