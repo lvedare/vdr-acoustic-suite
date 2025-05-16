@@ -131,14 +131,14 @@ const CadastroInsumosContent = () => {
           </div>
           <div className="w-full md:w-40">
             <Select 
-              value={filtroCategoria || ""} 
-              onValueChange={(v) => setFiltroCategoria(v || null)}
+              value={filtroCategoria || "todas_categorias"} 
+              onValueChange={(v) => setFiltroCategoria(v === "todas_categorias" ? null : v)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas categorias</SelectItem>
+                <SelectItem value="todas_categorias">Todas categorias</SelectItem>
                 {categoriasInsumo.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                 ))}
@@ -147,14 +147,14 @@ const CadastroInsumosContent = () => {
           </div>
           <div className="w-full md:w-40">
             <Select 
-              value={filtroRevenda || ""} 
-              onValueChange={(v) => setFiltroRevenda(v || null)}
+              value={filtroRevenda || "todos"} 
+              onValueChange={(v) => setFiltroRevenda(v === "todos" ? null : v)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Revenda" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="sim">Pode revender</SelectItem>
                 <SelectItem value="nao">Sem revenda</SelectItem>
               </SelectContent>
