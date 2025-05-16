@@ -66,7 +66,7 @@ export interface ProdutoAcabado {
   categoria: string;
   unidadeMedida: string;
   valorBase: number;
-  quantidadeEstoque: number;
+  quantidadeEstoque: number; // Este campo será gerenciado no módulo de estoque
   dataCadastro: string;
   composicao?: ComposicaoProduto;
 }

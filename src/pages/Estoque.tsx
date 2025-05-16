@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   Card, 
@@ -36,7 +37,8 @@ import {
   Pencil,
   Plus,
   Search,
-  Truck
+  Truck,
+  Database
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
@@ -48,6 +50,11 @@ import { EstoqueFilterBar } from "@/components/estoque/EstoqueFilterBar";
 import { EstoqueMateriaisTable } from "@/components/estoque/EstoqueMateriaisTable";
 import { EstoqueBaixoAlert } from "@/components/estoque/EstoqueBaixoAlert";
 import { MovimentacoesPlaceholder, RelatoriosPlaceholder } from "@/components/estoque/EstoquePlaceholders";
+import { useProdutos } from "@/contexts/ProdutosContext";
+import { useInsumos } from "@/contexts/InsumosContext";
+import { ProdutoAcabado } from "@/types/orcamento";
+import { formatCurrency } from "@/types/orcamento";
+import { Insumo } from "@/types/insumo";
 
 // Sample data for materials
 const materiaisMock = [
@@ -92,12 +99,69 @@ const materiaisMock = [
   }
 ];
 
+interface QuantidadeEstoqueProps {
+  item: {id: number, nome: string, codigo: string, quantidadeEstoque: number};
+  tipo: 'produto' | 'insumo';
+  onAtualizarEstoque: (id: number, novaQuantidade: number, tipo: 'produto' | 'insumo') => void;
+}
+
+const QuantidadeEstoqueDialog: React.FC<QuantidadeEstoqueProps> = ({ item, tipo, onAtualizarEstoque }) => {
+  const [quantidade, setQuantidade] = useState<number>(item.quantidadeEstoque);
+  const [open, setOpen] = useState(false);
+  
+  const handleSalvar = () => {
+    onAtualizarEstoque(item.id, quantidade, tipo);
+    setOpen(false);
+    toast.success(`Estoque de ${tipo === 'produto' ? 'produto' : 'insumo'} atualizado com sucesso!`);
+  };
+  
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          {item.quantidadeEstoque}
+          <Pencil className="ml-1 h-3 w-3" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Atualizar quantidade em estoque</DialogTitle>
+          <DialogDescription>
+            {item.codigo} - {item.nome}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="quantidade">Quantidade em estoque</Label>
+            <Input
+              id="quantidade"
+              type="number"
+              min="0"
+              value={quantidade}
+              onChange={(e) => setQuantidade(Number(e.target.value))}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button onClick={handleSalvar}>Salvar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const Estoque = () => {
   const [materiais, setMateriais] = useState<Material[]>(materiaisMock);
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState<string | null>(null);
   const [filtroEstoque, setFiltroEstoque] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("inventario");
+  const [activeInventarioTab, setActiveInventarioTab] = useState("materiais");
   const navigate = useNavigate();
+  
+  const { produtos, setProdutos } = useProdutos();
+  const { insumos, setInsumos } = useInsumos();
 
   // Filter materials based on search and filter
   const materiaisFiltrados = materiais.filter(material => {
@@ -114,6 +178,17 @@ const Estoque = () => {
     
     return matchesSearch && matchesCategoria && matchesEstoque;
   });
+  
+  // Filter produtos and insumos
+  const produtosFiltrados = produtos.filter(produto => 
+    produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    produto.codigo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const insumosFiltrados = insumos.filter(insumo => 
+    insumo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    insumo.codigo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   // Unique categories for filter
   const categorias = Array.from(new Set(materiais.map(m => m.categoria)));
@@ -154,6 +229,21 @@ const Estoque = () => {
     return materiais.filter(m => m.quantidadeEstoque < m.estoqueMinimo).length;
   };
 
+  // Atualizar quantidade em estoque
+  const atualizarQuantidadeEstoque = (id: number, novaQuantidade: number, tipo: 'produto' | 'insumo') => {
+    if (tipo === 'produto') {
+      const produtosAtualizados = produtos.map(p => 
+        p.id === id ? { ...p, quantidadeEstoque: novaQuantidade } : p
+      );
+      setProdutos(produtosAtualizados);
+    } else {
+      const insumosAtualizados = insumos.map(i => 
+        i.id === id ? { ...i, quantidadeEstoque: novaQuantidade } : i
+      );
+      setInsumos(insumosAtualizados);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -176,7 +266,7 @@ const Estoque = () => {
         formatarMoeda={formatarMoeda} 
       />
       
-      <Tabs defaultValue="inventario" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="inventario">Inventário</TabsTrigger>
           <TabsTrigger value="movimentacoes">Movimentações</TabsTrigger>
@@ -186,28 +276,141 @@ const Estoque = () => {
         <TabsContent value="inventario">
           <Card>
             <CardHeader>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <CardTitle>Materiais em Estoque</CardTitle>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <CardTitle>Controle de Estoque</CardTitle>
+                  
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Buscar..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full max-w-[300px]"
+                    />
+                  </div>
+                </div>
                 
-                {/* Filter Bar Component */}
-                <EstoqueFilterBar 
-                  searchTerm={searchTerm}
-                  setSearchTerm={setSearchTerm}
-                  filtroCategoria={filtroCategoria}
-                  setFiltroCategoria={setFiltroCategoria}
-                  filtroEstoque={filtroEstoque}
-                  setFiltroEstoque={setFiltroEstoque}
-                  categorias={categorias}
-                />
+                <Tabs value={activeInventarioTab} onValueChange={setActiveInventarioTab} className="w-full">
+                  <TabsList className="grid grid-cols-3 mb-4">
+                    <TabsTrigger value="materiais">
+                      <Package2 className="h-4 w-4 mr-2" />
+                      Materiais
+                    </TabsTrigger>
+                    <TabsTrigger value="produtos">
+                      <Database className="h-4 w-4 mr-2" />
+                      Produtos Acabados
+                    </TabsTrigger>
+                    <TabsTrigger value="insumos">
+                      <PackagePlus className="h-4 w-4 mr-2" />
+                      Insumos
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
             </CardHeader>
             <CardContent>
-              {/* Materials Table Component */}
-              <EstoqueMateriaisTable 
-                materiaisFiltrados={materiaisFiltrados}
-                getEstoqueStatus={getEstoqueStatus}
-                formatarMoeda={formatarMoeda}
-              />
+              <TabsContent value="materiais" className="mt-0">
+                {/* Materials Table Component */}
+                <EstoqueMateriaisTable 
+                  materiaisFiltrados={materiaisFiltrados}
+                  getEstoqueStatus={getEstoqueStatus}
+                  formatarMoeda={formatarMoeda}
+                />
+              </TabsContent>
+              
+              <TabsContent value="produtos" className="mt-0">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Nome</TableHead>
+                        <TableHead className="hidden md:table-cell">Categoria</TableHead>
+                        <TableHead>Unid.</TableHead>
+                        <TableHead className="text-right">Valor Base</TableHead>
+                        <TableHead className="text-center">Quantidade</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {produtosFiltrados.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                            Nenhum produto encontrado.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        produtosFiltrados.map((produto) => (
+                          <TableRow key={produto.id}>
+                            <TableCell className="font-medium">{produto.codigo}</TableCell>
+                            <TableCell>{produto.nome}</TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <Badge variant="secondary" className="font-normal">
+                                {produto.categoria}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{produto.unidadeMedida}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(produto.valorBase)}</TableCell>
+                            <TableCell className="text-center">
+                              <QuantidadeEstoqueDialog 
+                                item={produto}
+                                tipo="produto"
+                                onAtualizarEstoque={atualizarQuantidadeEstoque}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="insumos" className="mt-0">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Nome</TableHead>
+                        <TableHead className="hidden md:table-cell">Categoria</TableHead>
+                        <TableHead>Unid.</TableHead>
+                        <TableHead className="text-right">Valor Custo</TableHead>
+                        <TableHead className="text-center">Quantidade</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {insumosFiltrados.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                            Nenhum insumo encontrado.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        insumosFiltrados.map((insumo) => (
+                          <TableRow key={insumo.id}>
+                            <TableCell className="font-medium">{insumo.codigo}</TableCell>
+                            <TableCell>{insumo.nome}</TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <Badge variant="secondary" className="font-normal">
+                                {insumo.categoria}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{insumo.unidadeMedida}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(insumo.valorCusto)}</TableCell>
+                            <TableCell className="text-center">
+                              <QuantidadeEstoqueDialog 
+                                item={insumo}
+                                tipo="insumo"
+                                onAtualizarEstoque={atualizarQuantidadeEstoque}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
               
               {/* Low Stock Alert Component */}
               <EstoqueBaixoAlert contarItensBaixoEstoque={contarItensBaixoEstoque} />

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   Dialog, 
@@ -312,7 +313,7 @@ export function ProdutoDialog({
                 />
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="unidadeMedida">Unidade de Medida</Label>
                   <Select 
@@ -349,16 +350,12 @@ export function ProdutoDialog({
                     disabled={composicao.insumos.length > 0}
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="quantidadeEstoque">Quantidade em Estoque</Label>
-                  <Input 
-                    id="quantidadeEstoque" 
-                    type="number"
-                    value={novoProduto.quantidadeEstoque || ""}
-                    onChange={(e) => setNovoProduto({...novoProduto, quantidadeEstoque: Number(e.target.value)})}
-                  />
-                </div>
+              </div>
+              
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-md">
+                <p className="text-amber-700 text-sm">
+                  A quantidade em estoque deve ser gerenciada no módulo de estoque.
+                </p>
               </div>
             </div>
           </TabsContent>
