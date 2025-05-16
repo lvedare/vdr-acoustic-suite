@@ -93,6 +93,7 @@ export function ComposicaoProdutoDialog({
     setComposicaoAtual(composicaoAtualizada);
   };
   
+  // Alterando para usar despesa administrativa como percentual
   const handleChangeDespesaAdm = (valor: number) => {
     const composicaoAtualizada = {
       ...composicaoAtual,
@@ -102,6 +103,7 @@ export function ComposicaoProdutoDialog({
     setComposicaoAtual(composicaoAtualizada);
   };
   
+  // Alterando para usar markup para a margem
   const handleChangeMargem = (valor: number) => {
     const composicaoAtualizada = {
       ...composicaoAtual,
@@ -114,7 +116,12 @@ export function ComposicaoProdutoDialog({
   // Cálculo de subtotais
   const subtotalInsumos = composicaoAtual.insumos.reduce((acc, insumo) => acc + insumo.valorTotal, 0);
   const subtotalMaoDeObra = composicaoAtual.maoDeObra.fabricacao + composicaoAtual.maoDeObra.instalacao;
-  const subtotal = subtotalInsumos + subtotalMaoDeObra + composicaoAtual.despesaAdministrativa;
+  
+  // Calculando despesa administrativa como porcentagem do custo
+  const custoBase = subtotalInsumos + subtotalMaoDeObra;
+  const valorDespesaAdm = (custoBase * composicaoAtual.despesaAdministrativa) / 100;
+  
+  const subtotal = custoBase + valorDespesaAdm;
   const valorFinal = calcularValorTotal(composicaoAtual);
 
   return (
@@ -260,24 +267,28 @@ export function ComposicaoProdutoDialog({
               <h3 className="text-lg font-medium mb-2">Outros Custos e Margem</h3>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="despesaAdm">Despesa Administrativa (R$)</Label>
+                  <Label htmlFor="despesaAdm">Despesa Administrativa (%)</Label>
                   <Input 
                     id="despesaAdm" 
                     type="number" 
                     step="0.01" 
                     min="0"
+                    max="100"
                     value={composicaoAtual.despesaAdministrativa}
                     onChange={(e) => handleChangeDespesaAdm(Number(e.target.value))}
                   />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Valor: {formatCurrency(valorDespesaAdm)}
+                  </p>
                 </div>
                 <div>
-                  <Label htmlFor="margem">Margem de Venda (%)</Label>
+                  <Label htmlFor="margem">Markup (%)</Label>
                   <Input 
                     id="margem" 
                     type="number" 
                     step="0.01" 
                     min="0"
-                    max="100"
+                    max="300"
                     value={composicaoAtual.margemVenda}
                     onChange={(e) => handleChangeMargem(Number(e.target.value))}
                   />
@@ -289,11 +300,11 @@ export function ComposicaoProdutoDialog({
           <div className="bg-slate-50 p-4 rounded-md">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-sm text-muted-foreground">Subtotal (sem margem)</span>
+                <span className="text-sm text-muted-foreground">Custo Total (sem markup)</span>
                 <p className="text-lg font-medium">{formatCurrency(subtotal)}</p>
               </div>
               <div className="text-right">
-                <span className="text-sm text-muted-foreground">Preço Final (com margem de {composicaoAtual.margemVenda}%)</span>
+                <span className="text-sm text-muted-foreground">Preço Final (com markup de {composicaoAtual.margemVenda}%)</span>
                 <p className="text-xl font-bold text-green-600">{formatCurrency(valorFinal)}</p>
               </div>
             </div>

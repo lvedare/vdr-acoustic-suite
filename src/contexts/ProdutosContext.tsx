@@ -214,8 +214,8 @@ export const ProdutosProvider: React.FC<{ children: ReactNode }> = ({ children }
         fabricacao: 0,
         instalacao: 0
       },
-      despesaAdministrativa: 0,
-      margemVenda: 20
+      despesaAdministrativa: 10, // Valor padrão como porcentagem
+      margemVenda: 30 // Valor padrão como markup
     }
   };
 
@@ -244,7 +244,7 @@ export const ProdutosProvider: React.FC<{ children: ReactNode }> = ({ children }
     return `${dia}/${mes}/${ano}`;
   };
 
-  // Cálculo do valor total com base na composição
+  // Cálculo do valor total com base na composição - atualizado para usar despesa como % e markup
   const calcularValorTotal = (composicao: ComposicaoProduto): number => {
     // Soma do valor dos insumos
     const valorInsumos = composicao.insumos.reduce((acc, insumo) => acc + insumo.valorTotal, 0);
@@ -252,16 +252,20 @@ export const ProdutosProvider: React.FC<{ children: ReactNode }> = ({ children }
     // Soma mão de obra
     const valorMaoDeObra = composicao.maoDeObra.fabricacao + composicao.maoDeObra.instalacao;
     
-    // Despesa administrativa
-    const valorDespesaAdm = composicao.despesaAdministrativa;
+    // Custo base
+    const custoBase = valorInsumos + valorMaoDeObra;
+    
+    // Despesa administrativa (como percentual do custo base)
+    const valorDespesaAdm = (custoBase * composicao.despesaAdministrativa) / 100;
     
     // Subtotal
-    const subtotal = valorInsumos + valorMaoDeObra + valorDespesaAdm;
+    const subtotal = custoBase + valorDespesaAdm;
     
-    // Aplicação da margem de venda
-    const valorComMargem = subtotal * (1 + composicao.margemVenda / 100);
+    // Aplicação do markup (diferente da margem)
+    // Fórmula de markup: Preço = Custo * (1 + Markup/100)
+    const valorComMarkup = subtotal * (1 + composicao.margemVenda / 100);
     
-    return parseFloat(valorComMargem.toFixed(2));
+    return parseFloat(valorComMarkup.toFixed(2));
   };
 
   // Importando useNavigate do react-router-dom

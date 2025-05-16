@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Dialog, 
@@ -47,7 +46,7 @@ export function ProdutoDialog({
   const [insumoSelecionado, setInsumoSelecionado] = useState<number | null>(null);
   const [quantidadeInsumo, setQuantidadeInsumo] = useState<number>(1);
 
-  // Função para calcular valor total
+  // Função para calcular valor total - atualizado para usar despesa como % e markup
   const calcularValorTotal = () => {
     if (!novoProduto.composicao) return 0;
     
@@ -57,16 +56,19 @@ export function ProdutoDialog({
     // Soma mão de obra
     const valorMaoDeObra = novoProduto.composicao.maoDeObra.fabricacao + novoProduto.composicao.maoDeObra.instalacao;
     
-    // Despesa administrativa
-    const valorDespesaAdm = novoProduto.composicao.despesaAdministrativa;
+    // Custo base
+    const custoBase = valorInsumos + valorMaoDeObra;
+    
+    // Despesa administrativa (como percentual do custo base)
+    const valorDespesaAdm = (custoBase * novoProduto.composicao.despesaAdministrativa) / 100;
     
     // Subtotal
-    const subtotal = valorInsumos + valorMaoDeObra + valorDespesaAdm;
+    const subtotal = custoBase + valorDespesaAdm;
     
-    // Aplicação da margem de venda
-    const valorComMargem = subtotal * (1 + novoProduto.composicao.margemVenda / 100);
+    // Aplicação do markup
+    const valorComMarkup = subtotal * (1 + novoProduto.composicao.margemVenda / 100);
     
-    return parseFloat(valorComMargem.toFixed(2));
+    return parseFloat(valorComMarkup.toFixed(2));
   };
 
   // Atualiza o valor base quando a composição é modificada
@@ -166,7 +168,7 @@ export function ProdutoDialog({
     setTimeout(atualizarValorBase, 0);
   };
 
-  // Handler para alterar despesa administrativa
+  // Handler para alterar despesa administrativa - alterado para percentual
   const handleChangeDespesaAdm = (valor: number) => {
     if (!novoProduto.composicao) {
       setNovoProduto(prev => ({
@@ -175,7 +177,7 @@ export function ProdutoDialog({
           insumos: [],
           maoDeObra: { fabricacao: 0, instalacao: 0 },
           despesaAdministrativa: valor,
-          margemVenda: 20
+          margemVenda: 30
         }
       }));
     } else {
@@ -192,7 +194,7 @@ export function ProdutoDialog({
     setTimeout(atualizarValorBase, 0);
   };
 
-  // Handler para alterar margem
+  // Handler para alterar margem - agora tratado como markup
   const handleChangeMargem = (valor: number) => {
     if (!novoProduto.composicao) {
       setNovoProduto(prev => ({
@@ -200,7 +202,7 @@ export function ProdutoDialog({
         composicao: {
           insumos: [],
           maoDeObra: { fabricacao: 0, instalacao: 0 },
-          despesaAdministrativa: 0,
+          despesaAdministrativa: 10,
           margemVenda: valor
         }
       }));
@@ -226,13 +228,20 @@ export function ProdutoDialog({
   const composicao = novoProduto.composicao || {
     insumos: [],
     maoDeObra: { fabricacao: 0, instalacao: 0 },
-    despesaAdministrativa: 0,
-    margemVenda: 20
+    despesaAdministrativa: 10,
+    margemVenda: 30
   };
   
   const subtotalInsumos = composicao.insumos.reduce((acc, insumo) => acc + insumo.valorTotal, 0);
   const subtotalMaoDeObra = composicao.maoDeObra.fabricacao + composicao.maoDeObra.instalacao;
-  const subtotal = subtotalInsumos + subtotalMaoDeObra + composicao.despesaAdministrativa;
+  
+  // Custo base
+  const custoBase = subtotalInsumos + subtotalMaoDeObra;
+  
+  // Despesa administrativa como percentual
+  const valorDespesaAdm = (custoBase * composicao.despesaAdministrativa) / 100;
+  
+  const subtotal = custoBase + valorDespesaAdm;
   const valorFinal = calcularValorTotal();
 
   return (
@@ -480,24 +489,28 @@ export function ProdutoDialog({
                   <h3 className="text-lg font-medium mb-2">Outros Custos e Margem</h3>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="despesaAdm">Despesa Administrativa (R$)</Label>
+                      <Label htmlFor="despesaAdm">Despesa Administrativa (%)</Label>
                       <Input 
                         id="despesaAdm" 
                         type="number" 
                         step="0.01" 
                         min="0"
+                        max="100"
                         value={composicao.despesaAdministrativa}
                         onChange={(e) => handleChangeDespesaAdm(Number(e.target.value))}
                       />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Valor: {formatCurrency(valorDespesaAdm)}
+                      </p>
                     </div>
                     <div>
-                      <Label htmlFor="margem">Margem de Venda (%)</Label>
+                      <Label htmlFor="margem">Markup (%)</Label>
                       <Input 
                         id="margem" 
                         type="number" 
                         step="0.01" 
                         min="0"
-                        max="100"
+                        max="300"
                         value={composicao.margemVenda}
                         onChange={(e) => handleChangeMargem(Number(e.target.value))}
                       />
@@ -510,11 +523,11 @@ export function ProdutoDialog({
               <div className="bg-slate-50 p-4 rounded-md">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <span className="text-sm text-muted-foreground">Subtotal (sem margem)</span>
+                    <span className="text-sm text-muted-foreground">Custo Total (sem markup)</span>
                     <p className="text-lg font-medium">{formatCurrency(subtotal)}</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-sm text-muted-foreground">Preço Final (com margem de {composicao.margemVenda}%)</span>
+                    <span className="text-sm text-muted-foreground">Preço Final (com markup de {composicao.margemVenda}%)</span>
                     <p className="text-xl font-bold text-green-600">{formatCurrency(valorFinal)}</p>
                   </div>
                 </div>

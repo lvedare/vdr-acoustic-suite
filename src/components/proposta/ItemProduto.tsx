@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Plus, Search, Trash } from "lucide-react";
+import { Package, Plus, Search, Trash, Edit } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { 
   ItemProposta, 
@@ -32,6 +32,9 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
     quantidade: 1,
     valorUnitario: 0
   });
+  
+  const [itemEmEdicao, setItemEmEdicao] = useState<ItemProposta | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const [filtroProduto, setFiltroProduto] = useState("");
   const [dialogProdutosAberto, setDialogProdutosAberto] = useState(false);
@@ -80,6 +83,38 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
 
     setDialogProdutosAberto(false);
     toast.success("Produto selecionado, ajuste a quantidade se necessário");
+  };
+
+  // Handler para iniciar a edição de um item
+  const handleEditarItem = (item: ItemProposta) => {
+    setItemEmEdicao({...item});
+    setIsEditDialogOpen(true);
+  };
+  
+  // Handler para salvar a edição de um item
+  const handleSalvarEdicao = () => {
+    if (!itemEmEdicao) return;
+    
+    if (!itemEmEdicao.codigo || !itemEmEdicao.descricao || itemEmEdicao.quantidade <= 0 || itemEmEdicao.valorUnitario <= 0) {
+      toast.error("Preencha todos os campos do item corretamente");
+      return;
+    }
+    
+    // Atualizar o valor total
+    const valorTotal = itemEmEdicao.quantidade * itemEmEdicao.valorUnitario;
+    const itemAtualizado = { ...itemEmEdicao, valorTotal };
+    
+    // Atualizar a proposta com o item editado
+    setProposta(prev => ({
+      ...prev,
+      itens: prev.itens.map(item => 
+        item.id === itemAtualizado.id ? itemAtualizado : item
+      )
+    }));
+    
+    setIsEditDialogOpen(false);
+    setItemEmEdicao(null);
+    toast.success("Item atualizado com sucesso!");
   };
 
   // Handler para remover um item
@@ -264,7 +299,7 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
                 <TableHead>Qtd.</TableHead>
                 <TableHead>Valor Unit.</TableHead>
                 <TableHead>Valor Total</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
+                <TableHead className="w-[100px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -286,14 +321,24 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
                     <TableCell>{formatCurrency(item.valorUnitario)}</TableCell>
                     <TableCell>{formatCurrency(item.valorTotal)}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive/90"
-                        onClick={() => handleRemoverItem(item.id)}
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
+                      <div className="flex space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-blue-500 hover:text-blue-700"
+                          onClick={() => handleEditarItem(item)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive/90"
+                          onClick={() => handleRemoverItem(item.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -307,6 +352,91 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
             Total: {formatCurrency(proposta.valorTotal)}
           </div>
         </div>
+
+        {/* Dialog para edição de item */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Editar Item</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-codigo">Código</Label>
+                  <Input 
+                    id="edit-codigo" 
+                    value={itemEmEdicao?.codigo || ""}
+                    onChange={(e) => setItemEmEdicao(prev => prev ? { ...prev, codigo: e.target.value } : null)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-unidade">Unidade</Label>
+                  <Select
+                    value={itemEmEdicao?.unidade || ""}
+                    onValueChange={(value) => setItemEmEdicao(prev => prev ? { ...prev, unidade: value } : null)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Unidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UNIDADES_OPCOES.map((unidade) => (
+                        <SelectItem key={unidade} value={unidade}>
+                          {unidade}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="edit-descricao">Descrição</Label>
+                <Input 
+                  id="edit-descricao" 
+                  value={itemEmEdicao?.descricao || ""}
+                  onChange={(e) => setItemEmEdicao(prev => prev ? { ...prev, descricao: e.target.value } : null)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-quantidade">Quantidade</Label>
+                  <Input 
+                    id="edit-quantidade" 
+                    type="number"
+                    min="1"
+                    value={itemEmEdicao?.quantidade.toString() || ""}
+                    onChange={(e) => setItemEmEdicao(prev => prev ? { ...prev, quantidade: Number(e.target.value) } : null)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-valorUnitario">Valor Unitário (R$)</Label>
+                  <Input 
+                    id="edit-valorUnitario" 
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={itemEmEdicao?.valorUnitario.toString() || ""}
+                    onChange={(e) => setItemEmEdicao(prev => prev ? { ...prev, valorUnitario: Number(e.target.value) } : null)}
+                  />
+                </div>
+              </div>
+              {itemEmEdicao && (
+                <div className="p-4 bg-slate-50 rounded-md">
+                  <p className="font-medium">Valor Total: {formatCurrency(
+                    itemEmEdicao.quantidade * itemEmEdicao.valorUnitario
+                  )}</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSalvarEdicao}>
+                Salvar Alterações
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

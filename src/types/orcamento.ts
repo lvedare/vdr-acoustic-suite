@@ -54,8 +54,8 @@ export interface ComposicaoProduto {
     fabricacao: number;
     instalacao: number;
   };
-  despesaAdministrativa: number;
-  margemVenda: number;
+  despesaAdministrativa: number; // valor em porcentagem (%)
+  margemVenda: number; // valor em porcentagem (markup %)
 }
 
 export interface ProdutoAcabado {
