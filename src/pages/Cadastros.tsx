@@ -1,10 +1,31 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, ListChecks, Users, Building, Truck, FileText } from "lucide-react";
+import { Package, ListChecks, Users, Building, Truck, FileText, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useProdutos } from "@/contexts/ProdutosContext";
+import { ProdutosTabsContainer } from "@/components/produtos/ProdutosTabsContainer";
+import { ProdutosDialogContainer } from "@/components/produtos/ProdutosDialogContainer";
+import { ProdutosSummaryCards } from "@/components/produtos/ProdutosSummaryCards";
 
 const Cadastros = () => {
+  const { 
+    produtos, 
+    vendasProdutos, 
+    setIsProdutoDialogOpen, 
+    produtoAtual, 
+    setProdutoAtual, 
+    setNovoProduto, 
+    produtoVazio 
+  } = useProdutos();
+  
+  const handleNovoProduto = () => {
+    setProdutoAtual(null);
+    setNovoProduto(produtoVazio);
+    setIsProdutoDialogOpen(true);
+  };
+  
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Cadastros</h1>
@@ -20,19 +41,26 @@ const Cadastros = () => {
         
         <TabsContent value="produtos">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Package className="mr-2 h-5 w-5" />
-                Cadastro de Produtos
-              </CardTitle>
-              <CardDescription>
-                Gerencie o cadastro de produtos e insumos
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <Package className="mr-2 h-5 w-5" />
+                  Cadastro de Produtos
+                </CardTitle>
+                <CardDescription>
+                  Gerencie o cadastro de produtos e insumos
+                </CardDescription>
+              </div>
+              <Button onClick={handleNovoProduto}>
+                <Plus className="mr-1 h-4 w-4" /> Novo Produto
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-muted-foreground">
-                Esta seção será implementada em breve. Aqui você poderá cadastrar e gerenciar produtos e insumos.
-              </p>
+              <ProdutosSummaryCards produtos={produtos} vendasProdutos={vendasProdutos} />
+              <div className="mt-6">
+                <ProdutosTabsContainer />
+              </div>
+              <ProdutosDialogContainer />
             </CardContent>
           </Card>
         </TabsContent>
