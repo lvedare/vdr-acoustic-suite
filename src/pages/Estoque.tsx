@@ -51,7 +51,7 @@ import { EstoqueMateriaisTable } from "@/components/estoque/EstoqueMateriaisTabl
 import { EstoqueBaixoAlert } from "@/components/estoque/EstoqueBaixoAlert";
 import { MovimentacoesPlaceholder, RelatoriosPlaceholder } from "@/components/estoque/EstoquePlaceholders";
 import { useProdutos, ProdutosProvider } from "@/contexts/ProdutosContext";
-import { useInsumos } from "@/contexts/InsumosContext";
+import { useInsumos, InsumosProvider } from "@/contexts/InsumosContext";
 import { ProdutoAcabado } from "@/types/orcamento";
 import { formatCurrency } from "@/types/orcamento";
 import { Insumo } from "@/types/insumo";
@@ -431,11 +431,13 @@ const EstoqueContent = () => {
 };
 
 const Estoque = () => {
-  // Wrapping the EstoqueContent with ProdutosProvider
+  // Wrapping the EstoqueContent with both ProdutosProvider and InsumosProvider
   return (
-    <ProdutosProvider>
-      <EstoqueContent />
-    </ProdutosProvider>
+    <InsumosProvider>
+      <ProdutosProvider>
+        <EstoqueContent />
+      </ProdutosProvider>
+    </InsumosProvider>
   );
 };
 
