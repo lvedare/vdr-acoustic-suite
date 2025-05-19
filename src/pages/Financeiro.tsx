@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Card, 
@@ -422,13 +421,14 @@ const Financeiro = () => {
                 <div className="space-y-2">
                   <Label htmlFor="categoria">Categoria *</Label>
                   <Select 
-                    value={novaTransacao.categoria}
-                    onValueChange={(value) => setNovaTransacao({...novaTransacao, categoria: value})}
+                    value={novaTransacao.categoria || "selecionar"}
+                    onValueChange={(value) => setNovaTransacao({...novaTransacao, categoria: value === "selecionar" ? "" : value})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="selecionar">Selecione uma categoria</SelectItem>
                       {categorias
                         .filter(cat => cat.tipo === novaTransacao.tipo)
                         .map(categoria => (
@@ -444,13 +444,14 @@ const Financeiro = () => {
                 <div className="space-y-2">
                   <Label htmlFor="formaPagamento">Forma de Pagamento</Label>
                   <Select 
-                    value={novaTransacao.formaPagamento}
-                    onValueChange={(value) => setNovaTransacao({...novaTransacao, formaPagamento: value})}
+                    value={novaTransacao.formaPagamento || "selecionar"}
+                    onValueChange={(value) => setNovaTransacao({...novaTransacao, formaPagamento: value === "selecionar" ? "" : value})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="selecionar">Selecione</SelectItem>
                       <SelectItem value="Dinheiro">Dinheiro</SelectItem>
                       <SelectItem value="Débito">Cartão de Débito</SelectItem>
                       <SelectItem value="Crédito">Cartão de Crédito</SelectItem>
@@ -467,13 +468,14 @@ const Financeiro = () => {
                 <div className="space-y-2">
                   <Label htmlFor="contaBancaria">Conta Bancária</Label>
                   <Select 
-                    value={novaTransacao.contaBancaria}
-                    onValueChange={(value) => setNovaTransacao({...novaTransacao, contaBancaria: value})}
+                    value={novaTransacao.contaBancaria || "selecionar"}
+                    onValueChange={(value) => setNovaTransacao({...novaTransacao, contaBancaria: value === "selecionar" ? "" : value})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="selecionar">Selecione</SelectItem>
                       {contas.map(conta => (
                         <SelectItem key={conta.id} value={conta.nome}>
                           {conta.nome}
@@ -815,8 +817,8 @@ const Financeiro = () => {
                     />
                   </div>
                   <Select
-                    value={filtro.tipo}
-                    onValueChange={(value) => setFiltro({...filtro, tipo: value})}
+                    value={filtro.tipo || "todos"}
+                    onValueChange={(value) => setFiltro({...filtro, tipo: value === "todos" ? "" : value})}
                   >
                     <SelectTrigger className="w-[150px]">
                       <div className="flex items-center gap-2">
@@ -825,7 +827,7 @@ const Financeiro = () => {
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos</SelectItem>
+                      <SelectItem value="todos">Todos</SelectItem>
                       <SelectItem value="receita">Receitas</SelectItem>
                       <SelectItem value="despesa">Despesas</SelectItem>
                     </SelectContent>
