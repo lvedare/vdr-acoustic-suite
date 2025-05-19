@@ -13,9 +13,12 @@ interface EstoqueBaixoAlertProps {
 export const EstoqueBaixoAlert = ({ materiaisBaixos }: EstoqueBaixoAlertProps) => {
   const navigate = useNavigate();
   
+  // Ensure materiaisBaixos is always an array to prevent "length" of undefined errors
+  const itensComBaixoEstoque = materiaisBaixos || [];
+  
   return (
     <div className="mt-4">
-      {materiaisBaixos.length > 0 && (
+      {itensComBaixoEstoque.length > 0 && (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="p-4 flex gap-4 items-center">
             <div className="rounded-full bg-amber-100 p-2">
@@ -24,7 +27,7 @@ export const EstoqueBaixoAlert = ({ materiaisBaixos }: EstoqueBaixoAlertProps) =
             <div>
               <h3 className="font-medium text-amber-800">Atenção para Estoque Baixo</h3>
               <p className="text-sm text-amber-700">
-                {materiaisBaixos.length} itens estão abaixo do estoque mínimo recomendado.
+                {itensComBaixoEstoque.length} itens estão abaixo do estoque mínimo recomendado.
                 <Button 
                   variant="link" 
                   className="p-0 h-auto text-amber-800 font-semibold"

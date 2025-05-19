@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { EstoqueSummaryCards } from '@/components/estoque/EstoqueSummaryCards';
 import { EstoqueFilterBar } from '@/components/estoque/EstoqueFilterBar';
@@ -740,19 +741,22 @@ const EstoqueContent = () => {
     toast.success("Funcionalidade de adicionar material será implementada em breve!");
   };
   
+  // Filter materials with low stock for the alert
+  const materiaisComBaixoEstoque = materiais.filter(mat => mat.quantidadeEstoque < mat.estoqueMinimo);
+  
   return (
     <>
       <h1 className="text-3xl font-bold mb-6">Gerenciamento de Estoque</h1>
       
       <EstoqueSummaryCards
-        totalMateriais={countTotal}
-        baixoEstoque={countBaixoEstoque}
-        esgotados={countEsgotados}
-        regular={countRegular}
+        totalItems={countTotal}
+        lowStock={countBaixoEstoque}
+        outOfStock={countEsgotados}
+        normalStock={countRegular}
       />
       
       <EstoqueBaixoAlert
-        materiaisComBaixoEstoque={materiais.filter(mat => mat.quantidadeEstoque < mat.estoqueMinimo)}
+        materiaisBaixos={materiaisComBaixoEstoque}
       />
       
       <Tabs defaultValue="materiais" className="mt-6">
@@ -776,10 +780,10 @@ const EstoqueContent = () => {
               <EstoqueFilterBar
                 filtroCategoria={categoria}
                 setFiltroCategoria={setCategoria}
-                filtroEstoque={status}
-                setFiltroEstoque={setStatus}
-                termoBusca={searchTerm}
-                setTermoBusca={setSearchTerm}
+                filtroStatus={status}
+                setFiltroStatus={setStatus}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
                 categorias={categorias}
               />
               
