@@ -1,9 +1,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Save, ChevronLeft } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 
 // Import types
@@ -14,10 +11,10 @@ import {
 } from "@/types/orcamento";
 
 // Import components
-import InformacoesGerais from "@/components/proposta/InformacoesGerais";
-import ItemProduto from "@/components/proposta/ItemProduto";
-import CustoInterno from "@/components/proposta/CustoInterno";
-import CondicoesComerciais from "@/components/proposta/CondicoesComerciais";
+import PropostaTabs from "@/components/proposta/PropostaTabs";
+import PropostaHeader from "@/components/proposta/PropostaHeader";
+import PropostaSaveButton from "@/components/proposta/PropostaSaveButton";
+import PropostaActions from "@/components/proposta/PropostaActions";
 
 // Import utilities
 import { gerarNumeroProposta, getPropostaVazia } from "@/utils/propostaUtils";
@@ -89,77 +86,34 @@ const NovoOrcamento = () => {
     // Redirecionar para a página de listagem de propostas
     navigate("/orcamentos");
   };
+
+  const handleCancelar = () => {
+    navigate("/orcamentos");
+  };
   
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="icon" onClick={() => navigate("/orcamentos")}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-2xl font-bold">Nova Proposta</h1>
-        </div>
-        <Button onClick={handleSalvarProposta}>
-          <Save className="mr-2 h-4 w-4" />
-          Salvar Proposta
-        </Button>
+        <PropostaHeader 
+          title="Nova Proposta" 
+          onBack={handleCancelar} 
+        />
+        <PropostaSaveButton onClick={handleSalvarProposta} />
       </div>
       
-      <Tabs defaultValue="info" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="info">Informações Gerais</TabsTrigger>
-          <TabsTrigger value="itens">Itens e Valores</TabsTrigger>
-          <TabsTrigger value="custos">Custos Internos</TabsTrigger>
-          <TabsTrigger value="condicoes">Condições Comerciais</TabsTrigger>
-        </TabsList>
-        
-        {/* Tab: Informações Gerais */}
-        <TabsContent value="info">
-          <InformacoesGerais 
-            proposta={proposta} 
-            setProposta={setProposta} 
-            clientes={clientes}
-            gerarNumeroProposta={gerarNumeroProposta}
-            handleClienteChange={handleClienteChange}
-          />
-        </TabsContent>
-        
-        {/* Tab: Itens e Valores */}
-        <TabsContent value="itens">
-          <ItemProduto 
-            proposta={proposta} 
-            setProposta={setProposta} 
-            produtosAcabados={produtosAcabados}
-          />
-        </TabsContent>
-        
-        {/* Tab: Custos Internos */}
-        <TabsContent value="custos">
-          <CustoInterno 
-            proposta={proposta} 
-            setProposta={setProposta}
-          />
-        </TabsContent>
-        
-        {/* Tab: Condições Comerciais */}
-        <TabsContent value="condicoes">
-          <CondicoesComerciais 
-            proposta={proposta}
-            setProposta={setProposta}
-          />
-        </TabsContent>
-      </Tabs>
+      <PropostaTabs 
+        proposta={proposta}
+        setProposta={setProposta}
+        clientes={clientes}
+        produtosAcabados={produtosAcabados}
+        gerarNumeroProposta={gerarNumeroProposta}
+        handleClienteChange={handleClienteChange}
+      />
       
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={() => navigate("/orcamentos")}>
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Cancelar
-        </Button>
-        <Button onClick={handleSalvarProposta}>
-          <Save className="mr-2 h-4 w-4" />
-          Salvar Proposta
-        </Button>
-      </div>
+      <PropostaActions 
+        onSave={handleSalvarProposta} 
+        onCancel={handleCancelar} 
+      />
     </div>
   );
 };
