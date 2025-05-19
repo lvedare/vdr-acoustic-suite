@@ -749,10 +749,10 @@ const EstoqueContent = () => {
       <h1 className="text-3xl font-bold mb-6">Gerenciamento de Estoque</h1>
       
       <EstoqueSummaryCards
-        totalItems={countTotal}
-        lowStock={countBaixoEstoque}
-        outOfStock={countEsgotados}
-        normalStock={countRegular}
+        countTotal={countTotal}
+        countBaixoEstoque={countBaixoEstoque}
+        countEsgotados={countEsgotados}
+        countRegular={countRegular}
       />
       
       <EstoqueBaixoAlert
@@ -780,8 +780,8 @@ const EstoqueContent = () => {
               <EstoqueFilterBar
                 filtroCategoria={categoria}
                 setFiltroCategoria={setCategoria}
-                filtroStatus={status}
-                setFiltroStatus={setStatus}
+                filtroEstoque={status}
+                setFiltroEstoque={setStatus}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
                 categorias={categorias}
