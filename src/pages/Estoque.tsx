@@ -50,7 +50,7 @@ import { EstoqueFilterBar } from "@/components/estoque/EstoqueFilterBar";
 import { EstoqueMateriaisTable } from "@/components/estoque/EstoqueMateriaisTable";
 import { EstoqueBaixoAlert } from "@/components/estoque/EstoqueBaixoAlert";
 import { MovimentacoesPlaceholder, RelatoriosPlaceholder } from "@/components/estoque/EstoquePlaceholders";
-import { useProdutos } from "@/contexts/ProdutosContext";
+import { useProdutos, ProdutosProvider } from "@/contexts/ProdutosContext";
 import { useInsumos } from "@/contexts/InsumosContext";
 import { ProdutoAcabado } from "@/types/orcamento";
 import { formatCurrency } from "@/types/orcamento";
@@ -151,7 +151,7 @@ const QuantidadeEstoqueDialog: React.FC<QuantidadeEstoqueProps> = ({ item, tipo,
   );
 };
 
-const Estoque = () => {
+const EstoqueContent = () => {
   const [materiais, setMateriais] = useState<Material[]>(materiaisMock);
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState<string | null>(null);
@@ -427,6 +427,15 @@ const Estoque = () => {
         </TabsContent>
       </Tabs>
     </div>
+  );
+};
+
+const Estoque = () => {
+  // Wrapping the EstoqueContent with ProdutosProvider
+  return (
+    <ProdutosProvider>
+      <EstoqueContent />
+    </ProdutosProvider>
   );
 };
 
