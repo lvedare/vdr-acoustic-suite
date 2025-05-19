@@ -1,14 +1,9 @@
-
 import React, { useState } from 'react';
 import { EstoqueSummaryCards } from '@/components/estoque/EstoqueSummaryCards';
 import { EstoqueFilterBar } from '@/components/estoque/EstoqueFilterBar';
 import { EstoqueMateriaisTable } from '@/components/estoque/EstoqueMateriaisTable';
 import { EstoqueBaixoAlert } from '@/components/estoque/EstoqueBaixoAlert';
-import { EstoquePlaceholders } from '@/components/estoque/EstoquePlaceholders';
-import { InsumosProvider, useInsumos } from '@/contexts/InsumosContext';
-import { ProdutosProvider, useProdutos } from '@/contexts/ProdutosContext';
-import { Button } from '@/components/ui/button';
-import { Plus, Package, Layers, Truck } from 'lucide-react';
+import { Package, Layers, Truck } from 'lucide-react';
 import { Material, EstoqueStatus } from '@/types/estoque';
 import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/types/orcamento';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { InsumoDialog } from '@/components/insumos/InsumoDialog';
 import { categoriasInsumo } from '@/types/insumo';
 import {
@@ -31,6 +28,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { InsumosProvider, useInsumos } from '@/contexts/InsumosContext';
+import { ProdutosProvider, useProdutos } from '@/contexts/ProdutosContext';
 
 // Mock data
 const mockMateriais: Material[] = [
@@ -80,6 +79,11 @@ const getStatusBadge = (quantidade: number, minimo: number): EstoqueStatus => {
       texto: 'Estoque Bom'
     };
   }
+};
+
+// Function to get estoque status
+const getEstoqueStatus = (material: { quantidadeEstoque: number, estoqueMinimo: number }) => {
+  return getStatusBadge(material.quantidadeEstoque, material.estoqueMinimo);
 };
 
 // Componente para o fornecedor
@@ -741,13 +745,15 @@ const EstoqueContent = () => {
       <h1 className="text-3xl font-bold mb-6">Gerenciamento de Estoque</h1>
       
       <EstoqueSummaryCards
-        countTotal={countTotal}
-        countBaixoEstoque={countBaixoEstoque}
-        countEsgotados={countEsgotados}
-        countRegular={countRegular}
+        totalMateriais={countTotal}
+        baixoEstoque={countBaixoEstoque}
+        esgotados={countEsgotados}
+        regular={countRegular}
       />
       
-      <EstoqueBaixoAlert materiaisBaixos={materiais.filter(mat => mat.quantidadeEstoque < mat.estoqueMinimo)} />
+      <EstoqueBaixoAlert
+        materiaisComBaixoEstoque={materiais.filter(mat => mat.quantidadeEstoque < mat.estoqueMinimo)}
+      />
       
       <Tabs defaultValue="materiais" className="mt-6">
         <TabsList>
@@ -768,22 +774,25 @@ const EstoqueContent = () => {
             
             <CardContent>
               <EstoqueFilterBar
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                categoria={categoria}
-                setCategoria={setCategoria}
-                status={status}
-                setStatus={setStatus}
+                filtroCategoria={categoria}
+                setFiltroCategoria={setCategoria}
+                filtroEstoque={status}
+                setFiltroEstoque={setStatus}
+                termoBusca={searchTerm}
+                setTermoBusca={setSearchTerm}
                 categorias={categorias}
               />
               
               {materiaisPaginados.length > 0 ? (
                 <EstoqueMateriaisTable
-                  materiais={materiaisPaginados}
-                  getStatusBadge={getStatusBadge}
+                  materiaisFiltrados={materiaisPaginados}
+                  getEstoqueStatus={getEstoqueStatus}
+                  formatarMoeda={formatCurrency}
                 />
               ) : (
-                <EstoquePlaceholders />
+                <div className="text-center py-10 border rounded-md">
+                  <p className="text-muted-foreground">Nenhum material encontrado.</p>
+                </div>
               )}
             </CardContent>
           </Card>

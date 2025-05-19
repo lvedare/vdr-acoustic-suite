@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PackagePlus, Pencil } from "lucide-react";
 import { Material, EstoqueStatus } from "@/types/estoque";
+import { formatCurrency } from "@/types/orcamento";
 
 interface EstoqueMateriaisTableProps {
   materiaisFiltrados: Material[];
@@ -13,7 +14,7 @@ interface EstoqueMateriaisTableProps {
     badge: string, 
     texto: string 
   };
-  formatarMoeda: (valor: number) => string;
+  formatarMoeda?: (valor: number) => string;
   materiais?: Material[]; // For backward compatibility
   getStatusBadge?: (quantidade: number, minimo: number) => EstoqueStatus;
 }
@@ -32,6 +33,9 @@ export const EstoqueMateriaisTable = ({
     if (getStatusBadge) return getStatusBadge(material.quantidadeEstoque, material.estoqueMinimo);
     return { status: "Desconhecido", badge: "", texto: "Desconhecido" };
   };
+  
+  // Use formatCurrency from @/types/orcamento as fallback if formatarMoeda is not provided
+  const formatarValor = formatarMoeda || formatCurrency;
 
   return (
     <div className="rounded-md border overflow-hidden">
@@ -81,7 +85,7 @@ export const EstoqueMateriaisTable = ({
                       {texto}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">{formatarMoeda(material.valorUnitario)}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{formatarValor(material.valorUnitario)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button 
