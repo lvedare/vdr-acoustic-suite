@@ -22,7 +22,8 @@ import {
   Printer, 
   Search, 
   Table as TableIcon, 
-  User 
+  User,
+  Package
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,6 +32,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, Cell } from "recharts";
 import { Label } from "@/components/ui/label";
+import { ProdutosProvider, useProdutos } from "@/contexts/ProdutosContext";
+import { ProdutosRelatorioTab } from "@/components/relatorios/ProdutosRelatorioTab";
 
 // Mock data
 const dadosVendasPorMes = [
@@ -46,6 +49,15 @@ const topClientes = [
   { id: 2, nome: "Studio XYZ", contato: "Maria Oliveira", email: "maria@studioxyz.com", telefone: "(11) 91234-5678", totalCompras: 28500, ultimaCompra: "2025-05-10" },
   { id: 3, nome: "Restaurante Boa Mesa", contato: "Pedro Almeida", email: "pedro@boamesa.com", telefone: "(21) 98888-7777", totalCompras: 22800, ultimaCompra: "2025-04-15" }
 ];
+
+// Componente para o relatório de produtos
+const RelatorioProdutos = () => {
+  const { produtos, vendasProdutos } = useProdutos();
+  
+  return (
+    <ProdutosRelatorioTab produtos={produtos} vendasProdutos={vendasProdutos} />
+  );
+};
 
 const Relatorios = () => {
   const [periodo, setPeriodo] = useState("ultimo-mes");
@@ -64,6 +76,8 @@ const Relatorios = () => {
       return 'financeiro';
     } else if (reportName === 'estoque') {
       return 'estoque';
+    } else if (reportName === 'produtos') {
+      return 'produtos';
     }
     return 'vendas';
   };
@@ -110,12 +124,13 @@ const Relatorios = () => {
       </div>
       
       <Tabs defaultValue={tabAtiva} onValueChange={setTabAtiva} className="space-y-4">
-        <TabsList className="grid grid-cols-1 sm:grid-cols-5">
+        <TabsList className="grid grid-cols-1 sm:grid-cols-6">
           <TabsTrigger value="vendas">Vendas</TabsTrigger>
           <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
           <TabsTrigger value="estoque">Estoque</TabsTrigger>
           <TabsTrigger value="producao">Produção</TabsTrigger>
           <TabsTrigger value="clientes">Clientes</TabsTrigger>
+          <TabsTrigger value="produtos">Produtos</TabsTrigger>
         </TabsList>
         
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -282,6 +297,25 @@ const Relatorios = () => {
                   Os relatórios de estoque detalhados serão implementados em breve.
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="produtos">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Package className="mr-2 h-5 w-5" />
+                Relatórios de Produtos
+              </CardTitle>
+              <CardDescription>
+                Análise de vendas e desempenho de produtos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProdutosProvider>
+                <RelatorioProdutos />
+              </ProdutosProvider>
             </CardContent>
           </Card>
         </TabsContent>

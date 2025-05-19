@@ -3,7 +3,6 @@ import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProdutosListaTab } from "./ProdutosListaTab";
 import { ProdutosCardsTab } from "./ProdutosCardsTab";
-import { ProdutosRelatorioTab } from "./ProdutosRelatorioTab";
 import { useProdutos } from "@/contexts/ProdutosContext";
 
 export const ProdutosTabsContainer: React.FC = () => {
@@ -12,9 +11,7 @@ export const ProdutosTabsContainer: React.FC = () => {
     handleEditarProduto,
     handlePreExcluirProduto,
     handleVerDetalhesProduto,
-    handleCriarItemOrcamento,
-    produtos,
-    vendasProdutos
+    handleCriarItemOrcamento
   } = useProdutos();
 
   return (
@@ -22,7 +19,6 @@ export const ProdutosTabsContainer: React.FC = () => {
       <TabsList>
         <TabsTrigger value="lista">Lista de Produtos</TabsTrigger>
         <TabsTrigger value="cards">Cartões</TabsTrigger>
-        <TabsTrigger value="relatorio">Relatório de Vendas</TabsTrigger>
       </TabsList>
       
       {/* Tab de Lista */}
@@ -42,14 +38,6 @@ export const ProdutosTabsContainer: React.FC = () => {
           produtosFiltrados={produtosFiltrados}
           onVerDetalhes={handleVerDetalhesProduto}
           onCriarItemOrcamento={handleCriarItemOrcamento}
-        />
-      </TabsContent>
-      
-      {/* Tab de Relatórios */}
-      <TabsContent value="relatorio">
-        <ProdutosRelatorioTab 
-          produtos={produtos}
-          vendasProdutos={vendasProdutos}
         />
       </TabsContent>
     </Tabs>

@@ -17,6 +17,7 @@ export interface ItemProposta {
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
+  valorOriginal?: number; // Valor original antes da diluição de custos
 }
 
 export interface CustoProposta {
