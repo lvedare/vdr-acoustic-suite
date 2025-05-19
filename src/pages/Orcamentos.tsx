@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FileText, Plus, FileDown, Search, Trash, Eye, Edit, Check } from "lucide-react";
+import { FileText, Plus, FileDown, Search, Trash, Eye, Edit, Check, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { Avatar } from "@/components/ui/avatar";
 
 // Tipos para o Sistema de Orçamento
 import { 
@@ -18,6 +19,8 @@ import {
   Proposta,
   formatCurrency
 } from "@/types/orcamento";
+
+import { gerarNumeroProposta, converterAtendimentoParaProposta } from "@/utils/propostaUtils";
 
 // Dados de exemplo
 const clientesExemplo: ClienteSimplificado[] = [
@@ -148,9 +151,48 @@ const propostasIniciais: Proposta[] = [
   }
 ];
 
+// Dados de exemplo para atendimentos
+const atendimentosExemplo = [
+  {
+    id: 1,
+    cliente: "João Silva",
+    contato: "(11) 98765-4321",
+    assunto: "Orçamento para tratamento acústico",
+    data: "07/05/2025",
+    hora: "09:30",
+    canal: "WhatsApp",
+    status: "Novo",
+    mensagem: "Olá, gostaria de um orçamento para tratamento acústico em meu home studio."
+  },
+  {
+    id: 2,
+    cliente: "Maria Oliveira",
+    contato: "(11) 91234-5678",
+    assunto: "Dúvida sobre material",
+    data: "07/05/2025",
+    hora: "10:15",
+    canal: "Email",
+    status: "Em andamento",
+    mensagem: "Bom dia, gostaria de saber qual o melhor material para isolamento acústico em uma sala pequena."
+  },
+  {
+    id: 3,
+    cliente: "Empresa ABC",
+    contato: "(11) 3123-4567",
+    assunto: "Visita técnica",
+    data: "07/05/2025",
+    hora: "11:00",
+    canal: "Telefone",
+    status: "Agendado",
+    mensagem: "Preciso de uma visita técnica para avaliar o isolamento acústico de salas de reunião."
+  }
+];
+
 const Orcamentos = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchTermAtendimento, setSearchTermAtendimento] = useState("");
   const [propostas, setPropostas] = useState<Proposta[]>([]);
+  const [selectedAtendimento, setSelectedAtendimento] = useState<any | null>(null);
   const navigate = useNavigate();
 
   // Recuperar propostas do localStorage ou usar o exemplo
@@ -172,6 +214,15 @@ const Orcamentos = () => {
     );
   });
 
+  // Filtrar atendimentos com base no termo de pesquisa
+  const filteredAtendimentos = atendimentosExemplo.filter(atendimento => {
+    return (
+      atendimento.cliente.toLowerCase().includes(searchTermAtendimento.toLowerCase()) ||
+      atendimento.assunto.toLowerCase().includes(searchTermAtendimento.toLowerCase()) ||
+      atendimento.mensagem.toLowerCase().includes(searchTermAtendimento.toLowerCase())
+    );
+  });
+
   // Status colors
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -185,6 +236,24 @@ const Orcamentos = () => {
         return "bg-yellow-100 text-yellow-800 border-yellow-300";
       default:
         return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  // Status color for atendimentos
+  const getAtendimentoStatusColor = (status: string) => {
+    switch (status) {
+      case "Novo":
+        return "bg-blue-100 text-blue-800";
+      case "Em andamento":
+        return "bg-amber-100 text-amber-800";
+      case "Agendado":
+        return "bg-purple-100 text-purple-800";
+      case "Convertido":
+        return "bg-emerald-100 text-emerald-800";
+      case "Crítico":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -236,6 +305,23 @@ const Orcamentos = () => {
     navigate("/novo-orcamento");
   };
 
+  // Função para converter um atendimento em orçamento
+  const handleCriarPropostaFromAtendimento = (atendimento: any) => {
+    // Convert service record to proposal
+    const novaProposta = converterAtendimentoParaProposta(atendimento);
+    
+    // Add to propostas array and save to localStorage
+    const novasPropostas = [...propostas, novaProposta];
+    setPropostas(novasPropostas);
+    localStorage.setItem("propostas", JSON.stringify(novasPropostas));
+    
+    // Show success message
+    toast.success(`Proposta criada a partir do atendimento com sucesso!`);
+    
+    // Navigate to view the proposal
+    navigate(`/orcamentos/${novaProposta.id}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -268,6 +354,10 @@ const Orcamentos = () => {
               <TabsTrigger value="enviadas">Enviadas</TabsTrigger>
               <TabsTrigger value="aprovadas">Aprovadas</TabsTrigger>
               <TabsTrigger value="rejeitadas">Rejeitadas</TabsTrigger>
+              <TabsTrigger value="atendimentos">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Atendimentos
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="todas">
@@ -690,6 +780,131 @@ const Orcamentos = () => {
                     )}
                   </TableBody>
                 </Table>
+              </div>
+            </TabsContent>
+
+            {/* New tab for "Atendimentos" */}
+            <TabsContent value="atendimentos" className="mt-4">
+              <div className="space-y-4">
+                <div className="relative w-full">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar atendimentos..."
+                    className="pl-8"
+                    value={searchTermAtendimento}
+                    onChange={(e) => setSearchTermAtendimento(e.target.value)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {/* Lista de atendimentos */}
+                  <div className="rounded-md border">
+                    <div className="flex flex-col divide-y">
+                      {filteredAtendimentos.length === 0 ? (
+                        <div className="p-4 text-center text-muted-foreground">
+                          Nenhum atendimento encontrado.
+                        </div>
+                      ) : (
+                        filteredAtendimentos.map((atendimento) => (
+                          <div
+                            key={atendimento.id}
+                            className={`cursor-pointer p-4 transition-colors hover:bg-muted/50 ${
+                              selectedAtendimento?.id === atendimento.id
+                                ? "bg-muted/50"
+                                : ""
+                            }`}
+                            onClick={() => setSelectedAtendimento(atendimento)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium">{atendimento.cliente}</div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>{atendimento.data}</span>
+                                <span>{atendimento.hora}</span>
+                              </div>
+                            </div>
+                            <div className="mt-1 text-sm">{atendimento.assunto}</div>
+                            <div className="mt-2 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">{atendimento.canal}</Badge>
+                                <Badge
+                                  className={getAtendimentoStatusColor(atendimento.status)}
+                                  variant="secondary"
+                                >
+                                  {atendimento.status}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Detalhes do atendimento selecionado */}
+                  <div className="rounded-md border">
+                    {selectedAtendimento ? (
+                      <div className="p-4">
+                        <div className="mb-4 flex items-center justify-between">
+                          <h3 className="text-lg font-medium">
+                            Detalhes do Atendimento
+                          </h3>
+                          <Badge
+                            className={getAtendimentoStatusColor(selectedAtendimento.status)}
+                            variant="secondary"
+                          >
+                            {selectedAtendimento.status}
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="flex flex-col space-y-3">
+                            <div>
+                              <div className="text-sm text-muted-foreground">Cliente</div>
+                              <div className="font-medium">{selectedAtendimento.cliente}</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground">Contato</div>
+                              <div>{selectedAtendimento.contato}</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground">Assunto</div>
+                              <div>{selectedAtendimento.assunto}</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground">Data e Hora</div>
+                              <div>{selectedAtendimento.data} às {selectedAtendimento.hora}</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground">Canal</div>
+                              <Badge variant="outline">{selectedAtendimento.canal}</Badge>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Mensagem</div>
+                            <div className="rounded-md bg-muted p-3 text-sm">
+                              {selectedAtendimento.mensagem}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-end">
+                          <Button 
+                            className="bg-vdr-blue hover:bg-blue-800"
+                            onClick={() => handleCriarPropostaFromAtendimento(selectedAtendimento)}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Criar Proposta
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex h-full items-center justify-center p-4 text-muted-foreground">
+                        Selecione um atendimento para ver os detalhes.
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>

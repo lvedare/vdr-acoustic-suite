@@ -32,6 +32,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { converterAtendimentoParaProposta } from "@/utils/propostaUtils";
 
 // Sample data
 const atendimentos = [
@@ -100,6 +112,8 @@ const atendimentos = [
 const Atendimento = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAtendimento, setSelectedAtendimento] = useState(atendimentos[0]);
+  const [isNovoAtendimentoOpen, setIsNovoAtendimentoOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Filter atendimentos based on search term
   const filteredAtendimentos = atendimentos.filter(
@@ -127,17 +141,110 @@ const Atendimento = () => {
     }
   };
 
+  // Function to create a new service record
+  const handleNovoAtendimento = (data: any) => {
+    // For now we're just showing a success message 
+    // In a real implementation, we would add this to the atendimentos array
+    toast.success("Novo atendimento criado com sucesso!");
+    setIsNovoAtendimentoOpen(false);
+  };
+
+  // Function to register a call
+  const handleRegistrarLigacao = () => {
+    toast.success("Formulário de registro de ligação será aberto");
+    // Further implementation would open a form to register the call
+  };
+
+  // Function to view history
+  const handleViewHistory = () => {
+    toast.info("Visualizando histórico de atendimentos");
+    // Further implementation would show a detailed history
+  };
+
+  // Function to convert service to proposal
+  const handleConverterEmOrcamento = (atendimento: any) => {
+    // Convert service to proposal
+    const novaProposta = converterAtendimentoParaProposta(atendimento);
+    
+    // Store the new proposal in localStorage to be accessed in the Orcamentos page
+    const propostasAtuais = JSON.parse(localStorage.getItem("propostas") || "[]");
+    propostasAtuais.push(novaProposta);
+    localStorage.setItem("propostas", JSON.stringify(propostasAtuais));
+    
+    // Show success message
+    toast.success(`Atendimento convertido em orçamento com sucesso!`);
+    
+    // Navigate to the new proposal
+    navigate(`/orcamentos/${novaProposta.id}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold">CRM / Atendimento</h1>
         <div className="flex items-center gap-2">
-          <Button className="bg-vdr-blue hover:bg-blue-800">
+          <Button 
+            className="bg-vdr-blue hover:bg-blue-800"
+            onClick={handleRegistrarLigacao}
+          >
             <Phone className="mr-2 h-4 w-4" /> Registrar Ligação
           </Button>
-          <Button className="bg-vdr-blue hover:bg-blue-800">
-            <Plus className="mr-2 h-4 w-4" /> Novo Atendimento
-          </Button>
+          <Dialog open={isNovoAtendimentoOpen} onOpenChange={setIsNovoAtendimentoOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-vdr-blue hover:bg-blue-800">
+                <Plus className="mr-2 h-4 w-4" /> Novo Atendimento
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Novo Atendimento</DialogTitle>
+                <DialogDescription>
+                  Registre um novo atendimento no sistema.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="cliente">
+                      Cliente
+                    </label>
+                    <Input id="cliente" placeholder="Nome do cliente" className="mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="contato">
+                      Contato
+                    </label>
+                    <Input id="contato" placeholder="Telefone ou e-mail" className="mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="assunto">
+                      Assunto
+                    </label>
+                    <Input id="assunto" placeholder="Assunto do atendimento" className="mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="mensagem">
+                      Mensagem
+                    </label>
+                    <textarea 
+                      id="mensagem" 
+                      rows={4}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      placeholder="Detalhes do atendimento"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsNovoAtendimentoOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button className="bg-vdr-blue hover:bg-blue-800" onClick={() => handleNovoAtendimento({})}>
+                  Registrar Atendimento
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -294,9 +401,12 @@ const Atendimento = () => {
                       </div>
 
                       <div className="mt-6 flex justify-end gap-2">
-                        <Button variant="outline">Histórico</Button>
+                        <Button variant="outline" onClick={handleViewHistory}>Histórico</Button>
                         {selectedAtendimento.status !== "Convertido" && (
-                          <Button className="bg-vdr-blue hover:bg-blue-800">
+                          <Button 
+                            className="bg-vdr-blue hover:bg-blue-800" 
+                            onClick={() => handleConverterEmOrcamento(selectedAtendimento)}
+                          >
                             Converter em Orçamento
                           </Button>
                         )}
