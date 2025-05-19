@@ -4,20 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PackagePlus, Pencil } from "lucide-react";
-
-interface Material {
-  id: number;
-  codigo: string;
-  nome: string;
-  descricao: string;
-  categoria: string;
-  unidade: string;
-  quantidadeEstoque: number;
-  estoqueMinimo: number;
-  valorUnitario: number;
-  fornecedor: string;
-  localizacao: string;
-}
+import { Material, EstoqueStatus } from "@/types/estoque";
 
 interface EstoqueMateriaisTableProps {
   materiaisFiltrados: Material[];
@@ -27,13 +14,25 @@ interface EstoqueMateriaisTableProps {
     texto: string 
   };
   formatarMoeda: (valor: number) => string;
+  materiais?: Material[]; // For backward compatibility
+  getStatusBadge?: (quantidade: number, minimo: number) => EstoqueStatus;
 }
 
 export const EstoqueMateriaisTable = ({ 
   materiaisFiltrados, 
   getEstoqueStatus, 
-  formatarMoeda 
+  formatarMoeda,
+  materiais,
+  getStatusBadge
 }: EstoqueMateriaisTableProps) => {
+  // For backward compatibility
+  const effectiveMateriais = materiaisFiltrados || materiais || [];
+  const effectiveGetStatus = (material: Material) => {
+    if (getEstoqueStatus) return getEstoqueStatus(material);
+    if (getStatusBadge) return getStatusBadge(material.quantidadeEstoque, material.estoqueMinimo);
+    return { status: "Desconhecido", badge: "", texto: "Desconhecido" };
+  };
+
   return (
     <div className="rounded-md border overflow-hidden">
       <Table>
@@ -50,15 +49,15 @@ export const EstoqueMateriaisTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {materiaisFiltrados.length === 0 ? (
+          {effectiveMateriais.length === 0 ? (
             <TableRow>
               <TableCell colSpan={8} className="h-24 text-center">
                 Nenhum material encontrado.
               </TableCell>
             </TableRow>
           ) : (
-            materiaisFiltrados.map((material) => {
-              const { badge, texto } = getEstoqueStatus(material);
+            effectiveMateriais.map((material) => {
+              const { badge, texto } = effectiveGetStatus(material);
               return (
                 <TableRow key={material.id}>
                   <TableCell className="font-medium">{material.codigo}</TableCell>

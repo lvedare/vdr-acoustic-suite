@@ -8,38 +8,19 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-interface Material {
-  id: number;
-  codigo: string;
-  nome: string;
-  descricao: string;
-  categoria: string;
-  unidade: string;
-  quantidadeEstoque: number;
-  estoqueMinimo: number;
-  valorUnitario: number;
-  fornecedor: string;
-  localizacao: string;
-}
-
 interface EstoqueSummaryCardsProps {
-  materiais: Material[];
-  formatarMoeda: (valor: number) => string;
+  countTotal: number;
+  countBaixoEstoque: number;
+  countEsgotados: number;
+  countRegular: number;
 }
 
-export const EstoqueSummaryCards = ({ materiais, formatarMoeda }: EstoqueSummaryCardsProps) => {
-  // Calculate total value in stock
-  const calcularValorTotalEstoque = (): number => {
-    return materiais.reduce((total, material) => {
-      return total + (material.quantidadeEstoque * material.valorUnitario);
-    }, 0);
-  };
-  
-  // Count items with low stock
-  const contarItensBaixoEstoque = (): number => {
-    return materiais.filter(m => m.quantidadeEstoque < m.estoqueMinimo).length;
-  };
-
+export const EstoqueSummaryCards = ({ 
+  countTotal, 
+  countBaixoEstoque, 
+  countEsgotados,
+  countRegular
+}: EstoqueSummaryCardsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
@@ -48,7 +29,7 @@ export const EstoqueSummaryCards = ({ materiais, formatarMoeda }: EstoqueSummary
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {materiais.reduce((acc, material) => acc + material.quantidadeEstoque, 0)}
+            {countTotal}
             <span className="text-sm font-normal text-muted-foreground ml-2">itens</span>
           </div>
         </CardContent>
@@ -56,24 +37,13 @@ export const EstoqueSummaryCards = ({ materiais, formatarMoeda }: EstoqueSummary
       
       <Card>
         <CardHeader className="py-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Valor em Estoque</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {formatarMoeda(calcularValorTotalEstoque())}
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="py-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Itens com Estoque Baixo</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Estoque Baixo</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center gap-2">
           <div className="text-2xl font-bold">
-            {contarItensBaixoEstoque()}
+            {countBaixoEstoque}
           </div>
-          {contarItensBaixoEstoque() > 0 && (
+          {countBaixoEstoque > 0 && (
             <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-800">
               Atenção
             </Badge>
@@ -83,12 +53,27 @@ export const EstoqueSummaryCards = ({ materiais, formatarMoeda }: EstoqueSummary
       
       <Card>
         <CardHeader className="py-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Movimentações Recentes</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Itens Esgotados</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center gap-2">
+          <div className="text-2xl font-bold">
+            {countEsgotados}
+          </div>
+          {countEsgotados > 0 && (
+            <Badge variant="outline" className="bg-red-100 text-red-800 border-red-800">
+              Crítico
+            </Badge>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="py-4">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Estoque Regular</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            12
-            <span className="text-sm font-normal text-muted-foreground ml-2">esta semana</span>
+            {countRegular}
           </div>
         </CardContent>
       </Card>

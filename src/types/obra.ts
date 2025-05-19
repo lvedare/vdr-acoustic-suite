@@ -25,3 +25,8 @@ export const obraStatusMap: Record<string, StatusConfig> = {
   concluido: { label: "Concluído", variant: "outline" },
   cancelado: { label: "Cancelado", variant: "destructive" },
 };
+
+export const formatarData = (data: string): string => {
+  if (!data) return "";
+  return new Date(data).toLocaleDateString('pt-BR');
+};

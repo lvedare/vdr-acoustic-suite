@@ -28,9 +28,11 @@ interface ObrasListProps {
   obras: Obra[];
   statusMap: Record<string, StatusConfig>;
   formatarData: (data: string) => string;
+  onEdit?: (obra: Obra) => void;
+  onView?: (obra: Obra) => void;
 }
 
-export function ObrasList({ obras, statusMap, formatarData }: ObrasListProps) {
+export function ObrasList({ obras, statusMap, formatarData, onEdit, onView }: ObrasListProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -76,7 +78,12 @@ export function ObrasList({ obras, statusMap, formatarData }: ObrasListProps) {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => onView && onView(obra)}
+                  >
                     <FileText className="h-4 w-4" />
                     <span className="sr-only">Ver detalhes</span>
                   </Button>

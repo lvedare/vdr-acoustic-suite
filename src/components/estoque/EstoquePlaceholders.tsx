@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Calendar } from "lucide-react";
+import { BarChart, Calendar, Package } from "lucide-react";
 
 export const MovimentacoesPlaceholder = () => {
   return (
@@ -38,5 +38,17 @@ export const RelatoriosPlaceholder = () => {
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+export const EstoquePlaceholders = () => {
+  return (
+    <div className="flex flex-col items-center justify-center p-8 border rounded-md">
+      <Package className="h-16 w-16 text-muted-foreground mb-4" />
+      <h3 className="text-lg font-medium mb-2">Nenhum material encontrado</h3>
+      <p className="text-sm text-muted-foreground text-center max-w-md">
+        Não foram encontrados materiais com os filtros selecionados. Tente ajustar seus filtros ou adicione novos materiais ao estoque.
+      </p>
+    </div>
   );
 };

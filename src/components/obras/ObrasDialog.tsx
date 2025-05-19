@@ -1,36 +1,15 @@
 
-import React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, Plus } from "lucide-react";
-import { 
+import React, { useState, useEffect } from "react";
+import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { 
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -38,223 +17,201 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ObraStatus } from "@/types/obra";
-import { toast } from "@/components/ui/sonner";
-
-// Form schema validation for the new obra
-const formSchema = z.object({
-  nome: z.string().min(2, { message: "Nome da obra é obrigatório" }),
-  cliente: z.string().min(2, { message: "Nome do cliente é obrigatório" }),
-  endereco: z.string().min(2, { message: "Endereço é obrigatório" }),
-  status: z.string(),
-  dataInicio: z.date(),
-  dataPrevisao: z.date(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { Obra, ObraStatus, obraStatusMap } from "@/types/obra";
 
 interface ObrasDialogProps {
-  open: boolean;
+  isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (values: FormValues) => void;
+  onSave: (obra: Obra) => void;
+  obra: Obra | null;
 }
 
-export function ObrasDialog({ open, onOpenChange, onSave }: ObrasDialogProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      nome: "",
-      cliente: "",
-      endereco: "",
-      status: "planejamento",
-      dataInicio: new Date(),
-      dataPrevisao: new Date(),
-    },
+export function ObrasDialog({ isOpen, onOpenChange, onSave, obra }: ObrasDialogProps) {
+  const [formData, setFormData] = useState<Omit<Obra, "id"> & { id?: number }>({
+    nome: "",
+    endereco: "",
+    cliente: "",
+    status: "planejamento",
+    dataInicio: new Date().toISOString().split("T")[0],
+    dataPrevisao: new Date().toISOString().split("T")[0],
   });
 
-  const handleSubmit = (values: FormValues) => {
-    onSave(values);
-    form.reset();
+  // Atualiza o formulário quando uma obra for selecionada para edição
+  useEffect(() => {
+    if (obra) {
+      setFormData({
+        id: obra.id,
+        nome: obra.nome,
+        endereco: obra.endereco,
+        cliente: obra.cliente,
+        status: obra.status,
+        dataInicio: obra.dataInicio,
+        dataPrevisao: obra.dataPrevisao,
+        dataConclusao: obra.dataConclusao,
+      });
+    } else {
+      setFormData({
+        nome: "",
+        endereco: "",
+        cliente: "",
+        status: "planejamento",
+        dataInicio: new Date().toISOString().split("T")[0],
+        dataPrevisao: new Date().toISOString().split("T")[0],
+      });
+    }
+  }, [obra, isOpen]);
+
+  // Manipula a alteração nos inputs
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Manipula a alteração no select de status
+  const handleStatusChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, status: value }));
+  };
+
+  // Manipula o salvamento da obra
+  const handleSave = () => {
+    if (!formData.nome || !formData.endereco || !formData.cliente) {
+      alert("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    // Convert to proper Obra type
+    const obraToSave: Obra = {
+      id: formData.id || Math.floor(Math.random() * 10000),
+      nome: formData.nome,
+      endereco: formData.endereco,
+      cliente: formData.cliente,
+      status: formData.status as ObraStatus,
+      dataInicio: formData.dataInicio,
+      dataPrevisao: formData.dataPrevisao,
+      dataConclusao: formData.dataConclusao,
+    };
+
+    onSave(obraToSave);
     onOpenChange(false);
-    toast("Obra adicionada", {
-      description: "A obra foi adicionada com sucesso.",
-    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Nova Obra</DialogTitle>
-          <DialogDescription>
-            Preencha os dados da nova obra abaixo.
-          </DialogDescription>
+          <DialogTitle>{obra ? "Editar Obra" : "Nova Obra"}</DialogTitle>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="nome" className="text-right">
+              Nome
+            </Label>
+            <Input
+              id="nome"
               name="nome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome da Obra</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Edifício Residencial Park Avenue" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              value={formData.nome}
+              onChange={handleChange}
+              className="col-span-3"
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="cliente"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cliente</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Construtora Exemplo LTDA" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="endereco" className="text-right">
+              Endereço
+            </Label>
+            <Input
+              id="endereco"
               name="endereco"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Av. Principal, 1500, Centro" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              value={formData.endereco}
+              onChange={handleChange}
+              className="col-span-3"
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="planejamento">Planejamento</SelectItem>
-                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                      <SelectItem value="concluido">Concluído</SelectItem>
-                      <SelectItem value="cancelado">Cancelado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Status atual da obra
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="cliente" className="text-right">
+              Cliente
+            </Label>
+            <Input
+              id="cliente"
+              name="cliente"
+              value={formData.cliente}
+              onChange={handleChange}
+              className="col-span-3"
             />
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="dataInicio"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de Início</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="status" className="text-right">
+              Status
+            </Label>
+            <Select
+              value={formData.status}
+              onValueChange={handleStatusChange}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Selecione o status" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(obraStatusMap).map(([key, { label }]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-              <FormField
-                control={form.control}
-                name="dataPrevisao"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Previsão de Conclusão</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="dataInicio" className="text-right">
+              Data de Início
+            </Label>
+            <Input
+              id="dataInicio"
+              name="dataInicio"
+              type="date"
+              value={formData.dataInicio}
+              onChange={handleChange}
+              className="col-span-3"
+            />
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="dataPrevisao" className="text-right">
+              Previsão
+            </Label>
+            <Input
+              id="dataPrevisao"
+              name="dataPrevisao"
+              type="date"
+              value={formData.dataPrevisao}
+              onChange={handleChange}
+              className="col-span-3"
+            />
+          </div>
+
+          {formData.status === "concluido" && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="dataConclusao" className="text-right">
+                Conclusão
+              </Label>
+              <Input
+                id="dataConclusao"
+                name="dataConclusao"
+                type="date"
+                value={formData.dataConclusao || ""}
+                onChange={handleChange}
+                className="col-span-3"
               />
             </div>
+          )}
+        </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Obra
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSave}>Salvar</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

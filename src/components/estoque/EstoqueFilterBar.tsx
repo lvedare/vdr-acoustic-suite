@@ -12,6 +12,11 @@ interface EstoqueFilterBarProps {
   filtroEstoque: string | null;
   setFiltroEstoque: (estoque: string | null) => void;
   categorias: string[];
+  // For compatibility with Estoque.tsx
+  categoria?: string;
+  setCategoria?: (categoria: string | null) => void;
+  status?: string | null;
+  setStatus?: (status: string | null) => void;
 }
 
 export const EstoqueFilterBar = ({
@@ -21,8 +26,18 @@ export const EstoqueFilterBar = ({
   setFiltroCategoria,
   filtroEstoque,
   setFiltroEstoque,
-  categorias
+  categorias,
+  categoria,
+  setCategoria,
+  status,
+  setStatus
 }: EstoqueFilterBarProps) => {
+  // If we're using the old prop names, map them to the new prop names
+  const effectiveFiltroCategoria = filtroCategoria || categoria || null;
+  const effectiveSetFiltroCategoria = setFiltroCategoria || setCategoria || (() => {});
+  const effectiveFiltroEstoque = filtroEstoque || status || null;
+  const effectiveSetFiltroEstoque = setFiltroEstoque || setStatus || (() => {});
+
   return (
     <div className="flex flex-col sm:flex-row gap-2">
       <div className="relative">
@@ -36,13 +51,13 @@ export const EstoqueFilterBar = ({
       </div>
       <div className="flex gap-2">
         <Select
-          value={filtroCategoria || "todas"}
-          onValueChange={(value) => setFiltroCategoria(value === "todas" ? null : value)}
+          value={effectiveFiltroCategoria || "todas"}
+          onValueChange={(value) => effectiveSetFiltroCategoria(value === "todas" ? null : value)}
         >
           <SelectTrigger className="w-[180px]">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
-              <span>{filtroCategoria || "Todas as Categorias"}</span>
+              <span>{effectiveFiltroCategoria || "Todas as Categorias"}</span>
             </div>
           </SelectTrigger>
           <SelectContent>
@@ -56,12 +71,12 @@ export const EstoqueFilterBar = ({
         </Select>
         
         <Select
-          value={filtroEstoque || "todos"}
-          onValueChange={(value) => setFiltroEstoque(value === "todos" ? null : value)}
+          value={effectiveFiltroEstoque || "todos"}
+          onValueChange={(value) => effectiveSetFiltroEstoque(value === "todos" ? null : value)}
         >
           <SelectTrigger className="w-[150px]">
             <div className="flex items-center gap-2">
-              <span>{filtroEstoque === "baixo" ? "Estoque Baixo" : filtroEstoque === "normal" ? "Estoque Normal" : "Todos"}</span>
+              <span>{effectiveFiltroEstoque === "baixo" ? "Estoque Baixo" : effectiveFiltroEstoque === "normal" ? "Estoque Normal" : "Todos"}</span>
             </div>
           </SelectTrigger>
           <SelectContent>
