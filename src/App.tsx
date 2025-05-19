@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import AppLayout from './components/layout/AppLayout';
+import { AppLayout } from './components/layout/AppLayout';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import Cadastros from './pages/Cadastros';
