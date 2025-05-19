@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
@@ -34,7 +34,7 @@ function App() {
       <Toaster position="top-right" />
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<AppLayout />}>
+        <Route path="/" element={<AppLayout><Outlet /></AppLayout>}>
           <Route index element={<Index />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="cadastros" element={<Cadastros />} />
