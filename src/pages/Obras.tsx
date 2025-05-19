@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ObrasResumoCard } from "@/components/obras/ObrasResumoCard";
 import { ObrasFilterBar } from "@/components/obras/ObrasFilterBar";
@@ -9,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Building, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { ObraStatus, Obra, obraStatusMap } from "@/types/obra";
+import { ObraStatus, Obra, obraStatusMap, formatarData } from "@/types/obra";
 
 // Mock de dados para obras
 const mockObras: Obra[] = [
@@ -138,7 +137,9 @@ const Obras = () => {
       {!obraDetalhada ? (
         /* Lista de Obras */
         <ObrasList 
-          obras={obrasFiltradas} 
+          obras={obrasFiltradas}
+          statusMap={obraStatusMap}
+          formatarData={formatarData}
           onEdit={handleEditObra} 
           onView={handleViewObra}
         />

@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { StatusConfig } from "@/types/obra";
+import { StatusConfig, formatarData as formatarDataFn } from "@/types/obra";
 
 interface Obra {
   id: number;
@@ -27,12 +27,15 @@ interface Obra {
 interface ObrasListProps {
   obras: Obra[];
   statusMap: Record<string, StatusConfig>;
-  formatarData: (data: string) => string;
+  formatarData?: (data: string) => string;
   onEdit?: (obra: Obra) => void;
   onView?: (obra: Obra) => void;
 }
 
 export function ObrasList({ obras, statusMap, formatarData, onEdit, onView }: ObrasListProps) {
+  // Use the imported formatter as a fallback if none is provided
+  const formatDate = formatarData || formatarDataFn;
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -68,10 +71,10 @@ export function ObrasList({ obras, statusMap, formatarData, onEdit, onView }: Ob
                 <TableCell>
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    {formatarData(obra.dataInicio)}
+                    {formatDate(obra.dataInicio)}
                   </div>
                 </TableCell>
-                <TableCell>{formatarData(obra.dataPrevisao)}</TableCell>
+                <TableCell>{formatDate(obra.dataPrevisao)}</TableCell>
                 <TableCell>
                   <Badge variant={statusMap[obra.status].variant}>
                     {statusMap[obra.status].label}
