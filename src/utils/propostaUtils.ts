@@ -36,3 +36,25 @@ export const getPropostaVazia = () => {
     validade: "05 DIAS"
   };
 };
+
+// Converter atendimento para proposta
+export const converterAtendimentoParaProposta = (atendimento: any) => {
+  const propostaBase = getPropostaVazia();
+  
+  // Se o atendimento tiver um cliente associado, usá-lo
+  if (atendimento.cliente) {
+    propostaBase.cliente = atendimento.cliente;
+  }
+  
+  // Adicionar observação sobre a origem da proposta
+  propostaBase.observacoes = `Proposta gerada a partir do atendimento #${atendimento.id} em ${new Date().toLocaleDateString()}\n\n` + propostaBase.observacoes;
+  
+  return propostaBase;
+};
+
+// Formatação de data para exibição
+export const formatarData = (dataString: string) => {
+  const data = new Date(dataString);
+  return data.toLocaleDateString('pt-BR');
+};
+

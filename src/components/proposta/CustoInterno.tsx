@@ -39,7 +39,8 @@ const CustoInterno = ({ proposta, setProposta }: CustoInternoProps) => {
         ...prev.custos,
         {
           id: Date.now(),
-          ...novoCusto
+          ...novoCusto,
+          diluido: false
         }
       ]
     }));
@@ -62,8 +63,10 @@ const CustoInterno = ({ proposta, setProposta }: CustoInternoProps) => {
     toast.success("Custo removido com sucesso!");
   };
 
-  // Calcular total de custos
-  const totalCustos = proposta.custos.reduce((sum, item) => sum + item.valor, 0);
+  // Calcular total de custos (apenas os não diluídos)
+  const totalCustos = proposta.custos
+    .filter(custo => !custo.diluido)
+    .reduce((sum, item) => sum + item.valor, 0);
   
   // Efeito para diluir os custos nos itens da proposta quando a opção estiver ativada
   useEffect(() => {
@@ -82,6 +85,17 @@ const CustoInterno = ({ proposta, setProposta }: CustoInternoProps) => {
     // Copiar os itens para não modificar diretamente
     const itensAtualizados = [...proposta.itens];
     
+    // Pegar apenas os custos que ainda não foram diluídos
+    const custosParaDiluir = proposta.custos.filter(custo => !custo.diluido);
+    const valorTotalCustosParaDiluir = custosParaDiluir.reduce((sum, custo) => sum + custo.valor, 0);
+    
+    if (valorTotalCustosParaDiluir === 0) return;
+    
+    // Marcar os custos como diluídos
+    const custosAtualizados = proposta.custos.map(custo => 
+      !custo.diluido ? { ...custo, diluido: true } : custo
+    );
+    
     if (metodoDiluicao === 'proporcional') {
       // Diluição proporcional ao valor de cada item
       const valorTotalItens = itensAtualizados.reduce((sum, item) => sum + item.valorTotal, 0);
@@ -91,7 +105,7 @@ const CustoInterno = ({ proposta, setProposta }: CustoInternoProps) => {
       
       itensAtualizados.forEach(item => {
         const proporcao = item.valorTotal / valorTotalItens;
-        const custoProporcional = totalCustos * proporcao;
+        const custoProporcional = valorTotalCustosParaDiluir * proporcao;
         
         // Armazenar o valor original em um atributo se ainda não estiver armazenado
         if (!item.hasOwnProperty('valorOriginal')) {
@@ -111,7 +125,7 @@ const CustoInterno = ({ proposta, setProposta }: CustoInternoProps) => {
       });
     } else {
       // Diluição igual entre todos os itens
-      const custoPorItem = totalCustos / itensAtualizados.length;
+      const custoPorItem = valorTotalCustosParaDiluir / itensAtualizados.length;
       
       itensAtualizados.forEach(item => {
         // Armazenar o valor original em um atributo se ainda não estiver armazenado
@@ -139,6 +153,7 @@ const CustoInterno = ({ proposta, setProposta }: CustoInternoProps) => {
     setProposta(prev => ({
       ...prev,
       itens: itensAtualizados,
+      custos: custosAtualizados,
       valorTotal: novoValorTotal
     }));
     
@@ -157,6 +172,12 @@ const CustoInterno = ({ proposta, setProposta }: CustoInternoProps) => {
       };
     });
     
+    // Desmarcar todos os custos como não diluídos
+    const custosRestaurados = proposta.custos.map(custo => ({
+      ...custo,
+      diluido: false
+    }));
+    
     // Atualizar o valor total da proposta
     const novoValorTotal = itensRestaurados.reduce((sum, item) => sum + item.valorTotal, 0);
     
@@ -164,6 +185,7 @@ const CustoInterno = ({ proposta, setProposta }: CustoInternoProps) => {
     setProposta(prev => ({
       ...prev,
       itens: itensRestaurados,
+      custos: custosRestaurados,
       valorTotal: novoValorTotal
     }));
   };

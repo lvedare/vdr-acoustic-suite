@@ -1,291 +1,62 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AppLayout } from "@/components/layout/AppLayout";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AppLayout from './components/layout/AppLayout';
+import Index from './pages/Index';
+import Dashboard from './pages/Dashboard';
+import Cadastros from './pages/Cadastros';
+import Clientes from './pages/Clientes';
+import ProdutosAcabados from './pages/ProdutosAcabados';
+import Estoque from './pages/Estoque';
+import Orcamentos from './pages/Orcamentos';
+import NovoOrcamento from './pages/NovoOrcamento';
+import VisualizarOrcamento from './pages/VisualizarOrcamento';
+import Projetos from './pages/Projetos';
+import Obras from './pages/Obras';
+import Producao from './pages/Producao';
+import Financeiro from './pages/Financeiro';
+import Atendimento from './pages/Atendimento';
+import Relatorios from './pages/Relatorios';
+import AccessRequests from './pages/AccessRequests';
+import Configuracoes from './pages/Configuracoes';
+import NotFound from './pages/NotFound';
+import Login from './pages/Login';
+import PlaceholderPage from './pages/PlaceholderPage';
 
-// Pages
-import Dashboard from "./pages/Dashboard";
-import Login from "./pages/Login";
-import Atendimento from "./pages/Atendimento";
-import PlaceholderPage from "./pages/PlaceholderPage";
-import NotFound from "./pages/NotFound";
-import { useEffect, useState } from "react";
-import AccessRequests from "./pages/AccessRequests";
-import Orcamentos from "./pages/Orcamentos";
-import NovoOrcamento from "./pages/NovoOrcamento";
-import VisualizarOrcamento from "./pages/VisualizarOrcamento";
-import Clientes from "./pages/Clientes";
-import ProdutosAcabados from "./pages/ProdutosAcabados";
-import Producao from "./pages/Producao";
-import Projetos from "./pages/Projetos";
-import Estoque from "./pages/Estoque";
-import Obras from "./pages/Obras";
-import Financeiro from "./pages/Financeiro";
-import Relatorios from "./pages/Relatorios";
-import Cadastros from "./pages/Cadastros";
-import Configuracoes from "./pages/Configuracoes";
+// Toaster
+import { Toaster } from './components/ui/sonner';
 
-const queryClient = new QueryClient();
+import './App.css';
 
-// Protected route component
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: string[];
-}
-
-const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  // Check if the user is logged in
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-  const userRole = localStorage.getItem("userRole");
-  
-  // If not logged in, redirect to the login page
-  if (!isLoggedIn) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  // If requiredRole is specified and user doesn't have the role, redirect to dashboard
-  if (requiredRole && userRole && !requiredRole.includes(userRole)) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
-const App = () => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Add a small delay to prevent flash of login screen
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-vdr-blue">
-        <div className="text-center">
-          <div className="mb-4 flex items-center justify-center">
-            <div className="rounded-md bg-vdr-red p-3">
-              <span className="text-2xl font-bold text-white">VDR</span>
-            </div>
-          </div>
-          <div className="h-2 w-48 overflow-hidden rounded-full bg-blue-200">
-            <div className="animate-pulse h-full w-full bg-white"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public route */}
-            <Route path="/login" element={<Login />} />
-            
-            {/* Protected routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Dashboard />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/atendimento"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Atendimento />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orcamentos"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Orcamentos />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orcamentos/novo"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <NovoOrcamento />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orcamentos/:id"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <VisualizarOrcamento />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/clientes"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Clientes />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/produtos-acabados"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <ProdutosAcabados />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/producao"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Producao />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/projetos"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Projetos />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/estoque"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Estoque />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/obras"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Obras />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/financeiro"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Financeiro />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/relatorios"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Relatorios />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/cadastros"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Cadastros />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/configuracoes"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Configuracoes />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            {/* Rota para solicitações de acesso (apenas Administrador) */}
-            <Route
-              path="/solicitacoes-acesso"
-              element={
-                <ProtectedRoute requiredRole={["administrador"]}>
-                  <AppLayout>
-                    <AccessRequests />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/logout"
-              element={
-                <LogoutRoute />
-              }
-            />
-            
-            {/* Catch-all route for 404 */}
-            <Route
-              path="*"
-              element={
-                <AppLayout>
-                  <NotFound />
-                </AppLayout>
-              }
-            />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <Router>
+      <Toaster position="top-right" />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Index />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="cadastros" element={<Cadastros />} />
+          <Route path="clientes" element={<Clientes />} />
+          <Route path="produtos" element={<ProdutosAcabados />} />
+          <Route path="estoque" element={<Estoque />} />
+          <Route path="orcamentos" element={<Orcamentos />} />
+          <Route path="novo-orcamento" element={<NovoOrcamento />} />
+          <Route path="orcamentos/:id" element={<VisualizarOrcamento />} />
+          <Route path="projetos" element={<Projetos />} />
+          <Route path="obras" element={<Obras />} />
+          <Route path="producao" element={<Producao />} />
+          <Route path="financeiro" element={<Financeiro />} />
+          <Route path="atendimento" element={<Atendimento />} />
+          <Route path="relatorios" element={<Relatorios />} />
+          <Route path="access" element={<AccessRequests />} />
+          <Route path="configuracoes" element={<Configuracoes />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </Router>
   );
-};
-
-// Logout route component
-const LogoutRoute = () => {
-  useEffect(() => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("userRole");
-    window.location.href = "/login";
-  }, []);
-
-  return null;
-};
+}
 
 export default App;

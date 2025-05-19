@@ -1,4 +1,3 @@
-
 // Tipos utilizados no módulo de orçamentos
 export interface ClienteSimplificado {
   id: number;
@@ -24,6 +23,7 @@ export interface CustoProposta {
   id: number;
   descricao: string;
   valor: number;
+  diluido?: boolean; // Indica se o custo está diluído nos itens
 }
 
 export interface Proposta {

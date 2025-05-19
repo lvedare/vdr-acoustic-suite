@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { FileText, Plus, FileDown, Search, Trash, Eye, Edit, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,46 +11,13 @@ import { toast } from "@/components/ui/sonner";
 import { useNavigate } from "react-router-dom";
 
 // Tipos para o Sistema de Orçamento
-interface ClienteSimplificado {
-  id: number;
-  nome: string;
-  email: string;
-  telefone: string;
-  empresa?: string;
-  cnpj?: string;
-}
-
-interface ItemProposta {
-  id: number;
-  codigo: string;
-  descricao: string;
-  unidade: string;
-  quantidade: number;
-  valorUnitario: number;
-  valorTotal: number;
-}
-
-interface CustoProposta {
-  id: number;
-  descricao: string;
-  valor: number;
-}
-
-interface Proposta {
-  id: number;
-  numero: string;
-  data: string;
-  cliente: ClienteSimplificado;
-  status: "rascunho" | "enviada" | "aprovada" | "rejeitada" | "expirada";
-  itens: ItemProposta[];
-  custos: CustoProposta[];
-  observacoes: string;
-  valorTotal: number;
-  formaPagamento: string;
-  prazoEntrega: string;
-  prazoObra: string;
-  validade: string;
-}
+import { 
+  ClienteSimplificado, 
+  ItemProposta, 
+  CustoProposta, 
+  Proposta,
+  formatCurrency
+} from "@/types/orcamento";
 
 // Dados de exemplo
 const clientesExemplo: ClienteSimplificado[] = [
@@ -222,14 +188,6 @@ const Orcamentos = () => {
     }
   };
 
-  // Função para formatar valores monetários
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('pt-BR', { 
-      style: 'currency', 
-      currency: 'BRL' 
-    }).format(value);
-  };
-
   // Função para formatar datas
   const formatDate = (dateString: string): string => {
     const [year, month, day] = dateString.split('-');
@@ -275,14 +233,7 @@ const Orcamentos = () => {
   // Função para criar nova proposta (redirecionando para a página de criação)
   const handleNewProposal = () => {
     toast.info("Redirecionando para a criação de proposta...");
-    // Aqui redirecionaríamos para uma página de criação de proposta
-    // navigate("/orcamentos/novo");
-    // Como essa página ainda não existe, mostraremos um toast
-    setTimeout(() => {
-      toast("Funcionalidade em desenvolvimento", {
-        description: "Esta funcionalidade será implementada em breve."
-      });
-    }, 1000);
+    navigate("/novo-orcamento");
   };
 
   return (
@@ -378,7 +329,7 @@ const Orcamentos = () => {
                                   
                                   <div className="space-y-4 py-4 max-h-[500px] overflow-y-auto">
                                     <div className="space-y-2">
-                                      <h3 className="font-medium">Informações do Cliente</h3>
+                                      <h3 className="font-medium">Informa��ões do Cliente</h3>
                                       <div className="grid grid-cols-2 gap-2 text-sm">
                                         <div>
                                           <span className="font-medium">Nome:</span> {proposta.cliente.nome}
