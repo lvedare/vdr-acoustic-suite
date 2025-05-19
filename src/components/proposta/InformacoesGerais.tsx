@@ -61,12 +61,14 @@ const InformacoesGerais = ({
         <div className="space-y-2">
           <Label htmlFor="cliente">Cliente</Label>
           <Select
-            onValueChange={(value) => handleClienteChange(Number(value))}
+            value={proposta.cliente.id > 0 ? proposta.cliente.id.toString() : "selecionar"}
+            onValueChange={(value) => handleClienteChange(value === "selecionar" ? 0 : Number(value))}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione um cliente" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="selecionar">Selecione um cliente</SelectItem>
               {clientes.map((cliente) => (
                 <SelectItem key={cliente.id} value={cliente.id.toString()}>
                   {cliente.nome} {cliente.empresa && `(${cliente.empresa})`}

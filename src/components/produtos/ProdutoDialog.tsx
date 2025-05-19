@@ -279,13 +279,14 @@ export function ProdutoDialog({
                 <div className="space-y-2">
                   <Label htmlFor="categoria">Categoria *</Label>
                   <Select 
-                    value={novoProduto.categoria}
-                    onValueChange={(value) => setNovoProduto({...novoProduto, categoria: value})}
+                    value={novoProduto.categoria || "selecionar"}
+                    onValueChange={(value) => setNovoProduto({...novoProduto, categoria: value === "selecionar" ? "" : value})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="selecionar">Selecione uma categoria</SelectItem>
                       {categorias.map((cat) => (
                         <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                       ))}
@@ -317,7 +318,7 @@ export function ProdutoDialog({
                 <div className="space-y-2">
                   <Label htmlFor="unidadeMedida">Unidade de Medida</Label>
                   <Select 
-                    value={novoProduto.unidadeMedida}
+                    value={novoProduto.unidadeMedida || "UN"}
                     onValueChange={(value) => setNovoProduto({...novoProduto, unidadeMedida: value})}
                   >
                     <SelectTrigger>
@@ -337,7 +338,7 @@ export function ProdutoDialog({
                 <div className="space-y-2">
                   <Label htmlFor="valorBase">
                     Valor Base (R$)
-                    {composicao.insumos.length > 0 && (
+                    {(novoProduto.composicao?.insumos?.length || 0) > 0 && (
                       <span className="text-xs text-muted-foreground ml-1">(calculado pela composição)</span>
                     )}
                   </Label>
@@ -347,7 +348,7 @@ export function ProdutoDialog({
                     step="0.01"
                     value={novoProduto.valorBase || ""}
                     onChange={(e) => setNovoProduto({...novoProduto, valorBase: Number(e.target.value)})}
-                    disabled={composicao.insumos.length > 0}
+                    disabled={(novoProduto.composicao?.insumos?.length || 0) > 0}
                   />
                 </div>
               </div>
@@ -372,13 +373,14 @@ export function ProdutoDialog({
                   <div>
                     <Label htmlFor="insumo">Selecionar Insumo</Label>
                     <Select 
-                      value={insumoSelecionado?.toString() || ""} 
-                      onValueChange={(v) => setInsumoSelecionado(Number(v))}
+                      value={insumoSelecionado?.toString() || "selecionar"} 
+                      onValueChange={(v) => setInsumoSelecionado(v === "selecionar" ? null : Number(v))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar insumo" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="selecionar">Selecione um insumo</SelectItem>
                         {insumos.map((insumo) => (
                           <SelectItem key={insumo.id} value={insumo.id.toString()}>
                             {insumo.nome} - {formatCurrency(insumo.valorCusto)}

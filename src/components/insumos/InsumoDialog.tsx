@@ -62,13 +62,14 @@ export function InsumoDialog({
             <div className="space-y-2">
               <Label htmlFor="categoria">Categoria *</Label>
               <Select 
-                value={novoInsumo.categoria}
-                onValueChange={(value) => setNovoInsumo({...novoInsumo, categoria: value})}
+                value={novoInsumo.categoria || "selecionar"} 
+                onValueChange={(value) => setNovoInsumo({...novoInsumo, categoria: value === "selecionar" ? "" : value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="selecionar">Selecione uma categoria</SelectItem>
                   {categorias.map((cat) => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
@@ -100,7 +101,7 @@ export function InsumoDialog({
             <div className="space-y-2">
               <Label htmlFor="unidadeMedida">Unidade de Medida</Label>
               <Select 
-                value={novoInsumo.unidadeMedida}
+                value={novoInsumo.unidadeMedida || "UN"}
                 onValueChange={(value) => setNovoInsumo({...novoInsumo, unidadeMedida: value})}
               >
                 <SelectTrigger>
