@@ -1,28 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { FileText, FileDown, Search, Trash, Eye, Edit, Check, MessageSquare, Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MessageSquare } from "lucide-react";
+import { toast } from "sonner";
 
-// Tipos para o Sistema de Orçamento
-import { 
-  ClienteSimplificado, 
-  ItemProposta, 
-  CustoProposta, 
-  Proposta,
-  formatCurrency
-} from "@/types/orcamento";
+// Custom components
+import PropostasSearch from "@/components/orcamento/PropostasSearch";
+import PropostasList from "@/components/orcamento/PropostasList";
+import PropostasFiltradas from "@/components/orcamento/PropostasFiltradas";
+import AtendimentosTab from "@/components/orcamento/AtendimentosTab";
 
+// Types and Utilities
+import { Proposta } from "@/types/orcamento";
 import { gerarNumeroProposta, converterAtendimentoParaProposta } from "@/utils/propostaUtils";
 
 // Dados de exemplo
-const clientesExemplo: ClienteSimplificado[] = [
+const clientesExemplo = [
   {
     id: 1,
     nome: "Rayan Fássio Santos",
@@ -50,7 +44,7 @@ const clientesExemplo: ClienteSimplificado[] = [
 ];
 
 // Propostas iniciais de exemplo
-const propostasIniciais: Proposta[] = [
+const propostasIniciais = [
   {
     id: 1,
     numero: "VDR27.3.20241425.0RO",
@@ -191,7 +185,6 @@ const Orcamentos = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchTermAtendimento, setSearchTermAtendimento] = useState("");
   const [propostas, setPropostas] = useState<Proposta[]>([]);
-  const [selectedAtendimento, setSelectedAtendimento] = useState<any | null>(null);
   const navigate = useNavigate();
 
   // Recuperar propostas do localStorage ou usar o exemplo
@@ -222,56 +215,10 @@ const Orcamentos = () => {
     );
   });
 
-  // Status colors
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "aprovada":
-        return "bg-green-100 text-green-800 border-green-300";
-      case "enviada":
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      case "rejeitada":
-        return "bg-red-100 text-red-800 border-red-300";
-      case "expirada":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
-    }
-  };
-
-  // Status color for atendimentos
-  const getAtendimentoStatusColor = (status: string) => {
-    switch (status) {
-      case "Novo":
-        return "bg-blue-100 text-blue-800";
-      case "Em andamento":
-        return "bg-amber-100 text-amber-800";
-      case "Agendado":
-        return "bg-purple-100 text-purple-800";
-      case "Convertido":
-        return "bg-emerald-100 text-emerald-800";
-      case "Crítico":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   // Função para formatar datas
   const formatDate = (dateString: string): string => {
     const [year, month, day] = dateString.split('-');
     return `${day}/${month}/${year}`;
-  };
-
-  // Função para simular download de PDF
-  const handleDownloadPDF = (proposta: Proposta) => {
-    toast.success(`PDF da proposta ${proposta.numero} sendo gerado...`, {
-      description: "O download começará em instantes.",
-    });
-    
-    // Normalmente aqui iríamos gerar um PDF real, mas para fins de demonstração:
-    setTimeout(() => {
-      toast.success(`PDF da proposta ${proposta.numero} gerado com sucesso!`);
-    }, 2000);
   };
 
   // Função para lidar com a exclusão de proposta
@@ -297,12 +244,6 @@ const Orcamentos = () => {
     
     toast.success(`Status alterado para ${newStatus.toUpperCase()}`);
   };
-  
-  // Função para criar nova proposta (redirecionando para a página de criação)
-  const handleNewProposal = () => {
-    toast.info("Redirecionando para a criação de proposta...");
-    navigate("/novo-orcamento");
-  };
 
   // Função para converter um atendimento em orçamento
   const handleCriarPropostaFromAtendimento = (atendimento: any) => {
@@ -320,7 +261,7 @@ const Orcamentos = () => {
     });
   };
 
-  // Nova função para criar revisão de proposta
+  // Função para criar revisão de proposta
   const handleCriarRevisao = (proposta: Proposta) => {
     // Criar cópia da proposta original
     const revisaoProposta: Proposta = {
@@ -357,18 +298,10 @@ const Orcamentos = () => {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">Gerenciamento de Propostas</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar propostas..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
+          <PropostasSearch 
+            searchTerm={searchTerm} 
+            onSearchChange={(value) => setSearchTerm(value)} 
+          />
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="todas">
@@ -384,568 +317,46 @@ const Orcamentos = () => {
             </TabsList>
             
             <TabsContent value="todas">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[180px]">Número</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPropostas.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                          Nenhuma proposta encontrada
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredPropostas.map((proposta) => (
-                        <TableRow key={proposta.id}>
-                          <TableCell className="font-medium">{proposta.numero}</TableCell>
-                          <TableCell>{proposta.cliente.nome}</TableCell>
-                          <TableCell>{formatDate(proposta.data)}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant="outline" 
-                              className={getStatusColor(proposta.status)}
-                            >
-                              {proposta.status.toUpperCase()}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(proposta.valorTotal)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="outline" size="icon" onClick={() => handleDownloadPDF(proposta)}>
-                                <FileDown className="h-4 w-4" />
-                              </Button>
-                              
-                              {/* Dialog para visualizar proposta */}
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="icon">
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[650px]">
-                                  <DialogHeader>
-                                    <DialogTitle>Detalhes da Proposta</DialogTitle>
-                                    <DialogDescription>
-                                      Proposta {proposta.numero} - {formatDate(proposta.data)}
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  
-                                  <div className="space-y-4 py-4 max-h-[500px] overflow-y-auto">
-                                    <div className="space-y-2">
-                                      <h3 className="font-medium">Informa��ões do Cliente</h3>
-                                      <div className="grid grid-cols-2 gap-2 text-sm">
-                                        <div>
-                                          <span className="font-medium">Nome:</span> {proposta.cliente.nome}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Empresa:</span> {proposta.cliente.empresa || 'N/A'}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">E-mail:</span> {proposta.cliente.email}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Telefone:</span> {proposta.cliente.telefone}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <h3 className="font-medium">Itens da Proposta</h3>
-                                      <Table>
-                                        <TableHeader>
-                                          <TableRow>
-                                            <TableHead className="w-[80px]">Código</TableHead>
-                                            <TableHead>Descrição</TableHead>
-                                            <TableHead>Qtd</TableHead>
-                                            <TableHead className="text-right">Valor Unit.</TableHead>
-                                            <TableHead className="text-right">Valor Total</TableHead>
-                                          </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                          {proposta.itens.map((item) => (
-                                            <TableRow key={item.id}>
-                                              <TableCell>{item.codigo}</TableCell>
-                                              <TableCell className="max-w-[250px] truncate" title={item.descricao}>
-                                                {item.descricao}
-                                              </TableCell>
-                                              <TableCell>{item.quantidade}</TableCell>
-                                              <TableCell className="text-right">
-                                                {formatCurrency(item.valorUnitario)}
-                                              </TableCell>
-                                              <TableCell className="text-right">
-                                                {formatCurrency(item.valorTotal)}
-                                              </TableCell>
-                                            </TableRow>
-                                          ))}
-                                        </TableBody>
-                                      </Table>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <h3 className="font-medium">Informações Comerciais</h3>
-                                      <div className="grid grid-cols-2 gap-2 text-sm">
-                                        <div>
-                                          <span className="font-medium">Forma de Pagamento:</span> {proposta.formaPagamento}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Prazo de Entrega:</span> {proposta.prazoEntrega}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Prazo de Obra:</span> {proposta.prazoObra}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Validade:</span> {proposta.validade}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <h3 className="font-medium">Observações</h3>
-                                      <p className="text-sm whitespace-pre-line">{proposta.observacoes}</p>
-                                    </div>
-                                  </div>
-                                  
-                                  <DialogFooter className="flex justify-between items-center">
-                                    <span className="text-xl font-medium">
-                                      Total: {formatCurrency(proposta.valorTotal)}
-                                    </span>
-                                    <Button onClick={() => handleDownloadPDF(proposta)}>
-                                      <FileDown className="mr-2 h-4 w-4" />
-                                      Download PDF
-                                    </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
-                              
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                onClick={() => navigate(`/novo-orcamento`, { 
-                                  state: { propostaId: proposta.id, isEdit: true } 
-                                })}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              
-                              {/* Novo botão para criar revisão */}
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                onClick={() => handleCriarRevisao(proposta)}
-                                title="Criar revisão"
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                              
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="icon">
-                                    <Check className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Alterar Status</DialogTitle>
-                                    <DialogDescription>
-                                      Selecione o novo status para a proposta {proposta.numero}
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  
-                                  <div className="grid grid-cols-2 gap-2 py-4">
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => {
-                                        handleChangeStatus(proposta.id, "enviada");
-                                        document.querySelector("dialog")?.close();
-                                      }}
-                                      className={`justify-start ${proposta.status === 'enviada' ? 'border-blue-500' : ''}`}
-                                    >
-                                      <Badge variant="outline" className={getStatusColor("enviada")}>ENVIADA</Badge>
-                                    </Button>
-                                    
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => {
-                                        handleChangeStatus(proposta.id, "aprovada");
-                                        document.querySelector("dialog")?.close();
-                                      }}
-                                      className={`justify-start ${proposta.status === 'aprovada' ? 'border-green-500' : ''}`}
-                                    >
-                                      <Badge variant="outline" className={getStatusColor("aprovada")}>APROVADA</Badge>
-                                    </Button>
-                                    
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => {
-                                        handleChangeStatus(proposta.id, "rejeitada");
-                                        document.querySelector("dialog")?.close();
-                                      }}
-                                      className={`justify-start ${proposta.status === 'rejeitada' ? 'border-red-500' : ''}`}
-                                    >
-                                      <Badge variant="outline" className={getStatusColor("rejeitada")}>REJEITADA</Badge>
-                                    </Button>
-                                    
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => {
-                                        handleChangeStatus(proposta.id, "expirada");
-                                        document.querySelector("dialog")?.close();
-                                      }}
-                                      className={`justify-start ${proposta.status === 'expirada' ? 'border-yellow-500' : ''}`}
-                                    >
-                                      <Badge variant="outline" className={getStatusColor("expirada")}>EXPIRADA</Badge>
-                                    </Button>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                              
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="icon">
-                                    <Trash className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Confirmar exclusão</DialogTitle>
-                                    <DialogDescription>
-                                      Tem certeza que deseja excluir a proposta {proposta.numero}?
-                                      Esta ação não pode ser desfeita.
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  
-                                  <DialogFooter>
-                                    <Button
-                                      variant="destructive" 
-                                      onClick={() => {
-                                        handleDelete(proposta.id);
-                                        document.querySelector("dialog")?.close();
-                                      }}
-                                    >
-                                      Excluir
-                                    </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <PropostasList 
+                propostas={filteredPropostas}
+                onDelete={handleDelete}
+                onChangeStatus={handleChangeStatus}
+                onCriarRevisao={handleCriarRevisao}
+                formatDate={formatDate}
+              />
             </TabsContent>
             
-            {/* Tabelas para as outras abas seriam similares mas filtradas pelo status */}
             <TabsContent value="enviadas">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[180px]">Número</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPropostas.filter(p => p.status === 'enviada').length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                          Nenhuma proposta enviada encontrada
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredPropostas
-                        .filter(p => p.status === 'enviada')
-                        .map((proposta) => (
-                          <TableRow key={proposta.id}>
-                            <TableCell className="font-medium">{proposta.numero}</TableCell>
-                            <TableCell>{proposta.cliente.nome}</TableCell>
-                            <TableCell>{formatDate(proposta.data)}</TableCell>
-                            <TableCell>
-                              <Badge 
-                                variant="outline" 
-                                className={getStatusColor(proposta.status)}
-                              >
-                                {proposta.status.toUpperCase()}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(proposta.valorTotal)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button variant="outline" size="icon" onClick={() => handleDownloadPDF(proposta)}>
-                                  <FileDown className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="icon">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="icon">
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <PropostasFiltradas 
+                propostas={filteredPropostas}
+                status="enviada"
+                formatDate={formatDate}
+              />
             </TabsContent>
             
             <TabsContent value="aprovadas">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[180px]">Número</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPropostas.filter(p => p.status === 'aprovada').length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                          Nenhuma proposta aprovada encontrada
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredPropostas
-                        .filter(p => p.status === 'aprovada')
-                        .map((proposta) => (
-                          <TableRow key={proposta.id}>
-                            <TableCell className="font-medium">{proposta.numero}</TableCell>
-                            <TableCell>{proposta.cliente.nome}</TableCell>
-                            <TableCell>{formatDate(proposta.data)}</TableCell>
-                            <TableCell>
-                              <Badge 
-                                variant="outline" 
-                                className={getStatusColor(proposta.status)}
-                              >
-                                {proposta.status.toUpperCase()}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(proposta.valorTotal)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button variant="outline" size="icon" onClick={() => handleDownloadPDF(proposta)}>
-                                  <FileDown className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="icon">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <PropostasFiltradas 
+                propostas={filteredPropostas}
+                status="aprovada"
+                formatDate={formatDate}
+              />
             </TabsContent>
             
             <TabsContent value="rejeitadas">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[180px]">Número</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPropostas.filter(p => p.status === 'rejeitada').length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                          Nenhuma proposta rejeitada encontrada
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredPropostas
-                        .filter(p => p.status === 'rejeitada')
-                        .map((proposta) => (
-                          <TableRow key={proposta.id}>
-                            <TableCell className="font-medium">{proposta.numero}</TableCell>
-                            <TableCell>{proposta.cliente.nome}</TableCell>
-                            <TableCell>{formatDate(proposta.data)}</TableCell>
-                            <TableCell>
-                              <Badge 
-                                variant="outline" 
-                                className={getStatusColor(proposta.status)}
-                              >
-                                {proposta.status.toUpperCase()}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(proposta.valorTotal)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button variant="outline" size="icon" onClick={() => handleDownloadPDF(proposta)}>
-                                  <FileDown className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="icon">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <PropostasFiltradas 
+                propostas={filteredPropostas}
+                status="rejeitada"
+                formatDate={formatDate}
+              />
             </TabsContent>
 
-            {/* New tab for "Atendimentos" */}
-            <TabsContent value="atendimentos" className="mt-4">
-              <div className="space-y-4">
-                <div className="relative w-full">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar atendimentos..."
-                    className="pl-8"
-                    value={searchTermAtendimento}
-                    onChange={(e) => setSearchTermAtendimento(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  {/* Lista de atendimentos */}
-                  <div className="rounded-md border">
-                    <div className="flex flex-col divide-y">
-                      {filteredAtendimentos.length === 0 ? (
-                        <div className="p-4 text-center text-muted-foreground">
-                          Nenhum atendimento encontrado.
-                        </div>
-                      ) : (
-                        filteredAtendimentos.map((atendimento) => (
-                          <div
-                            key={atendimento.id}
-                            className={`cursor-pointer p-4 transition-colors hover:bg-muted/50 ${
-                              selectedAtendimento?.id === atendimento.id
-                                ? "bg-muted/50"
-                                : ""
-                            }`}
-                            onClick={() => setSelectedAtendimento(atendimento)}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="font-medium">{atendimento.cliente}</div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>{atendimento.data}</span>
-                                <span>{atendimento.hora}</span>
-                              </div>
-                            </div>
-                            <div className="mt-1 text-sm">{atendimento.assunto}</div>
-                            <div className="mt-2 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline">{atendimento.canal}</Badge>
-                                <Badge
-                                  className={getAtendimentoStatusColor(atendimento.status)}
-                                  variant="secondary"
-                                >
-                                  {atendimento.status}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Detalhes do atendimento selecionado */}
-                  <div className="rounded-md border">
-                    {selectedAtendimento ? (
-                      <div className="p-4">
-                        <div className="mb-4 flex items-center justify-between">
-                          <h3 className="text-lg font-medium">
-                            Detalhes do Atendimento
-                          </h3>
-                          <Badge
-                            className={getAtendimentoStatusColor(selectedAtendimento.status)}
-                            variant="secondary"
-                          >
-                            {selectedAtendimento.status}
-                          </Badge>
-                        </div>
-
-                        <div className="space-y-4">
-                          <div className="flex flex-col space-y-3">
-                            <div>
-                              <div className="text-sm text-muted-foreground">Cliente</div>
-                              <div className="font-medium">{selectedAtendimento.cliente}</div>
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground">Contato</div>
-                              <div>{selectedAtendimento.contato}</div>
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground">Assunto</div>
-                              <div>{selectedAtendimento.assunto}</div>
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground">Data e Hora</div>
-                              <div>{selectedAtendimento.data} às {selectedAtendimento.hora}</div>
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground">Canal</div>
-                              <Badge variant="outline">{selectedAtendimento.canal}</Badge>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Mensagem</div>
-                            <div className="rounded-md bg-muted p-3 text-sm">
-                              {selectedAtendimento.mensagem}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-6 flex justify-end">
-                          <Button 
-                            className="bg-vdr-blue hover:bg-blue-800"
-                            onClick={() => handleCriarPropostaFromAtendimento(selectedAtendimento)}
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Criar Proposta
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex h-full items-center justify-center p-4 text-muted-foreground">
-                        Selecione um atendimento para ver os detalhes.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+            <TabsContent value="atendimentos">
+              <AtendimentosTab 
+                atendimentos={filteredAtendimentos}
+                searchTerm={searchTermAtendimento}
+                onSearchChange={(value) => setSearchTermAtendimento(value)}
+                onCriarProposta={handleCriarPropostaFromAtendimento}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>
