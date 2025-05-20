@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FileText, Plus, FileDown, Search, Trash, Eye, Edit, Check, MessageSquare } from "lucide-react";
+import { FileText, FileDown, Search, Trash, Eye, Edit, Check, MessageSquare, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Avatar } from "@/components/ui/avatar";
 
 // Tipos para o Sistema de Orçamento
 import { 
@@ -310,26 +309,50 @@ const Orcamentos = () => {
     // Convert service record to proposal
     const novaProposta = converterAtendimentoParaProposta(atendimento);
     
-    // Add to propostas array and save to localStorage
-    const novasPropostas = [...propostas, novaProposta];
+    // Navigate to new proposal page with the atendimento data
+    navigate("/novo-orcamento", {
+      state: { 
+        clienteId: atendimento.clienteId,
+        fromAtendimento: true, 
+        atendimentoId: atendimento.id,
+        atendimento: atendimento
+      }
+    });
+  };
+
+  // Nova função para criar revisão de proposta
+  const handleCriarRevisao = (proposta: Proposta) => {
+    // Criar cópia da proposta original
+    const revisaoProposta: Proposta = {
+      ...proposta,
+      id: Date.now(), // Novo ID para a revisão
+      numero: `${proposta.numero}-REV${new Date().toISOString().slice(0,10)}`, // Adiciona REV ao número
+      data: new Date().toISOString().split('T')[0], // Data atual
+      status: "rascunho" as const, // Inicia como rascunho
+    };
+    
+    // Adicionar a revisão às propostas existentes
+    const novasPropostas = [...propostas, revisaoProposta];
     setPropostas(novasPropostas);
     localStorage.setItem("propostas", JSON.stringify(novasPropostas));
     
-    // Show success message
-    toast.success(`Proposta criada a partir do atendimento com sucesso!`);
+    // Notificar o usuário
+    toast.success(`Revisão da proposta ${proposta.numero} criada com sucesso!`);
     
-    // Navigate to view the proposal
-    navigate(`/orcamentos/${novaProposta.id}`);
+    // Navegar para a edição da nova revisão
+    navigate(`/novo-orcamento`, { 
+      state: { 
+        propostaId: revisaoProposta.id,
+        isRevisao: true,
+        propostaOriginalId: proposta.id
+      } 
+    });
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Orçamentos</h1>
-        <Button onClick={handleNewProposal}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Proposta
-        </Button>
       </div>
 
       <Card>
@@ -403,6 +426,7 @@ const Orcamentos = () => {
                                 <FileDown className="h-4 w-4" />
                               </Button>
                               
+                              {/* Dialog para visualizar proposta */}
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button variant="outline" size="icon">
@@ -504,8 +528,24 @@ const Orcamentos = () => {
                                 </DialogContent>
                               </Dialog>
                               
-                              <Button variant="outline" size="icon">
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                onClick={() => navigate(`/novo-orcamento`, { 
+                                  state: { propostaId: proposta.id, isEdit: true } 
+                                })}
+                              >
                                 <Edit className="h-4 w-4" />
+                              </Button>
+                              
+                              {/* Novo botão para criar revisão */}
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                onClick={() => handleCriarRevisao(proposta)}
+                                title="Criar revisão"
+                              >
+                                <Copy className="h-4 w-4" />
                               </Button>
                               
                               <Dialog>
@@ -893,7 +933,7 @@ const Orcamentos = () => {
                             className="bg-vdr-blue hover:bg-blue-800"
                             onClick={() => handleCriarPropostaFromAtendimento(selectedAtendimento)}
                           >
-                            <Plus className="mr-2 h-4 w-4" />
+                            <FileText className="mr-2 h-4 w-4" />
                             Criar Proposta
                           </Button>
                         </div>

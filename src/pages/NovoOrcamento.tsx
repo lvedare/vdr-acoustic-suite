@@ -25,6 +25,9 @@ const NovoOrcamento = () => {
   const [clientes, setClientes] = useState<ClienteSimplificado[]>([]);
   const [proposta, setProposta] = useState<Proposta>(getPropostaVazia());
   const [produtosAcabados, setProdutosAcabados] = useState<ProdutoAcabado[]>([]);
+  const [isRevision, setIsRevision] = useState(false);
+  const [originalPropostaId, setOriginalPropostaId] = useState<number | null>(null);
+  const [title, setTitle] = useState("Nova Proposta");
 
   // Carregar clientes e produtos do localStorage
   useEffect(() => {
@@ -38,17 +41,58 @@ const NovoOrcamento = () => {
       setProdutosAcabados(JSON.parse(savedProdutos));
     }
 
-    // Verificar se há um cliente pré-selecionado da página de atendimento
-    if (location.state && location.state.clienteId) {
-      const clienteSelecionado = JSON.parse(savedClientes || '[]')
-        .find((c: ClienteSimplificado) => c.id === location.state.clienteId);
+    // Verificar se estamos carregando uma proposta existente para edição ou revisão
+    if (location.state) {
+      const { propostaId, isEdit, isRevisao, propostaOriginalId, clienteId, atendimento } = location.state;
+
+      // Carregar proposta existente para edição
+      if (propostaId) {
+        const propostasExistentes = JSON.parse(localStorage.getItem("propostas") || "[]");
+        const propostaExistente = propostasExistentes.find((p: Proposta) => p.id === propostaId);
+        
+        if (propostaExistente) {
+          setProposta(propostaExistente);
+          
+          if (isEdit) {
+            setTitle("Editar Proposta");
+          }
+          
+          if (isRevisao) {
+            setTitle("Revisão de Proposta");
+            setIsRevision(true);
+            setOriginalPropostaId(propostaOriginalId);
+          }
+        }
+      }
       
-      if (clienteSelecionado) {
-        setProposta(prev => ({
-          ...prev,
-          cliente: clienteSelecionado
-        }));
-        toast.info(`Cliente ${clienteSelecionado.nome} selecionado da tela de atendimento`);
+      // Verificar se há um cliente pré-selecionado da página de atendimento
+      else if (clienteId) {
+        const clienteSelecionado = JSON.parse(savedClientes || '[]')
+          .find((c: ClienteSimplificado) => c.id === clienteId);
+        
+        if (clienteSelecionado) {
+          setProposta(prev => ({
+            ...prev,
+            cliente: clienteSelecionado
+          }));
+          
+          // Verificar se temos dados do atendimento para preencher a proposta
+          if (atendimento) {
+            setTitle(`Nova Proposta (Atendimento #${atendimento.id})`);
+            
+            // Adicionar observações do atendimento
+            if (atendimento.mensagem) {
+              setProposta(prev => ({
+                ...prev,
+                observacoes: `Atendimento: ${atendimento.mensagem}\n\n${prev.observacoes}`
+              }));
+            }
+            
+            toast.info(`Cliente ${clienteSelecionado.nome} selecionado do atendimento`);
+          } else {
+            toast.info(`Cliente ${clienteSelecionado.nome} selecionado`);
+          }
+        }
       }
     }
   }, [location.state]);
@@ -90,13 +134,25 @@ const NovoOrcamento = () => {
     // Recuperar propostas existentes
     const propostasExistentes = JSON.parse(localStorage.getItem("propostas") || "[]");
     
-    // Adicionar nova proposta
-    const novasPropostas = [...propostasExistentes, proposta];
-    
-    // Salvar no localStorage
-    localStorage.setItem("propostas", JSON.stringify(novasPropostas));
-    
-    toast.success("Proposta salva com sucesso!");
+    // Se estamos editando, atualizamos a proposta existente
+    if (location.state?.isEdit) {
+      const novasPropostas = propostasExistentes.map((p: Proposta) => 
+        p.id === proposta.id ? proposta : p
+      );
+      localStorage.setItem("propostas", JSON.stringify(novasPropostas));
+      toast.success("Proposta atualizada com sucesso!");
+    } 
+    // Caso contrário, adicionamos como nova (incluindo revisões)
+    else {
+      const novasPropostas = [...propostasExistentes, proposta];
+      localStorage.setItem("propostas", JSON.stringify(novasPropostas));
+      
+      if (isRevision) {
+        toast.success("Revisão de proposta salva com sucesso!");
+      } else {
+        toast.success("Proposta criada com sucesso!");
+      }
+    }
     
     // Redirecionar para a página de listagem de propostas
     navigate("/orcamentos");
@@ -110,7 +166,7 @@ const NovoOrcamento = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <PropostaHeader 
-          title="Nova Proposta" 
+          title={title}
           onBack={handleCancelar} 
         />
         <PropostaSaveButton onClick={handleSalvarProposta} />
@@ -129,6 +185,14 @@ const NovoOrcamento = () => {
         onSave={handleSalvarProposta} 
         onCancel={handleCancelar} 
       />
+      
+      {isRevision && originalPropostaId && (
+        <div className="bg-amber-50 border border-amber-200 p-3 rounded-md">
+          <p className="text-amber-800 text-sm">
+            Esta é uma revisão da proposta original. A proposta original será mantida para referência.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

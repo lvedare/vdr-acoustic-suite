@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { FileText, Calendar, User, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatarData } from "@/utils/propostaUtils";
-import { converterAtendimentoParaProposta } from "@/utils/propostaUtils";
 import { toast } from "@/components/ui/sonner";
 
 const HistoricoAtendimentos = () => {
@@ -21,29 +20,18 @@ const HistoricoAtendimentos = () => {
     }
   }, []);
 
-  const handleCriarProposta = (atendimento: any) => {
-    // Converter atendimento para proposta
-    const novaProposta = converterAtendimentoParaProposta(atendimento);
-    
-    // Recuperar propostas existentes
-    const propostasExistentes = JSON.parse(localStorage.getItem("propostas") || "[]");
-    
-    // Adicionar nova proposta
-    const novasPropostas = [...propostasExistentes, novaProposta];
-    
-    // Salvar no localStorage
-    localStorage.setItem("propostas", JSON.stringify(novasPropostas));
-    
-    toast.success("Proposta criada com sucesso!");
-    
+  const handleCriarProposta = (atendimento: any) => {    
     // Redirecionar para criar nova proposta com o cliente selecionado
     navigate("/novo-orcamento", {
       state: { 
         clienteId: atendimento.clienteId,
         fromAtendimento: true, 
-        atendimentoId: atendimento.id 
+        atendimentoId: atendimento.id,
+        atendimento: atendimento
       }
     });
+    
+    toast.success("Redirecionando para criar nova proposta");
   };
 
   return (
@@ -91,7 +79,7 @@ const HistoricoAtendimentos = () => {
                     </div>
                   </div>
                   <Button 
-                    variant="outline" 
+                    className="bg-vdr-blue hover:bg-blue-800"
                     size="sm" 
                     onClick={() => handleCriarProposta(atendimento)}
                   >

@@ -41,13 +41,33 @@ export const getPropostaVazia = () => {
 export const converterAtendimentoParaProposta = (atendimento: any) => {
   const propostaBase = getPropostaVazia();
   
-  // Se o atendimento tiver um cliente associado, usá-lo
-  if (atendimento.cliente) {
-    propostaBase.cliente = atendimento.cliente;
+  // Se o atendimento tiver um cliente associado, procurar no localStorage
+  if (atendimento.clienteId) {
+    const clientesString = localStorage.getItem("clientes");
+    if (clientesString) {
+      const clientes = JSON.parse(clientesString);
+      const clienteSelecionado = clientes.find((c: any) => c.id === atendimento.clienteId);
+      
+      if (clienteSelecionado) {
+        propostaBase.cliente = clienteSelecionado;
+      }
+    }
   }
   
-  // Adicionar observação sobre a origem da proposta
-  propostaBase.observacoes = `Proposta gerada a partir do atendimento #${atendimento.id} em ${new Date().toLocaleDateString()}\n\n` + propostaBase.observacoes;
+  // Se não encontrou o cliente pelo ID, mas tem nome de cliente no atendimento
+  if (!propostaBase.cliente.id && atendimento.cliente) {
+    propostaBase.cliente = {
+      ...propostaBase.cliente,
+      nome: atendimento.cliente,
+      telefone: atendimento.contato || "",
+    };
+  }
+  
+  // Adicionar assunto/mensagem do atendimento como observação
+  if (atendimento.mensagem || atendimento.assunto) {
+    const assuntoMensagem = atendimento.mensagem || atendimento.assunto;
+    propostaBase.observacoes = `Atendimento #${atendimento.id} - ${assuntoMensagem}\n\n` + propostaBase.observacoes;
+  }
   
   return propostaBase;
 };
@@ -57,4 +77,3 @@ export const formatarData = (dataString: string) => {
   const data = new Date(dataString);
   return data.toLocaleDateString('pt-BR');
 };
-
