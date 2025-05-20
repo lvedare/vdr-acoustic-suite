@@ -9,7 +9,7 @@ interface PropostaSaveButtonProps {
 
 const PropostaSaveButton = ({ onClick }: PropostaSaveButtonProps) => {
   return (
-    <Button onClick={onClick}>
+    <Button onClick={onClick} className="bg-vdr-blue hover:bg-blue-800">
       <Save className="mr-2 h-4 w-4" />
       Salvar Proposta
     </Button>

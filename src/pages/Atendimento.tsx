@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Phone, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -13,22 +13,42 @@ const Atendimento = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAtendimento, setSelectedAtendimento] = useState(atendimentosData[0]);
   const [isNovoAtendimentoOpen, setIsNovoAtendimentoOpen] = useState(false);
+  const [atendimentos, setAtendimentos] = useState<any[]>(atendimentosData);
   const navigate = useNavigate();
 
+  // Load saved atendimentos
+  useEffect(() => {
+    const savedAtendimentos = localStorage.getItem("atendimentos");
+    if (savedAtendimentos) {
+      const parsedAtendimentos = JSON.parse(savedAtendimentos);
+      setAtendimentos([...atendimentosData, ...parsedAtendimentos]);
+    }
+  }, []);
+
   // Filter atendimentos based on search term
-  const filteredAtendimentos = atendimentosData.filter(
+  const filteredAtendimentos = atendimentos.filter(
     (item) =>
       item.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.assunto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.mensagem.toLowerCase().includes(searchTerm.toLowerCase())
+      (item.mensagem && item.mensagem.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Function to create a new service record
   const handleNovoAtendimento = (data: any) => {
-    // For now we're just showing a success message 
-    // In a real implementation, we would add this to the atendimentos array
+    // Add to existing atendimentos
+    const updatedAtendimentos = [data, ...atendimentos];
+    setAtendimentos(updatedAtendimentos);
+    
+    // Save to localStorage
+    const existingAtendimentos = JSON.parse(localStorage.getItem("atendimentos") || "[]");
+    localStorage.setItem("atendimentos", JSON.stringify([data, ...existingAtendimentos]));
+    
+    // Show success message
     toast.success("Novo atendimento criado com sucesso!");
     setIsNovoAtendimentoOpen(false);
+    
+    // Select the new atendimento
+    setSelectedAtendimento(data);
   };
 
   // Function to register a call
@@ -56,8 +76,14 @@ const Atendimento = () => {
     // Show success message
     toast.success(`Atendimento convertido em orçamento com sucesso!`);
     
-    // Navigate to the new proposal
-    navigate(`/orcamentos/${novaProposta.id}`);
+    // Navigate to the new proposal, passing the client info
+    navigate(`/novo-orcamento`, {
+      state: { 
+        clienteId: atendimento.clienteId,
+        fromAtendimento: true, 
+        atendimentoId: atendimento.id 
+      }
+    });
   };
 
   return (

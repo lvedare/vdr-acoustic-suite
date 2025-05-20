@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 
 // Import types
@@ -21,6 +21,7 @@ import { gerarNumeroProposta, getPropostaVazia } from "@/utils/propostaUtils";
 
 const NovoOrcamento = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [clientes, setClientes] = useState<ClienteSimplificado[]>([]);
   const [proposta, setProposta] = useState<Proposta>(getPropostaVazia());
   const [produtosAcabados, setProdutosAcabados] = useState<ProdutoAcabado[]>([]);
@@ -36,7 +37,21 @@ const NovoOrcamento = () => {
     if (savedProdutos) {
       setProdutosAcabados(JSON.parse(savedProdutos));
     }
-  }, []);
+
+    // Verificar se há um cliente pré-selecionado da página de atendimento
+    if (location.state && location.state.clienteId) {
+      const clienteSelecionado = JSON.parse(savedClientes || '[]')
+        .find((c: ClienteSimplificado) => c.id === location.state.clienteId);
+      
+      if (clienteSelecionado) {
+        setProposta(prev => ({
+          ...prev,
+          cliente: clienteSelecionado
+        }));
+        toast.info(`Cliente ${clienteSelecionado.nome} selecionado da tela de atendimento`);
+      }
+    }
+  }, [location.state]);
   
   // Calcular o valor total quando os itens mudarem
   useEffect(() => {

@@ -15,7 +15,7 @@ const PropostaActions = ({ onSave, onCancel }: PropostaActionsProps) => {
         <ChevronLeft className="mr-2 h-4 w-4" />
         Cancelar
       </Button>
-      <Button onClick={onSave}>
+      <Button className="bg-vdr-blue hover:bg-blue-800" onClick={onSave}>
         <Save className="mr-2 h-4 w-4" />
         Salvar Proposta
       </Button>

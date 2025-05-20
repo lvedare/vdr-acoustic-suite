@@ -36,8 +36,14 @@ const HistoricoAtendimentos = () => {
     
     toast.success("Proposta criada com sucesso!");
     
-    // Redirecionar para editar a proposta
-    navigate(`/orcamentos/${novaProposta.id}`);
+    // Redirecionar para criar nova proposta com o cliente selecionado
+    navigate("/novo-orcamento", {
+      state: { 
+        clienteId: atendimento.clienteId,
+        fromAtendimento: true, 
+        atendimentoId: atendimento.id 
+      }
+    });
   };
 
   return (
@@ -73,15 +79,15 @@ const HistoricoAtendimentos = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{atendimento.cliente?.nome || 'Cliente não informado'}</span>
+                      <span>{atendimento.cliente || 'Cliente não informado'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{formatarData(atendimento.data)}</span>
+                      <span>{atendimento.data || formatarData(new Date().toISOString())}</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <MessageSquare className="h-4 w-4 text-muted-foreground mt-1" />
-                      <p className="text-sm">{atendimento.descricao}</p>
+                      <p className="text-sm">{atendimento.mensagem || atendimento.assunto || 'Sem descrição'}</p>
                     </div>
                   </div>
                   <Button 

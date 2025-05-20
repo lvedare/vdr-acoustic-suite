@@ -34,7 +34,7 @@ const Index = () => {
     
     if (isLoggedIn) {
       // If logged in, navigate to the dashboard
-      navigate("/");
+      navigate("/dashboard");
     } else {
       // If not logged in, redirect to the login page
       navigate("/login");
