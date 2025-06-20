@@ -42,6 +42,352 @@ export type Database = {
         }
         Relationships: []
       }
+      composicao_produtos: {
+        Row: {
+          created_at: string | null
+          id: string
+          insumo_id: string | null
+          observacao: string | null
+          produto_id: string | null
+          quantidade: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insumo_id?: string | null
+          observacao?: string | null
+          produto_id?: string | null
+          quantidade: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insumo_id?: string | null
+          observacao?: string | null
+          produto_id?: string | null
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "composicao_produtos_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "composicao_produtos_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos_acabados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insumos: {
+        Row: {
+          categoria: string
+          codigo: string
+          created_at: string | null
+          data_cadastro: string
+          descricao: string | null
+          fornecedor: string | null
+          id: string
+          nome: string
+          pode_ser_revendido: boolean | null
+          quantidade_estoque: number
+          unidade_medida: string
+          updated_at: string | null
+          valor_custo: number
+        }
+        Insert: {
+          categoria: string
+          codigo: string
+          created_at?: string | null
+          data_cadastro?: string
+          descricao?: string | null
+          fornecedor?: string | null
+          id?: string
+          nome: string
+          pode_ser_revendido?: boolean | null
+          quantidade_estoque?: number
+          unidade_medida: string
+          updated_at?: string | null
+          valor_custo?: number
+        }
+        Update: {
+          categoria?: string
+          codigo?: string
+          created_at?: string | null
+          data_cadastro?: string
+          descricao?: string | null
+          fornecedor?: string | null
+          id?: string
+          nome?: string
+          pode_ser_revendido?: boolean | null
+          quantidade_estoque?: number
+          unidade_medida?: string
+          updated_at?: string | null
+          valor_custo?: number
+        }
+        Relationships: []
+      }
+      movimentacoes_estoque: {
+        Row: {
+          created_at: string | null
+          data_movimentacao: string | null
+          id: string
+          insumo_id: string | null
+          motivo: string
+          observacoes: string | null
+          produto_id: string | null
+          quantidade: number
+          tipo: string
+          usuario: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_movimentacao?: string | null
+          id?: string
+          insumo_id?: string | null
+          motivo: string
+          observacoes?: string | null
+          produto_id?: string | null
+          quantidade: number
+          tipo: string
+          usuario?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_movimentacao?: string | null
+          id?: string
+          insumo_id?: string | null
+          motivo?: string
+          observacoes?: string | null
+          produto_id?: string | null
+          quantidade?: number
+          tipo?: string
+          usuario?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_estoque_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_estoque_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos_acabados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obras: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          data_conclusao: string | null
+          data_inicio: string | null
+          data_previsao: string | null
+          endereco: string
+          id: string
+          nome: string
+          observacoes: string | null
+          projeto_id: string | null
+          status: Database["public"]["Enums"]["obra_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_previsao?: string | null
+          endereco: string
+          id?: string
+          nome: string
+          observacoes?: string | null
+          projeto_id?: string | null
+          status?: Database["public"]["Enums"]["obra_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_previsao?: string | null
+          endereco?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          projeto_id?: string | null
+          status?: Database["public"]["Enums"]["obra_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordens_producao: {
+        Row: {
+          created_at: string | null
+          data_conclusao: string | null
+          data_pedido: string
+          data_previsao: string | null
+          id: string
+          numero: string
+          observacoes: string | null
+          produto_id: string | null
+          quantidade: number
+          status: Database["public"]["Enums"]["producao_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_conclusao?: string | null
+          data_pedido?: string
+          data_previsao?: string | null
+          id?: string
+          numero: string
+          observacoes?: string | null
+          produto_id?: string | null
+          quantidade: number
+          status?: Database["public"]["Enums"]["producao_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_conclusao?: string | null
+          data_pedido?: string
+          data_previsao?: string | null
+          id?: string
+          numero?: string
+          observacoes?: string | null
+          produto_id?: string | null
+          quantidade?: number
+          status?: Database["public"]["Enums"]["producao_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordens_producao_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos_acabados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produtos_acabados: {
+        Row: {
+          categoria: string
+          codigo: string
+          created_at: string | null
+          data_cadastro: string
+          descricao: string | null
+          id: string
+          nome: string
+          quantidade_estoque: number
+          unidade_medida: string
+          updated_at: string | null
+          valor_base: number
+        }
+        Insert: {
+          categoria: string
+          codigo: string
+          created_at?: string | null
+          data_cadastro?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          quantidade_estoque?: number
+          unidade_medida: string
+          updated_at?: string | null
+          valor_base?: number
+        }
+        Update: {
+          categoria?: string
+          codigo?: string
+          created_at?: string | null
+          data_cadastro?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          quantidade_estoque?: number
+          unidade_medida?: string
+          updated_at?: string | null
+          valor_base?: number
+        }
+        Relationships: []
+      }
+      projetos: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          data_conclusao: string | null
+          data_inicio: string | null
+          data_previsao: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          status: Database["public"]["Enums"]["projeto_status"]
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_previsao?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["projeto_status"]
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_previsao?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["projeto_status"]
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projetos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposta_custos: {
         Row: {
           created_at: string | null
@@ -180,6 +526,57 @@ export type Database = {
           },
         ]
       }
+      vendas_produtos: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          data_venda: string
+          id: string
+          observacoes: string | null
+          produto_id: string | null
+          quantidade: number
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data_venda?: string
+          id?: string
+          observacoes?: string | null
+          produto_id?: string | null
+          quantidade: number
+          valor_total: number
+          valor_unitario: number
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data_venda?: string
+          id?: string
+          observacoes?: string | null
+          produto_id?: string | null
+          quantidade?: number
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_produtos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_produtos_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos_acabados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -188,6 +585,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      obra_status: "planejamento" | "em_andamento" | "concluido" | "cancelado"
+      producao_status: "pendente" | "em_andamento" | "concluido" | "cancelado"
+      projeto_status:
+        | "planejamento"
+        | "em_andamento"
+        | "concluido"
+        | "cancelado"
       proposta_status:
         | "rascunho"
         | "enviada"
@@ -309,6 +713,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      obra_status: ["planejamento", "em_andamento", "concluido", "cancelado"],
+      producao_status: ["pendente", "em_andamento", "concluido", "cancelado"],
+      projeto_status: [
+        "planejamento",
+        "em_andamento",
+        "concluido",
+        "cancelado",
+      ],
       proposta_status: [
         "rascunho",
         "enviada",
