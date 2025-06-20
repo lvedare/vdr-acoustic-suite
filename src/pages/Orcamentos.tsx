@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -208,8 +207,8 @@ const Orcamentos = () => {
             </TabsContent>
             
             <TabsContent value="aprovadas">
-              <Pro
-              propostas={filteredPropostas}
+              <PropostasFiltradas 
+                propostas={filteredPropostas}
                 status="aprovada"
                 formatDate={formatDate}
               />
