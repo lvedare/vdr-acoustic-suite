@@ -269,7 +269,7 @@ const Orcamentos = () => {
       id: Date.now(), // Novo ID para a revisão
       numero: `${proposta.numero}-REV${new Date().toISOString().slice(0,10)}`, // Adiciona REV ao número
       data: new Date().toISOString().split('T')[0], // Data atual
-      status: "rascunho" as const, // Inicia como rascunho
+      status: "rascunho", // Inicia como rascunho
     };
     
     // Adicionar a revisão às propostas existentes
