@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -44,13 +45,13 @@ const clientesExemplo = [
 ];
 
 // Propostas iniciais de exemplo
-const propostasIniciais = [
+const propostasIniciais: Proposta[] = [
   {
     id: 1,
     numero: "VDR27.3.20241425.0RO",
     data: "2025-05-07",
     cliente: clientesExemplo[0],
-    status: "enviada",
+    status: "enviada" as const,
     itens: [
       {
         id: 1,
@@ -80,7 +81,7 @@ const propostasIniciais = [
     numero: "VDR27.3.20241426.0RO",
     data: "2025-05-01",
     cliente: clientesExemplo[1],
-    status: "aprovada",
+    status: "aprovada" as const,
     itens: [
       {
         id: 1,
@@ -118,7 +119,7 @@ const propostasIniciais = [
     numero: "VDR27.3.20241427.0RO",
     data: "2025-04-25",
     cliente: clientesExemplo[2],
-    status: "rejeitada",
+    status: "rejeitada" as const,
     itens: [
       {
         id: 1,
@@ -191,7 +192,14 @@ const Orcamentos = () => {
   useEffect(() => {
     const savedPropostas = localStorage.getItem("propostas");
     if (savedPropostas) {
-      setPropostas(JSON.parse(savedPropostas));
+      try {
+        const parsedPropostas = JSON.parse(savedPropostas) as Proposta[];
+        setPropostas(parsedPropostas);
+      } catch (error) {
+        console.error("Erro ao carregar propostas do localStorage:", error);
+        setPropostas(propostasIniciais);
+        localStorage.setItem("propostas", JSON.stringify(propostasIniciais));
+      }
     } else {
       setPropostas(propostasIniciais);
       localStorage.setItem("propostas", JSON.stringify(propostasIniciais));
