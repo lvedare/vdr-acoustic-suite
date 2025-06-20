@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 // Import types
 import { 
@@ -16,26 +16,23 @@ import PropostaHeader from "@/components/proposta/PropostaHeader";
 import PropostaSaveButton from "@/components/proposta/PropostaSaveButton";
 import PropostaActions from "@/components/proposta/PropostaActions";
 
-// Import utilities
+// Import utilities and hooks
 import { gerarNumeroProposta, getPropostaVazia } from "@/utils/propostaUtils";
+import { usePropostas } from "@/hooks/usePropostas";
 
 const NovoOrcamento = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [clientes, setClientes] = useState<ClienteSimplificado[]>([]);
+  const { clientes, atualizarProposta, criarProposta, isCriando, isAtualizando } = usePropostas();
   const [proposta, setProposta] = useState<Proposta>(getPropostaVazia());
   const [produtosAcabados, setProdutosAcabados] = useState<ProdutoAcabado[]>([]);
   const [isRevision, setIsRevision] = useState(false);
   const [originalPropostaId, setOriginalPropostaId] = useState<number | null>(null);
   const [title, setTitle] = useState("Nova Proposta");
+  const [isEdit, setIsEdit] = useState(false);
 
-  // Carregar clientes e produtos do localStorage
+  // Carregar produtos do localStorage
   useEffect(() => {
-    const savedClientes = localStorage.getItem("clientes");
-    if (savedClientes) {
-      setClientes(JSON.parse(savedClientes));
-    }
-
     const savedProdutos = localStorage.getItem("produtosAcabados");
     if (savedProdutos) {
       setProdutosAcabados(JSON.parse(savedProdutos));
@@ -43,32 +40,34 @@ const NovoOrcamento = () => {
 
     // Verificar se estamos carregando uma proposta existente para edição ou revisão
     if (location.state) {
-      const { propostaId, isEdit, isRevisao, propostaOriginalId, clienteId, atendimento } = location.state;
+      const { propostaId, isEdit: editMode, isRevisao, propostaOriginal, propostaOriginalId, clienteId, atendimento } = location.state;
 
       // Carregar proposta existente para edição
-      if (propostaId) {
-        const propostasExistentes = JSON.parse(localStorage.getItem("propostas") || "[]");
-        const propostaExistente = propostasExistentes.find((p: Proposta) => p.id === propostaId);
+      if (propostaId && editMode) {
+        // Buscar proposta nas propostas carregadas pelo hook
+        setIsEdit(true);
+        setTitle("Editar Proposta");
+      }
+      
+      // Carregar dados para revisão
+      else if (propostaOriginal && isRevisao) {
+        const revisaoProposta: Proposta = {
+          ...propostaOriginal,
+          id: Date.now(), // Novo ID para a revisão
+          numero: `${propostaOriginal.numero}-REV${new Date().toISOString().slice(0,10)}`, // Adiciona REV ao número
+          data: new Date().toISOString().split('T')[0], // Data atual
+          status: "rascunho", // Inicia como rascunho
+        };
         
-        if (propostaExistente) {
-          setProposta(propostaExistente);
-          
-          if (isEdit) {
-            setTitle("Editar Proposta");
-          }
-          
-          if (isRevisao) {
-            setTitle("Revisão de Proposta");
-            setIsRevision(true);
-            setOriginalPropostaId(propostaOriginalId);
-          }
-        }
+        setProposta(revisaoProposta);
+        setTitle("Revisão de Proposta");
+        setIsRevision(true);
+        setOriginalPropostaId(propostaOriginalId);
       }
       
       // Verificar se há um cliente pré-selecionado da página de atendimento
       else if (clienteId) {
-        const clienteSelecionado = JSON.parse(savedClientes || '[]')
-          .find((c: ClienteSimplificado) => c.id === clienteId);
+        const clienteSelecionado = clientes.find(c => c.id === clienteId);
         
         if (clienteSelecionado) {
           setProposta(prev => ({
@@ -95,7 +94,7 @@ const NovoOrcamento = () => {
         }
       }
     }
-  }, [location.state]);
+  }, [location.state, clientes]);
   
   // Calcular o valor total quando os itens mudarem
   useEffect(() => {
@@ -118,7 +117,7 @@ const NovoOrcamento = () => {
   };
   
   // Handler para salvar a proposta
-  const handleSalvarProposta = () => {
+  const handleSalvarProposta = async () => {
     // Validar se há itens na proposta
     if (proposta.itens.length === 0) {
       toast.error("Adicione pelo menos um item à proposta");
@@ -131,31 +130,22 @@ const NovoOrcamento = () => {
       return;
     }
     
-    // Recuperar propostas existentes
-    const propostasExistentes = JSON.parse(localStorage.getItem("propostas") || "[]");
-    
-    // Se estamos editando, atualizamos a proposta existente
-    if (location.state?.isEdit) {
-      const novasPropostas = propostasExistentes.map((p: Proposta) => 
-        p.id === proposta.id ? proposta : p
-      );
-      localStorage.setItem("propostas", JSON.stringify(novasPropostas));
-      toast.success("Proposta atualizada com sucesso!");
-    } 
-    // Caso contrário, adicionamos como nova (incluindo revisões)
-    else {
-      const novasPropostas = [...propostasExistentes, proposta];
-      localStorage.setItem("propostas", JSON.stringify(novasPropostas));
-      
-      if (isRevision) {
-        toast.success("Revisão de proposta salva com sucesso!");
+    try {
+      if (isEdit) {
+        // Atualizar proposta existente
+        await atualizarProposta({ id: proposta.id, proposta });
       } else {
-        toast.success("Proposta criada com sucesso!");
+        // Criar nova proposta (incluindo revisões)
+        await criarProposta(proposta);
       }
+      
+      // Redirecionar para a página de listagem de propostas
+      navigate("/orcamentos");
+      
+    } catch (error) {
+      console.error('Erro ao salvar proposta:', error);
+      toast.error("Erro ao salvar proposta");
     }
-    
-    // Redirecionar para a página de listagem de propostas
-    navigate("/orcamentos");
   };
 
   const handleCancelar = () => {
@@ -169,7 +159,10 @@ const NovoOrcamento = () => {
           title={title}
           onBack={handleCancelar} 
         />
-        <PropostaSaveButton onClick={handleSalvarProposta} />
+        <PropostaSaveButton 
+          onClick={handleSalvarProposta} 
+          isLoading={isCriando || isAtualizando}
+        />
       </div>
       
       <PropostaTabs 
@@ -183,7 +176,8 @@ const NovoOrcamento = () => {
       
       <PropostaActions 
         onSave={handleSalvarProposta} 
-        onCancel={handleCancelar} 
+        onCancel={handleCancelar}
+        isLoading={isCriando || isAtualizando}
       />
       
       {isRevision && originalPropostaId && (

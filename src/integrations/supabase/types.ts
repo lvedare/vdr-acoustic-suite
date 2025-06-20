@@ -9,7 +9,177 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      clientes: {
+        Row: {
+          cnpj: string | null
+          created_at: string | null
+          email: string | null
+          empresa: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          empresa?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          empresa?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      proposta_custos: {
+        Row: {
+          created_at: string | null
+          descricao: string
+          diluido: boolean | null
+          id: string
+          proposta_id: string | null
+          valor: number
+        }
+        Insert: {
+          created_at?: string | null
+          descricao: string
+          diluido?: boolean | null
+          id?: string
+          proposta_id?: string | null
+          valor: number
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string
+          diluido?: boolean | null
+          id?: string
+          proposta_id?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposta_custos_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposta_itens: {
+        Row: {
+          codigo: string
+          created_at: string | null
+          descricao: string
+          id: string
+          proposta_id: string | null
+          quantidade: number
+          unidade: string
+          valor_original: number | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          codigo: string
+          created_at?: string | null
+          descricao: string
+          id?: string
+          proposta_id?: string | null
+          quantidade: number
+          unidade: string
+          valor_original?: number | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Update: {
+          codigo?: string
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          proposta_id?: string | null
+          quantidade?: number
+          unidade?: string
+          valor_original?: number | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposta_itens_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      propostas: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          data: string
+          forma_pagamento: string | null
+          id: string
+          numero: string
+          observacoes: string | null
+          prazo_entrega: string | null
+          prazo_obra: string | null
+          status: Database["public"]["Enums"]["proposta_status"]
+          updated_at: string | null
+          validade: string | null
+          valor_total: number
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data: string
+          forma_pagamento?: string | null
+          id?: string
+          numero: string
+          observacoes?: string | null
+          prazo_entrega?: string | null
+          prazo_obra?: string | null
+          status?: Database["public"]["Enums"]["proposta_status"]
+          updated_at?: string | null
+          validade?: string | null
+          valor_total?: number
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data?: string
+          forma_pagamento?: string | null
+          id?: string
+          numero?: string
+          observacoes?: string | null
+          prazo_entrega?: string | null
+          prazo_obra?: string | null
+          status?: Database["public"]["Enums"]["proposta_status"]
+          updated_at?: string | null
+          validade?: string | null
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +188,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      proposta_status:
+        | "rascunho"
+        | "enviada"
+        | "aprovada"
+        | "rejeitada"
+        | "expirada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +308,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      proposta_status: [
+        "rascunho",
+        "enviada",
+        "aprovada",
+        "rejeitada",
+        "expirada",
+      ],
+    },
   },
 } as const
