@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import PropostasSearch from "@/components/orcamento/PropostasSearch";
 import PropostasList from "@/components/orcamento/PropostasList";
 import PropostasFiltradas from "@/components/orcamento/PropostasFiltradas";
 import AtendimentosTab from "@/components/orcamento/AtendimentosTab";
+import PropostasExportButton from "@/components/orcamento/PropostasExportButton";
 
 // Types and Utilities
 import { Proposta } from "@/types/orcamento";
@@ -302,6 +302,7 @@ const Orcamentos = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Orçamentos</h1>
+        <PropostasExportButton propostas={filteredPropostas} />
       </div>
 
       <Card>
