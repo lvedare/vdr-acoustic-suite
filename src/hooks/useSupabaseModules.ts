@@ -1,15 +1,12 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import {
-  insumoService,
-  produtoAcabadoService,
-  projetoService,
-  obraService,
-  ordemProducaoService,
-  movimentacaoEstoqueService,
-  vendaProdutoService
-} from '@/services/supabaseExtendedService';
+import { insumoService } from '@/services/insumoService';
+import { produtoAcabadoService } from '@/services/produtoAcabadoService';
+import { projetoService } from '@/services/projetoService';
+import { obraService } from '@/services/obraService';
+import { ordemProducaoService } from '@/services/ordemProducaoService';
+import { movimentacaoEstoqueService } from '@/services/movimentacaoEstoqueService';
+import { vendaProdutoService } from '@/services/vendaProdutoService';
 
 // Hook para Insumos
 export const useInsumos = () => {
