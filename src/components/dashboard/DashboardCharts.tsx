@@ -1,8 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { usePropostas } from "@/hooks/usePropostas";
 import { useInsumos, useProdutosAcabados, useProjetos, useObras } from "@/hooks/useSupabaseModules";
 
@@ -144,7 +143,7 @@ const DashboardCharts = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -168,7 +167,7 @@ const DashboardCharts = () => {
                   height={70}
                 />
                 <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
+                <Tooltip />
                 <Legend />
                 <Bar dataKey="insumos" name="Insumos" fill={COLORS.primary} />
                 <Bar dataKey="produtos" name="Produtos" fill={COLORS.secondary} />
@@ -190,7 +189,7 @@ const DashboardCharts = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="status" />
                 <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
+                <Tooltip />
                 <Legend />
                 <Bar dataKey="projetos" name="Projetos" fill={COLORS.accent} />
                 <Bar dataKey="obras" name="Obras" fill={COLORS.success} />
@@ -223,8 +222,7 @@ const DashboardCharts = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <ChartTooltip 
-                  content={<ChartTooltipContent />}
+                <Tooltip 
                   formatter={(value: number) => [
                     `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
                     'Valor'
