@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Plus, Search, Trash, Edit } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { 
   ItemProposta, 
   NovoItemInput, 
@@ -164,13 +166,13 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
               />
               <Dialog open={dialogProdutosAberto} onOpenChange={setDialogProdutosAberto}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" title="Selecionar Produto">
                     <Package className="h-4 w-4" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[700px]">
+                <DialogContent className="sm:max-w-[900px] max-h-[80vh]">
                   <DialogHeader>
-                    <DialogTitle>Selecionar Produto Acabado</DialogTitle>
+                    <DialogTitle>Selecionar Produto do Estoque</DialogTitle>
                   </DialogHeader>
                   <div className="py-4">
                     <div className="relative mb-4">
@@ -187,18 +189,19 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Código</TableHead>
+                            <TableHead className="w-[100px]">Código</TableHead>
                             <TableHead>Produto</TableHead>
                             <TableHead>Categoria</TableHead>
-                            <TableHead>Un.</TableHead>
-                            <TableHead>Valor</TableHead>
+                            <TableHead className="w-[80px]">Un.</TableHead>
+                            <TableHead className="w-[100px]">Valor</TableHead>
+                            <TableHead className="w-[80px]">Estoque</TableHead>
                             <TableHead className="w-[100px]"></TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {produtosFiltrados.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={6} className="h-24 text-center">
+                              <TableCell colSpan={7} className="h-24 text-center">
                                 {produtosAcabados.length === 0 
                                   ? "Nenhum produto cadastrado no sistema."
                                   : "Nenhum produto encontrado com o filtro aplicado."
@@ -207,11 +210,13 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
                             </TableRow>
                           ) : (
                             produtosFiltrados.map((produto) => (
-                              <TableRow key={produto.id}>
-                                <TableCell className="font-medium">{produto.codigo}</TableCell>
+                              <TableRow key={produto.id} className="hover:bg-muted/50">
+                                <TableCell className="font-medium">
+                                  <Badge variant="outline">{produto.codigo}</Badge>
+                                </TableCell>
                                 <TableCell>
                                   <div>
-                                    <div>{produto.nome}</div>
+                                    <div className="font-medium">{produto.nome}</div>
                                     {produto.descricao && (
                                       <div className="text-xs text-muted-foreground truncate max-w-xs">
                                         {produto.descricao}
@@ -219,15 +224,26 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
                                     )}
                                   </div>
                                 </TableCell>
-                                <TableCell>{produto.categoria}</TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary">{produto.categoria}</Badge>
+                                </TableCell>
                                 <TableCell>{produto.unidadeMedida}</TableCell>
-                                <TableCell>{formatCurrency(produto.valorBase)}</TableCell>
+                                <TableCell className="font-medium">
+                                  {formatCurrency(produto.valorBase)}
+                                </TableCell>
+                                <TableCell>
+                                  <span className={produto.quantidadeEstoque < 10 ? 'text-red-500 font-medium' : ''}>
+                                    {produto.quantidadeEstoque}
+                                  </span>
+                                </TableCell>
                                 <TableCell>
                                   <Button
                                     size="sm"
                                     onClick={() => handleAdicionarProdutoAcabado(produto)}
+                                    disabled={produto.quantidadeEstoque <= 0}
                                   >
-                                    <Plus className="h-4 w-4 mr-1" /> Selecionar
+                                    <Plus className="h-4 w-4 mr-1" /> 
+                                    {produto.quantidadeEstoque <= 0 ? 'Sem estoque' : 'Selecionar'}
                                   </Button>
                                 </TableCell>
                               </TableRow>
@@ -236,6 +252,12 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
                         </TableBody>
                       </Table>
                     </div>
+                    
+                    {produtosFiltrados.length > 0 && (
+                      <div className="mt-4 text-sm text-muted-foreground">
+                        Encontrados {produtosFiltrados.length} produtos
+                      </div>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -314,14 +336,16 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
               ) : (
                 proposta.itens.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.codigo}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{item.codigo}</Badge>
+                    </TableCell>
                     <TableCell className="max-w-[300px] truncate" title={item.descricao}>
                       {item.descricao}
                     </TableCell>
                     <TableCell>{item.unidade}</TableCell>
                     <TableCell>{item.quantidade}</TableCell>
                     <TableCell>{formatCurrency(item.valorUnitario)}</TableCell>
-                    <TableCell>{formatCurrency(item.valorTotal)}</TableCell>
+                    <TableCell className="font-medium">{formatCurrency(item.valorTotal)}</TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
                         <Button

@@ -1,11 +1,6 @@
 
 import React, { useState } from 'react';
-import { EstoqueSummaryCards } from '@/components/estoque/EstoqueSummaryCards';
-import { EstoqueFilterBar } from '@/components/estoque/EstoqueFilterBar';
-import { EstoqueMateriaisTable } from '@/components/estoque/EstoqueMateriaisTable';
-import { EstoqueBaixoAlert } from '@/components/estoque/EstoqueBaixoAlert';
 import { Package, Layers, Truck } from 'lucide-react';
-import { Material, EstoqueStatus } from '@/types/estoque';
 import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -32,15 +27,6 @@ import {
 import { InsumosProvider, useInsumos } from '@/contexts/InsumosContext';
 import { ProdutosProvider, useProdutos } from '@/contexts/ProdutosContext';
 
-// Mock data
-const mockMateriais: Material[] = [
-  { id: 1, codigo: "MAT001", nome: "Madeira Pinus", descricao: "Madeira tratada tipo Pinus", categoria: "Madeira", unidade: "M²", quantidadeEstoque: 150, estoqueMinimo: 50, valorUnitario: 35.90, fornecedor: "Madeiras Brasil", localizacao: "Dep A-01" },
-  { id: 2, codigo: "MAT002", nome: "Parafuso 4mm", descricao: "Parafuso de fixação 4mm", categoria: "Fixação", unidade: "UN", quantidadeEstoque: 2500, estoqueMinimo: 500, valorUnitario: 0.35, fornecedor: "Parafusos & Cia", localizacao: "Dep B-12" },
-  { id: 3, codigo: "MAT003", nome: "Cola de Madeira", descricao: "Cola especial para madeira", categoria: "Adesivo", unidade: "KG", quantidadeEstoque: 20, estoqueMinimo: 10, valorUnitario: 28.50, fornecedor: "Adesivos Industriais", localizacao: "Dep C-03" },
-  { id: 4, codigo: "MAT004", nome: "Prego 15x15", descricao: "Prego com cabeça 15x15", categoria: "Fixação", unidade: "KG", quantidadeEstoque: 5, estoqueMinimo: 10, valorUnitario: 22.90, fornecedor: "Ferragens Gerais", localizacao: "Dep B-08" },
-  { id: 5, codigo: "MAT005", nome: "Tinta Branca", descricao: "Tinta acrílica branca", categoria: "Pintura", unidade: "L", quantidadeEstoque: 45, estoqueMinimo: 20, valorUnitario: 89.90, fornecedor: "Tintas Premium", localizacao: "Dep D-04" },
-];
-
 // Mock fornecedores
 const mockFornecedores = [
   { id: 1, nome: "Madeiras Brasil", cnpj: "12.345.678/0001-01", telefone: "(11) 1234-5678", email: "contato@madeirasbrasil.com", endereco: "Rua das Árvores, 123", cidade: "São Paulo", uf: "SP", categoria: "Madeira" },
@@ -52,40 +38,6 @@ const mockFornecedores = [
 
 // Select "categorias" options
 const categorias = ['Madeira', 'Fixação', 'Adesivo', 'Pintura', 'Elétrico', 'Hidráulico', 'Ferragem', 'Outros'];
-
-// Function to get status badge style
-const getStatusBadge = (quantidade: number, minimo: number): EstoqueStatus => {
-  if (quantidade <= 0) {
-    return {
-      status: 'Esgotado',
-      badge: 'destructive',
-      texto: 'Esgotado'
-    };
-  } else if (quantidade < minimo) {
-    return {
-      status: 'Baixo',
-      badge: 'warning',
-      texto: 'Estoque Baixo'
-    };
-  } else if (quantidade < minimo * 2) {
-    return {
-      status: 'Regular',
-      badge: 'outline',
-      texto: 'Regular'
-    };
-  } else {
-    return {
-      status: 'Bom',
-      badge: 'secondary',
-      texto: 'Estoque Bom'
-    };
-  }
-};
-
-// Function to get estoque status
-const getEstoqueStatus = (material: { quantidadeEstoque: number, estoqueMinimo: number }) => {
-  return getStatusBadge(material.quantidadeEstoque, material.estoqueMinimo);
-};
 
 // Componente para o fornecedor
 interface Fornecedor {
@@ -692,115 +644,18 @@ const CadastroFornecedoresContent = () => {
   );
 };
 
-// Main component for Estoque module with materials management
+// Main component for Estoque module without materials
 const EstoqueContent = () => {
-  const [materiais, setMateriais] = useState<Material[]>(mockMateriais);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoria, setCategoria] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-  const [paginaAtual, setPaginaAtual] = useState(1);
-  const itensPorPagina = 10;
-  
-  // Filtered materials list
-  const materiaisFiltrados = materiais.filter((material) => {
-    const matchesSearch = material.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         material.codigo.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategoria = categoria ? material.categoria === categoria : true;
-    
-    const materialStatus = getStatusBadge(material.quantidadeEstoque, material.estoqueMinimo).status;
-    const matchesStatus = status ?
-      (status === 'Baixo' && materialStatus === 'Baixo') ||
-      (status === 'Esgotado' && materialStatus === 'Esgotado') ||
-      (status === 'Regular' && materialStatus === 'Regular') ||
-      (status === 'Bom' && materialStatus === 'Bom')
-      : true;
-    
-    return matchesSearch && matchesCategoria && matchesStatus;
-  });
-  
-  // Calculate counts for summary cards
-  const countTotal = materiais.length;
-  const countBaixoEstoque = materiais.filter(mat => mat.quantidadeEstoque < mat.estoqueMinimo && mat.quantidadeEstoque > 0).length;
-  const countEsgotados = materiais.filter(mat => mat.quantidadeEstoque <= 0).length;
-  const countRegular = materiais.filter(mat => mat.quantidadeEstoque >= mat.estoqueMinimo && mat.quantidadeEstoque < mat.estoqueMinimo * 2).length;
-  
-  // Determine pagination
-  const indexInicio = (paginaAtual - 1) * itensPorPagina;
-  const indexFim = paginaAtual * itensPorPagina;
-  const materiaisPaginados = materiaisFiltrados.slice(indexInicio, indexFim);
-  const totalPaginas = Math.ceil(materiaisFiltrados.length / itensPorPagina);
-  
-  // Reset to first page when filters change
-  React.useEffect(() => {
-    setPaginaAtual(1);
-  }, [searchTerm, categoria, status]);
-  
-  // Mock handler for adding new material
-  const handleAddMaterial = () => {
-    toast.success("Funcionalidade de adicionar material será implementada em breve!");
-  };
-  
-  // Filter materials with low stock for the alert
-  const materiaisComBaixoEstoque = materiais.filter(mat => mat.quantidadeEstoque < mat.estoqueMinimo);
-  
   return (
     <>
       <h1 className="text-3xl font-bold mb-6">Gerenciamento de Estoque</h1>
       
-      <EstoqueSummaryCards
-        countTotal={countTotal}
-        countBaixoEstoque={countBaixoEstoque}
-        countEsgotados={countEsgotados}
-        countRegular={countRegular}
-      />
-      
-      <EstoqueBaixoAlert
-        materiaisBaixos={materiaisComBaixoEstoque}
-      />
-      
-      <Tabs defaultValue="materiais" className="mt-6">
+      <Tabs defaultValue="produtos" className="mt-6">
         <TabsList>
-          <TabsTrigger value="materiais">Materiais</TabsTrigger>
           <TabsTrigger value="produtos">Produtos</TabsTrigger>
           <TabsTrigger value="insumos">Insumos</TabsTrigger>
           <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="materiais">
-          <Card className="mt-6">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle>Materiais em Estoque</CardTitle>
-              <Button onClick={handleAddMaterial}>
-                <Plus className="mr-1 h-4 w-4" /> Novo Material
-              </Button>
-            </CardHeader>
-            
-            <CardContent>
-              <EstoqueFilterBar
-                filtroCategoria={categoria}
-                setFiltroCategoria={setCategoria}
-                filtroEstoque={status}
-                setFiltroEstoque={setStatus}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                categorias={categorias}
-              />
-              
-              {materiaisPaginados.length > 0 ? (
-                <EstoqueMateriaisTable
-                  materiaisFiltrados={materiaisPaginados}
-                  getEstoqueStatus={getEstoqueStatus}
-                  formatarMoeda={formatCurrency}
-                />
-              ) : (
-                <div className="text-center py-10 border rounded-md">
-                  <p className="text-muted-foreground">Nenhum material encontrado.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
         
         <TabsContent value="produtos">
           <ProdutosProvider>
