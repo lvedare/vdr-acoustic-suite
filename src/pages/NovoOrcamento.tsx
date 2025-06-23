@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -19,13 +18,18 @@ import PropostaActions from "@/components/proposta/PropostaActions";
 // Import utilities and hooks
 import { gerarNumeroProposta, getPropostaVazia } from "@/utils/propostaUtils";
 import { usePropostas } from "@/hooks/usePropostas";
+import { useClientes, useProdutosAcabados } from "@/hooks/useSupabaseData";
 
 const NovoOrcamento = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { clientes, atualizarProposta, criarProposta, isCriando, isAtualizando } = usePropostas();
+  const { atualizarProposta, criarProposta, isCriando, isAtualizando } = usePropostas();
+  
+  // Hooks para dados do Supabase
+  const { data: clientes = [], isLoading: loadingClientes } = useClientes();
+  const { data: produtosAcabados = [], isLoading: loadingProdutos } = useProdutosAcabados();
+  
   const [proposta, setProposta] = useState<Proposta>(getPropostaVazia());
-  const [produtosAcabados, setProdutosAcabados] = useState<ProdutoAcabado[]>([]);
   const [isRevision, setIsRevision] = useState(false);
   const [originalPropostaId, setOriginalPropostaId] = useState<number | null>(null);
   const [title, setTitle] = useState("Nova Proposta");
@@ -66,7 +70,7 @@ const NovoOrcamento = () => {
       }
       
       // Verificar se há um cliente pré-selecionado da página de atendimento
-      else if (clienteId) {
+      else if (clienteId && clientes.length > 0) {
         const clienteSelecionado = clientes.find(c => c.id === clienteId);
         
         if (clienteSelecionado) {
@@ -151,6 +155,27 @@ const NovoOrcamento = () => {
   const handleCancelar = () => {
     navigate("/orcamentos");
   };
+  
+  // Mostrar loading enquanto carrega dados
+  if (loadingClientes || loadingProdutos) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <PropostaHeader 
+            title="Carregando..."
+            onBack={handleCancelar} 
+          />
+        </div>
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="text-lg font-medium text-muted-foreground">
+              Carregando dados do sistema...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">

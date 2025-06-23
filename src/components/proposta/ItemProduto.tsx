@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Plus, Search, Trash, Edit } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { 
   ItemProposta, 
   NovoItemInput, 
@@ -200,7 +199,10 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
                           {produtosFiltrados.length === 0 ? (
                             <TableRow>
                               <TableCell colSpan={6} className="h-24 text-center">
-                                Nenhum produto encontrado.
+                                {produtosAcabados.length === 0 
+                                  ? "Nenhum produto cadastrado no sistema."
+                                  : "Nenhum produto encontrado com o filtro aplicado."
+                                }
                               </TableCell>
                             </TableRow>
                           ) : (
