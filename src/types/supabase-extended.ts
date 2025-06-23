@@ -1,4 +1,9 @@
 
+import { Database } from '@/integrations/supabase/types';
+
+// Import the cliente type from the main supabase types
+export type SupabaseCliente = Database['public']['Tables']['clientes']['Row'];
+
 // Tipos estendidos para os novos módulos integrados com Supabase
 export interface SupabaseInsumo {
   id: string;

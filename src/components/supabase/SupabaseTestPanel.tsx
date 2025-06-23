@@ -67,6 +67,9 @@ const SupabaseTestPanel = () => {
       tipo: "Tratamento Acústico",
       status: "planejamento" as const,
       cliente_id: clientes.length > 0 ? clientes[0].id.toString() : null,
+      data_inicio: null,
+      data_previsao: null,
+      data_conclusao: null,
       observacoes: "Projeto criado para teste"
     });
   };
@@ -78,6 +81,9 @@ const SupabaseTestPanel = () => {
       status: "planejamento" as const,
       cliente_id: clientes.length > 0 ? clientes[0].id.toString() : null,
       projeto_id: projetos.length > 0 ? projetos[0].id : null,
+      data_inicio: null,
+      data_previsao: null,
+      data_conclusao: null,
       observacoes: "Obra criada para teste"
     });
   };
