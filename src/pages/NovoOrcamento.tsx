@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -35,14 +36,8 @@ const NovoOrcamento = () => {
   const [title, setTitle] = useState("Nova Proposta");
   const [isEdit, setIsEdit] = useState(false);
 
-  // Carregar produtos do localStorage
+  // Verificar se estamos carregando uma proposta existente para edição ou revisão
   useEffect(() => {
-    const savedProdutos = localStorage.getItem("produtosAcabados");
-    if (savedProdutos) {
-      setProdutosAcabados(JSON.parse(savedProdutos));
-    }
-
-    // Verificar se estamos carregando uma proposta existente para edição ou revisão
     if (location.state) {
       const { propostaId, isEdit: editMode, isRevisao, propostaOriginal, propostaOriginalId, clienteId, atendimento } = location.state;
 
