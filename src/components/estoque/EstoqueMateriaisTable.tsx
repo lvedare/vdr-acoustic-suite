@@ -1,11 +1,10 @@
 
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PackagePlus, Pencil } from "lucide-react";
 import { Material, EstoqueStatus } from "@/types/estoque";
 import { formatCurrency } from "@/types/orcamento";
+import { EstoqueActions } from "./EstoqueActions";
 
 interface EstoqueMateriaisTableProps {
   materiaisFiltrados: Material[];
@@ -15,8 +14,10 @@ interface EstoqueMateriaisTableProps {
     texto: string 
   };
   formatarMoeda?: (valor: number) => string;
-  materiais?: Material[]; // For backward compatibility
+  materiais?: Material[];
   getStatusBadge?: (quantidade: number, minimo: number) => EstoqueStatus;
+  onEditMaterial?: (material: Material) => void;
+  onDeleteMaterial?: (material: Material) => void;
 }
 
 export const EstoqueMateriaisTable = ({ 
@@ -24,9 +25,10 @@ export const EstoqueMateriaisTable = ({
   getEstoqueStatus, 
   formatarMoeda,
   materiais,
-  getStatusBadge
+  getStatusBadge,
+  onEditMaterial,
+  onDeleteMaterial
 }: EstoqueMateriaisTableProps) => {
-  // For backward compatibility
   const effectiveMateriais = materiaisFiltrados || materiais || [];
   const effectiveGetStatus = (material: Material) => {
     if (getEstoqueStatus) return getEstoqueStatus(material);
@@ -34,7 +36,6 @@ export const EstoqueMateriaisTable = ({
     return { status: "Desconhecido", badge: "", texto: "Desconhecido" };
   };
   
-  // Use formatCurrency from @/types/orcamento as fallback if formatarMoeda is not provided
   const formatarValor = formatarMoeda || formatCurrency;
 
   return (
@@ -87,22 +88,13 @@ export const EstoqueMateriaisTable = ({
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">{formatarValor(material.valorUnitario)}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        title="Registrar Movimentação"
-                      >
-                        <PackagePlus className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        title="Editar Material"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <EstoqueActions
+                      itemId={material.id.toString()}
+                      itemNome={material.nome}
+                      tipo="insumo"
+                      onEdit={() => onEditMaterial?.(material)}
+                      onDelete={() => onDeleteMaterial?.(material)}
+                    />
                   </TableCell>
                 </TableRow>
               );

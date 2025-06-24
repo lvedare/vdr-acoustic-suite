@@ -1,9 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { SupabaseProdutoAcabado } from "@/types/supabase-extended";
 
 export const produtoAcabadoService = {
-  async listarTodos(): Promise<SupabaseProdutoAcabado[]> {
+  async listarTodos() {
     const { data, error } = await supabase
       .from('produtos_acabados')
       .select('*')
@@ -17,7 +16,7 @@ export const produtoAcabadoService = {
     return data;
   },
 
-  async criar(produto: Omit<SupabaseProdutoAcabado, 'id' | 'created_at' | 'updated_at'>): Promise<SupabaseProdutoAcabado> {
+  async criar(produto: any) {
     const { data, error } = await supabase
       .from('produtos_acabados')
       .insert(produto)
@@ -32,7 +31,7 @@ export const produtoAcabadoService = {
     return data;
   },
 
-  async atualizar(id: string, produto: Partial<SupabaseProdutoAcabado>): Promise<SupabaseProdutoAcabado> {
+  async atualizar(id: string, produto: any) {
     const { data, error } = await supabase
       .from('produtos_acabados')
       .update(produto)
@@ -48,7 +47,7 @@ export const produtoAcabadoService = {
     return data;
   },
 
-  async excluir(id: string): Promise<void> {
+  async excluir(id: string) {
     const { error } = await supabase
       .from('produtos_acabados')
       .delete()
@@ -58,5 +57,41 @@ export const produtoAcabadoService = {
       console.error('Erro ao excluir produto acabado:', error);
       throw error;
     }
+  },
+
+  async adicionarEstoque(id: string, quantidade: number) {
+    const { data, error } = await supabase
+      .from('produtos_acabados')
+      .update({ 
+        quantidade_estoque: supabase.raw(`quantidade_estoque + ${quantidade}`)
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao adicionar estoque:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  async removerEstoque(id: string, quantidade: number) {
+    const { data, error } = await supabase
+      .from('produtos_acabados')
+      .update({ 
+        quantidade_estoque: supabase.raw(`GREATEST(quantidade_estoque - ${quantidade}, 0)`)
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao remover estoque:', error);
+      throw error;
+    }
+
+    return data;
   }
 };
