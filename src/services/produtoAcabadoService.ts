@@ -60,11 +60,23 @@ export const produtoAcabadoService = {
   },
 
   async adicionarEstoque(id: string, quantidade: number) {
+    // Get current stock first
+    const { data: currentData, error: fetchError } = await supabase
+      .from('produtos_acabados')
+      .select('quantidade_estoque')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      console.error('Erro ao buscar estoque atual:', fetchError);
+      throw fetchError;
+    }
+
+    const novaQuantidade = currentData.quantidade_estoque + quantidade;
+
     const { data, error } = await supabase
       .from('produtos_acabados')
-      .update({ 
-        quantidade_estoque: supabase.raw(`quantidade_estoque + ${quantidade}`)
-      })
+      .update({ quantidade_estoque: novaQuantidade })
       .eq('id', id)
       .select()
       .single();
@@ -78,11 +90,23 @@ export const produtoAcabadoService = {
   },
 
   async removerEstoque(id: string, quantidade: number) {
+    // Get current stock first
+    const { data: currentData, error: fetchError } = await supabase
+      .from('produtos_acabados')
+      .select('quantidade_estoque')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      console.error('Erro ao buscar estoque atual:', fetchError);
+      throw fetchError;
+    }
+
+    const novaQuantidade = Math.max(0, currentData.quantidade_estoque - quantidade);
+
     const { data, error } = await supabase
       .from('produtos_acabados')
-      .update({ 
-        quantidade_estoque: supabase.raw(`GREATEST(quantidade_estoque - ${quantidade}, 0)`)
-      })
+      .update({ quantidade_estoque: novaQuantidade })
       .eq('id', id)
       .select()
       .single();

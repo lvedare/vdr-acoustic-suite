@@ -58,5 +58,65 @@ export const insumoService = {
       console.error('Erro ao excluir insumo:', error);
       throw error;
     }
+  },
+
+  async adicionarEstoque(id: string, quantidade: number): Promise<SupabaseInsumo> {
+    // Get current stock first
+    const { data: currentData, error: fetchError } = await supabase
+      .from('insumos')
+      .select('quantidade_estoque')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      console.error('Erro ao buscar estoque atual:', fetchError);
+      throw fetchError;
+    }
+
+    const novaQuantidade = currentData.quantidade_estoque + quantidade;
+
+    const { data, error } = await supabase
+      .from('insumos')
+      .update({ quantidade_estoque: novaQuantidade })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao adicionar estoque:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  async removerEstoque(id: string, quantidade: number): Promise<SupabaseInsumo> {
+    // Get current stock first
+    const { data: currentData, error: fetchError } = await supabase
+      .from('insumos')
+      .select('quantidade_estoque')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      console.error('Erro ao buscar estoque atual:', fetchError);
+      throw fetchError;
+    }
+
+    const novaQuantidade = Math.max(0, currentData.quantidade_estoque - quantidade);
+
+    const { data, error } = await supabase
+      .from('insumos')
+      .update({ quantidade_estoque: novaQuantidade })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao remover estoque:', error);
+      throw error;
+    }
+
+    return data;
   }
 };

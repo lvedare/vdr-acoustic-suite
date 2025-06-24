@@ -35,7 +35,8 @@ export const useMovimentacaoEstoque = () => {
       quantidade: tipo === 'saida' ? -quantidade : quantidade,
       motivo,
       usuario: 'Sistema',
-      observacoes: `Movimentação ${tipo} de estoque`
+      observacoes: `Movimentação ${tipo} de estoque`,
+      data_movimentacao: new Date().toISOString()
     };
 
     await criarMovimentacao.mutateAsync(movimentacao);
@@ -56,7 +57,8 @@ export const useMovimentacaoEstoque = () => {
       quantidade: tipo === 'saida' ? -quantidade : quantidade,
       motivo,
       usuario: 'Sistema',
-      observacoes: `Movimentação ${tipo} de estoque`
+      observacoes: `Movimentação ${tipo} de estoque`,
+      data_movimentacao: new Date().toISOString()
     };
 
     await criarMovimentacao.mutateAsync(movimentacao);
