@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { insumoService } from '@/services/insumoService';
@@ -48,13 +49,13 @@ export const useInsumos = () => {
 
   const excluirInsumoMutation = useMutation({
     mutationFn: insumoService.excluir,
-    onSuccess: () => {
+    onSuccess: (_, insumoId) => {
       queryClient.invalidateQueries({ queryKey: ['insumos'] });
       toast.success('Insumo excluído com sucesso!');
     },
     onError: (error) => {
       console.error('Erro ao excluir insumo:', error);
-      toast.error('Erro ao excluir insumo');
+      toast.error('Erro ao excluir insumo. Verifique se não há dependências.');
     },
   });
 
@@ -117,7 +118,7 @@ export const useProdutosAcabados = () => {
     },
     onError: (error) => {
       console.error('Erro ao excluir produto:', error);
-      toast.error('Erro ao excluir produto');
+      toast.error('Erro ao excluir produto. Verifique se não há dependências.');
     },
   });
 
@@ -180,7 +181,7 @@ export const useProjetos = () => {
     },
     onError: (error) => {
       console.error('Erro ao excluir projeto:', error);
-      toast.error('Erro ao excluir projeto');
+      toast.error('Erro ao excluir projeto. Verifique se não há dependências.');
     },
   });
 
@@ -243,7 +244,7 @@ export const useObras = () => {
     },
     onError: (error) => {
       console.error('Erro ao excluir obra:', error);
-      toast.error('Erro ao excluir obra');
+      toast.error('Erro ao excluir obra. Verifique se não há dependências.');
     },
   });
 
@@ -320,5 +321,41 @@ export const useOrdensProducao = () => {
     isCriando: criarOrdemMutation.isPending,
     isAtualizando: atualizarOrdemMutation.isPending,
     isExcluindo: excluirOrdemMutation.isPending,
+  };
+};
+
+// Hook para Movimentações de Estoque
+export const useMovimentacoesEstoque = () => {
+  const queryClient = useQueryClient();
+
+  const {
+    data: movimentacoes = [],
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ['movimentacoes-estoque'],
+    queryFn: movimentacaoEstoqueService.listarTodas,
+  });
+
+  const criarMovimentacaoMutation = useMutation({
+    mutationFn: movimentacaoEstoqueService.criar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['movimentacoes-estoque'] });
+      queryClient.invalidateQueries({ queryKey: ['insumos'] });
+      queryClient.invalidateQueries({ queryKey: ['produtos-acabados'] });
+      toast.success('Movimentação registrada com sucesso!');
+    },
+    onError: (error) => {
+      console.error('Erro ao criar movimentação:', error);
+      toast.error('Erro ao registrar movimentação');
+    },
+  });
+
+  return {
+    movimentacoes,
+    isLoading,
+    error,
+    criarMovimentacao: criarMovimentacaoMutation.mutate,
+    isCriando: criarMovimentacaoMutation.isPending,
   };
 };

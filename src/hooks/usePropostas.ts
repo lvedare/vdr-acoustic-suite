@@ -28,6 +28,9 @@ export const usePropostas = () => {
     queryFn: clienteService.listarTodos,
   });
 
+  // Propostas aprovadas para integração com outros módulos
+  const propostasAprovadas = propostas.filter(p => p.status === 'aprovada');
+
   // Mutation para criar proposta
   const criarPropostaMutation = useMutation({
     mutationFn: propostaService.criar,
@@ -72,9 +75,13 @@ export const usePropostas = () => {
   const atualizarStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: Proposta['status'] }) =>
       propostaService.atualizarStatus(id, status),
-    onSuccess: () => {
+    onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['propostas'] });
-      toast.success('Status atualizado com sucesso!');
+      if (status === 'aprovada') {
+        toast.success('Proposta aprovada! Agora pode gerar obra e ordem de produção.');
+      } else {
+        toast.success('Status atualizado com sucesso!');
+      }
     },
     onError: (error) => {
       console.error('Erro ao atualizar status:', error);
@@ -82,9 +89,49 @@ export const usePropostas = () => {
     },
   });
 
+  // Função para converter proposta em obra
+  const converterParaObra = (proposta: Proposta) => {
+    if (proposta.status !== 'aprovada') {
+      toast.error('Apenas propostas aprovadas podem ser convertidas em obras');
+      return null;
+    }
+
+    return {
+      nome: `Obra - ${proposta.numero}`,
+      endereco: proposta.observacoes || 'Endereço a definir',
+      cliente_id: proposta.cliente.id.toString(),
+      projeto_id: null,
+      status: 'planejamento' as const,
+      data_inicio: null,
+      data_previsao: null,
+      data_conclusao: null,
+      observacoes: `Obra gerada da proposta ${proposta.numero}`
+    };
+  };
+
+  // Função para converter proposta em ordem de produção
+  const converterParaOrdemProducao = (proposta: Proposta) => {
+    if (proposta.status !== 'aprovada') {
+      toast.error('Apenas propostas aprovadas podem gerar ordens de produção');
+      return [];
+    }
+
+    return proposta.itens.map(item => ({
+      numero: `OP-${proposta.numero}-${item.codigo}`,
+      produto_id: null, // Será definido quando selecionar produto
+      quantidade: item.quantidade,
+      status: 'pendente' as const,
+      data_pedido: new Date().toISOString().split('T')[0],
+      data_previsao: null,
+      data_conclusao: null,
+      observacoes: `OP gerada da proposta ${proposta.numero} - ${item.descricao}`
+    }));
+  };
+
   return {
     // Dados
     propostas,
+    propostasAprovadas,
     clientes,
     isLoading,
     isLoadingClientes,
@@ -96,6 +143,10 @@ export const usePropostas = () => {
     excluirProposta: excluirPropostaMutation.mutate,
     atualizarStatus: atualizarStatusMutation.mutate,
     refetch,
+    
+    // Conversões para outros módulos
+    converterParaObra,
+    converterParaOrdemProducao,
     
     // Estados das mutations
     isCriando: criarPropostaMutation.isPending,

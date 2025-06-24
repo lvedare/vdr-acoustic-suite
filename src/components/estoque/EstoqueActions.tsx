@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PackagePlus, Pencil, Trash2 } from 'lucide-react';
 import { MovimentacaoEstoqueDialog } from './MovimentacaoEstoqueDialog';
+import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
 
 interface EstoqueActionsProps {
   itemId: string;
@@ -10,6 +11,7 @@ interface EstoqueActionsProps {
   tipo: 'produto' | 'insumo';
   onEdit?: () => void;
   onDelete?: () => void;
+  isDeleting?: boolean;
 }
 
 export const EstoqueActions = ({ 
@@ -17,9 +19,22 @@ export const EstoqueActions = ({
   itemNome, 
   tipo, 
   onEdit, 
-  onDelete 
+  onDelete,
+  isDeleting = false
 }: EstoqueActionsProps) => {
   const [isMovimentacaoDialogOpen, setIsMovimentacaoDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (onDelete) {
+      onDelete();
+      setIsDeleteDialogOpen(false);
+    }
+  };
 
   return (
     <>
@@ -48,7 +63,8 @@ export const EstoqueActions = ({
             size="icon"
             title="Excluir"
             className="text-destructive hover:text-destructive"
-            onClick={onDelete}
+            onClick={handleDeleteClick}
+            disabled={isDeleting}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -61,6 +77,15 @@ export const EstoqueActions = ({
         tipo={tipo}
         itemId={itemId}
         itemNome={itemNome}
+      />
+
+      <ConfirmDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        title={`Excluir ${tipo === 'produto' ? 'Produto' : 'Insumo'}`}
+        itemName={itemNome}
+        isLoading={isDeleting}
       />
     </>
   );

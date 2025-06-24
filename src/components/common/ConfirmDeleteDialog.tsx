@@ -9,6 +9,8 @@ interface ConfirmDeleteDialogProps {
   onConfirm: () => void;
   title?: string;
   description?: string;
+  itemName?: string;
+  isLoading?: boolean;
 }
 
 export const ConfirmDeleteDialog: React.FC<ConfirmDeleteDialogProps> = ({
@@ -16,23 +18,29 @@ export const ConfirmDeleteDialog: React.FC<ConfirmDeleteDialogProps> = ({
   onOpenChange,
   onConfirm,
   title = "Excluir item",
-  description = "Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita."
+  description,
+  itemName,
+  isLoading = false
 }) => {
+  const defaultDescription = itemName 
+    ? `Tem certeza que deseja excluir "${itemName}"? Esta ação não pode ser desfeita.`
+    : "Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.";
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            {description}
+            {description || defaultDescription}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={onConfirm}>
-            Excluir
+          <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? "Excluindo..." : "Excluir"}
           </Button>
         </DialogFooter>
       </DialogContent>
