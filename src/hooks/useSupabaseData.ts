@@ -10,7 +10,7 @@ export const useClientes = () => {
     queryFn: async (): Promise<ClienteSimplificado[]> => {
       const data = await clienteService.listarTodos();
       return data.map(cliente => ({
-        id: parseInt(cliente.id.replace(/-/g, '').substring(0, 8), 16),
+        id: parseInt(cliente.id.toString().replace(/-/g, '').substring(0, 8), 16),
         nome: cliente.nome,
         email: cliente.email || '',
         telefone: cliente.telefone || '',
@@ -30,7 +30,7 @@ export const useProdutosAcabados = () => {
       const data = await produtoAcabadoService.listarTodos();
       
       return data.map(produto => ({
-        id: parseInt(produto.id.replace(/-/g, '').substring(0, 8), 16),
+        id: parseInt(produto.id.toString().replace(/-/g, '').substring(0, 8), 16),
         codigo: produto.codigo,
         nome: produto.nome,
         descricao: produto.descricao || '',
