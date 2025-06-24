@@ -86,7 +86,14 @@ export function ObrasList({
 
     const novaObra = converterParaObra(proposta);
     if (novaObra) {
-      criarObra(novaObra);
+      // Buscar o cliente UUID real do Supabase
+      const clienteData = {
+        ...novaObra,
+        cliente_id: proposta.cliente.id.toString()
+      };
+      
+      console.log('Criando obra com dados:', clienteData);
+      criarObra(clienteData);
       setSelectedPropostaId("");
     }
   };

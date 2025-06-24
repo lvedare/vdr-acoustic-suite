@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { OrdemProducaoFromProposta } from "@/components/producao/OrdemProducaoFromProposta";
 
 const ordens = [
   {
@@ -174,6 +175,7 @@ const Producao = () => {
       <Tabs defaultValue="ordens" className="space-y-4">
         <TabsList>
           <TabsTrigger value="ordens">Ordens de Produção</TabsTrigger>
+          <TabsTrigger value="nova-proposta">Nova da Proposta</TabsTrigger>
           <TabsTrigger value="programacao">Programação</TabsTrigger>
           <TabsTrigger value="recursos">Recursos</TabsTrigger>
           <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
@@ -275,6 +277,10 @@ const Producao = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="nova-proposta">
+          <OrdemProducaoFromProposta />
         </TabsContent>
         
         <TabsContent value="programacao">

@@ -128,6 +128,25 @@ export const usePropostas = () => {
     }));
   };
 
+  // Função para converter proposta em projeto
+  const converterParaProjeto = (proposta: Proposta) => {
+    if (proposta.status !== 'aprovada') {
+      toast.error('Apenas propostas aprovadas podem ser convertidas em projetos');
+      return null;
+    }
+
+    return {
+      nome: `Projeto - ${proposta.numero}`,
+      tipo: 'Acústico',
+      cliente_id: proposta.cliente.id.toString(),
+      status: 'planejamento' as const,
+      data_inicio: null,
+      data_previsao: null,
+      data_conclusao: null,
+      observacoes: `Projeto gerado da proposta ${proposta.numero}`
+    };
+  };
+
   return {
     // Dados
     propostas,
@@ -147,6 +166,7 @@ export const usePropostas = () => {
     // Conversões para outros módulos
     converterParaObra,
     converterParaOrdemProducao,
+    converterParaProjeto,
     
     // Estados das mutations
     isCriando: criarPropostaMutation.isPending,
