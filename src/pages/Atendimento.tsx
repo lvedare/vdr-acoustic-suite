@@ -8,6 +8,8 @@ import { converterAtendimentoParaProposta } from "@/utils/propostaUtils";
 import { atendimentosData } from "@/components/atendimento/utils";
 import NovoAtendimentoDialog from "@/components/atendimento/NovoAtendimentoDialog";
 import AtendimentoTabs from "@/components/atendimento/AtendimentoTabs";
+import { AtendimentoKanbanView } from "@/components/atendimento/AtendimentoKanbanView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Atendimento = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,53 +37,71 @@ const Atendimento = () => {
 
   // Function to create a new service record
   const handleNovoAtendimento = (data: any) => {
-    // Add to existing atendimentos
     const updatedAtendimentos = [data, ...atendimentos];
     setAtendimentos(updatedAtendimentos);
     
-    // Save to localStorage
     const existingAtendimentos = JSON.parse(localStorage.getItem("atendimentos") || "[]");
     localStorage.setItem("atendimentos", JSON.stringify([data, ...existingAtendimentos]));
     
-    // Show success message
     toast.success("Novo atendimento criado com sucesso!");
     setIsNovoAtendimentoOpen(false);
-    
-    // Select the new atendimento
     setSelectedAtendimento(data);
+  };
+
+  // Function to delete atendimento
+  const handleDeleteAtendimento = (id: number) => {
+    const updatedAtendimentos = atendimentos.filter(a => a.id !== id);
+    setAtendimentos(updatedAtendimentos);
+    
+    const savedAtendimentos = JSON.parse(localStorage.getItem("atendimentos") || "[]");
+    const filteredSaved = savedAtendimentos.filter((a: any) => a.id !== id);
+    localStorage.setItem("atendimentos", JSON.stringify(filteredSaved));
+    
+    if (selectedAtendimento?.id === id) {
+      setSelectedAtendimento(atendimentos[0]);
+    }
+  };
+
+  // Function to change status
+  const handleChangeStatus = (id: number, newStatus: string) => {
+    const updatedAtendimentos = atendimentos.map(a => 
+      a.id === id ? { ...a, status: newStatus } : a
+    );
+    setAtendimentos(updatedAtendimentos);
+    
+    const savedAtendimentos = JSON.parse(localStorage.getItem("atendimentos") || "[]");
+    const updatedSaved = savedAtendimentos.map((a: any) => 
+      a.id === id ? { ...a, status: newStatus } : a
+    );
+    localStorage.setItem("atendimentos", JSON.stringify(updatedSaved));
   };
 
   // Function to register a call
   const handleRegistrarLigacao = () => {
     toast.success("Formulário de registro de ligação será aberto");
-    // Further implementation would open a form to register the call
   };
 
   // Function to view history
   const handleViewHistory = () => {
     toast.info("Visualizando histórico de atendimentos");
-    // Further implementation would show a detailed history
   };
 
   // Function to convert service to proposal
   const handleConverterEmOrcamento = (atendimento: any) => {
-    // Convert service to proposal
     const novaProposta = converterAtendimentoParaProposta(atendimento);
     
-    // Store the new proposal in localStorage to be accessed in the Orcamentos page
     const propostasAtuais = JSON.parse(localStorage.getItem("propostas") || "[]");
     propostasAtuais.push(novaProposta);
     localStorage.setItem("propostas", JSON.stringify(propostasAtuais));
     
-    // Show success message
     toast.success(`Atendimento convertido em orçamento com sucesso!`);
     
-    // Navigate to the new proposal, passing the client info
     navigate(`/novo-orcamento`, {
       state: { 
         clienteId: atendimento.clienteId,
         fromAtendimento: true, 
-        atendimentoId: atendimento.id 
+        atendimentoId: atendimento.id,
+        atendimento: atendimento
       }
     });
   };
@@ -105,15 +125,33 @@ const Atendimento = () => {
         </div>
       </div>
 
-      <AtendimentoTabs
-        atendimentos={filteredAtendimentos}
-        selectedAtendimento={selectedAtendimento}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onSelectAtendimento={setSelectedAtendimento}
-        onViewHistory={handleViewHistory}
-        onConverterEmOrcamento={handleConverterEmOrcamento}
-      />
+      <Tabs defaultValue="lista" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="lista">Lista de Atendimentos</TabsTrigger>
+          <TabsTrigger value="kanban">Kanban CRM</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="lista">
+          <AtendimentoTabs
+            atendimentos={filteredAtendimentos}
+            selectedAtendimento={selectedAtendimento}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onSelectAtendimento={setSelectedAtendimento}
+            onViewHistory={handleViewHistory}
+            onConverterEmOrcamento={handleConverterEmOrcamento}
+          />
+        </TabsContent>
+
+        <TabsContent value="kanban">
+          <AtendimentoKanbanView
+            atendimentos={filteredAtendimentos}
+            onDeleteAtendimento={handleDeleteAtendimento}
+            onChangeStatus={handleChangeStatus}
+            onConverterEmOrcamento={handleConverterEmOrcamento}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

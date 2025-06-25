@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import PropostasFiltradas from "@/components/orcamento/PropostasFiltradas";
 import AtendimentosTab from "@/components/orcamento/AtendimentosTab";
 import PropostasExportButton from "@/components/orcamento/PropostasExportButton";
 import PropostasMetrics from "@/components/orcamento/PropostasMetrics";
+import { RascunhoTab } from "@/components/orcamento/RascunhoTab";
 
 // Hooks e serviços
 import { usePropostas, useMigrationToSupabase } from "@/hooks/usePropostas";
@@ -97,9 +99,13 @@ const Orcamentos = () => {
     return `${day}/${month}/${year}`;
   };
 
-  // Função para lidar com a exclusão de proposta
-  const handleDelete = (id: number) => {
-    excluirProposta(id);
+  // Função para lidar com a exclusão de proposta - CORRIGIDA
+  const handleDelete = async (id: number) => {
+    try {
+      await excluirProposta(id);
+    } catch (error) {
+      console.error('Erro ao excluir proposta:', error);
+    }
   };
 
   // Função para mudar o status
@@ -109,10 +115,6 @@ const Orcamentos = () => {
 
   // Função para converter um atendimento em orçamento
   const handleCriarPropostaFromAtendimento = (atendimento: any) => {
-    // Convert service record to proposal
-    const novaProposta = converterAtendimentoParaProposta(atendimento);
-    
-    // Navigate to new proposal page with the atendimento data
     navigate("/novo-orcamento", {
       state: { 
         clienteId: atendimento.clienteId,
@@ -125,7 +127,6 @@ const Orcamentos = () => {
 
   // Função para criar revisão de proposta
   const handleCriarRevisao = (proposta: any) => {
-    // Navegar para a página de novo orçamento com dados da proposta original
     navigate(`/novo-orcamento`, { 
       state: { 
         propostaOriginal: proposta,
@@ -176,17 +177,35 @@ const Orcamentos = () => {
           />
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="todas">
+          <Tabs defaultValue="atendimentos">
             <TabsList className="mb-4">
-              <TabsTrigger value="todas">Todas</TabsTrigger>
-              <TabsTrigger value="enviadas">Enviadas</TabsTrigger>
-              <TabsTrigger value="aprovadas">Aprovadas</TabsTrigger>
-              <TabsTrigger value="rejeitadas">Rejeitadas</TabsTrigger>
               <TabsTrigger value="atendimentos">
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Atendimentos
               </TabsTrigger>
+              <TabsTrigger value="rascunhos">Rascunhos</TabsTrigger>
+              <TabsTrigger value="todas">Todas</TabsTrigger>
+              <TabsTrigger value="enviadas">Enviadas</TabsTrigger>
+              <TabsTrigger value="aprovadas">Aprovadas</TabsTrigger>
+              <TabsTrigger value="rejeitadas">Rejeitadas</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="atendimentos">
+              <AtendimentosTab 
+                atendimentos={filteredAtendimentos}
+                searchTerm={searchTermAtendimento}
+                onSearchChange={(value) => setSearchTermAtendimento(value)}
+                onCriarProposta={handleCriarPropostaFromAtendimento}
+              />
+            </TabsContent>
+
+            <TabsContent value="rascunhos">
+              <RascunhoTab
+                propostas={filteredPropostas}
+                onDelete={handleDelete}
+                formatDate={formatDate}
+              />
+            </TabsContent>
             
             <TabsContent value="todas">
               <PropostasList 
@@ -219,15 +238,6 @@ const Orcamentos = () => {
                 propostas={filteredPropostas}
                 status="rejeitada"
                 formatDate={formatDate}
-              />
-            </TabsContent>
-
-            <TabsContent value="atendimentos">
-              <AtendimentosTab 
-                atendimentos={filteredAtendimentos}
-                searchTerm={searchTermAtendimento}
-                onSearchChange={(value) => setSearchTermAtendimento(value)}
-                onCriarProposta={handleCriarPropostaFromAtendimento}
               />
             </TabsContent>
           </Tabs>

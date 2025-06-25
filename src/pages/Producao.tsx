@@ -15,13 +15,19 @@ import {
   Plus,
   Search,
   Filter,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { OrdemProducaoFromProposta } from "@/components/producao/OrdemProducaoFromProposta";
+import { ProducaoDialog } from "@/components/producao/ProducaoDialog";
+import { ConfirmDeleteDialog } from "@/components/common/ConfirmDeleteDialog";
+import { toast } from "sonner";
 
-const ordens = [
+const ordensIniciais = [
   {
     id: "OP-2025-001",
     produto: "Painel Acústico 60mm",
@@ -87,6 +93,11 @@ const ordens = [
 const Producao = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<string | null>(null);
+  const [ordens, setOrdens] = useState(ordensIniciais);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [ordemToDelete, setOrdemToDelete] = useState<any>(null);
+  const [selectedOrdem, setSelectedOrdem] = useState<any>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   
   // Filtrar ordens com base na busca e filtros
   const ordensFiltradas = ordens.filter(ordem => {
@@ -124,14 +135,38 @@ const Producao = () => {
     }
   };
 
+  const handleCreateOrdem = (novaOrdem: any) => {
+    setOrdens(prev => [novaOrdem, ...prev]);
+  };
+
+  const handleDeleteClick = (ordem: any) => {
+    setOrdemToDelete(ordem);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (ordemToDelete) {
+      setOrdens(prev => prev.filter(o => o.id !== ordemToDelete.id));
+      setDeleteDialogOpen(false);
+      setOrdemToDelete(null);
+      toast.success("Ordem de produção excluída com sucesso!");
+    }
+  };
+
+  const handleViewDetails = (ordem: any) => {
+    setSelectedOrdem(ordem);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleEditOrdem = (ordem: any) => {
+    toast.info(`Edição da ordem ${ordem.id} será implementada em breve`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-bold">Produção</h1>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Ordem de Produção
-        </Button>
+        <ProducaoDialog onCreateOrdem={handleCreateOrdem} />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -240,9 +275,33 @@ const Producao = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
-                              Detalhes
-                            </Button>
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleViewDetails(ordem)}
+                                title="Ver detalhes"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleEditOrdem(ordem)}
+                                title="Editar"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleDeleteClick(ordem)}
+                                className="text-destructive hover:text-destructive"
+                                title="Excluir"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -340,6 +399,14 @@ const Producao = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <ConfirmDeleteDialog
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Ordem de Produção"
+        itemName={ordemToDelete?.id}
+      />
     </div>
   );
 };

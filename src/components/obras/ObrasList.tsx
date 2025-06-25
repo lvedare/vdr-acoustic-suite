@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { FileText, MapPin, Calendar, Trash2, Plus } from "lucide-react";
+import { FileText, MapPin, Calendar, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -86,7 +86,6 @@ export function ObrasList({
 
     const novaObra = converterParaObra(proposta);
     if (novaObra) {
-      // Buscar o cliente UUID real do Supabase
       const clienteData = {
         ...novaObra,
         cliente_id: proposta.cliente.id.toString()
@@ -122,7 +121,7 @@ export function ObrasList({
           disabled={!selectedPropostaId || isCriando}
           className="mt-6"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <FileText className="h-4 w-4 mr-2" />
           {isCriando ? "Criando..." : "Criar Obra"}
         </Button>
       </div>

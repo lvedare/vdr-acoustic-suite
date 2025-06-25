@@ -1,7 +1,10 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { 
   ItemProposta, 
   NovoItemInput, 
@@ -12,6 +15,7 @@ import { ItemForm } from "./ItemForm";
 import { ItemsTable } from "./ItemsTable";
 import { ItemEditDialog } from "./ItemEditDialog";
 import { ProdutoSelectionDialog } from "./ProdutoSelectionDialog";
+import { useProdutosAcabados } from "@/hooks/useSupabaseModules";
 
 interface ItemProdutoProps {
   proposta: Proposta;
@@ -20,6 +24,9 @@ interface ItemProdutoProps {
 }
 
 const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoProps) => {
+  const navigate = useNavigate();
+  const { produtos: produtosEstoque, isLoading: loadingProdutos } = useProdutosAcabados();
+  
   const [novoItem, setNovoItem] = useState<NovoItemInput>({
     codigo: "",
     descricao: "",
@@ -32,6 +39,9 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [filtroProduto, setFiltroProduto] = useState("");
   const [dialogProdutosAberto, setDialogProdutosAberto] = useState(false);
+
+  // Usar apenas produtos que estão no estoque
+  const produtosDisponiveis = produtosEstoque.filter(produto => produto.quantidade_estoque > 0);
 
   const handleAdicionarItem = () => {
     if (!novoItem.codigo || !novoItem.descricao || novoItem.quantidade <= 0 || novoItem.valorUnitario <= 0) {
@@ -64,13 +74,13 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
     toast.success("Item adicionado com sucesso!");
   };
 
-  const handleAdicionarProdutoAcabado = (produto: ProdutoAcabado) => {
+  const handleAdicionarProdutoAcabado = (produto: any) => {
     setNovoItem({
       codigo: produto.codigo,
       descricao: produto.nome,
-      unidade: produto.unidadeMedida,
+      unidade: produto.unidade_medida,
       quantidade: 1,
-      valorUnitario: produto.valorBase
+      valorUnitario: produto.valor_base
     });
 
     setDialogProdutosAberto(false);
@@ -114,12 +124,42 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
     toast.success("Item removido com sucesso!");
   };
 
+  const handleIrParaCadastroPA = () => {
+    navigate("/estoque", { state: { activeTab: "produtos" } });
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Itens da Proposta</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Itens da Proposta</CardTitle>
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={handleIrParaCadastroPA}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Cadastrar Novo PA
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+          <div className="flex-1">
+            <p className="text-sm font-medium">Produtos disponíveis no estoque:</p>
+            <p className="text-sm text-muted-foreground">
+              {loadingProdutos ? "Carregando..." : `${produtosDisponiveis.length} produtos com estoque disponível`}
+            </p>
+          </div>
+          <Button 
+            onClick={() => setDialogProdutosAberto(true)}
+            disabled={loadingProdutos || produtosDisponiveis.length === 0}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Selecionar do Estoque
+          </Button>
+        </div>
+
         <ItemForm
           novoItem={novoItem}
           onItemChange={setNovoItem}
@@ -137,7 +177,7 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
         <ProdutoSelectionDialog
           isOpen={dialogProdutosAberto}
           onOpenChange={setDialogProdutosAberto}
-          produtos={produtosAcabados}
+          produtos={produtosDisponiveis}
           filtroProduto={filtroProduto}
           onFilterChange={setFiltroProduto}
           onSelectProduto={handleAdicionarProdutoAcabado}
