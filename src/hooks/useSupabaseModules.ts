@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { insumoService } from '@/services/insumoService';
@@ -321,6 +320,27 @@ export const useOrdensProducao = () => {
     isCriando: criarOrdemMutation.isPending,
     isAtualizando: atualizarOrdemMutation.isPending,
     isExcluindo: excluirOrdemMutation.isPending,
+  };
+};
+
+// Hook para serviços de Ordem de Produção (versão service)
+export const useOrdemProducaoService = () => {
+  const queryClient = useQueryClient();
+
+  const criarOrdemMutation = useMutation({
+    mutationFn: ordemProducaoService.criar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ordens-producao'] });
+    },
+    onError: (error) => {
+      console.error('Erro ao criar ordem de produção:', error);
+      throw error;
+    },
+  });
+
+  return {
+    criarOrdem: criarOrdemMutation.mutateAsync,
+    isCriando: criarOrdemMutation.isPending,
   };
 };
 
