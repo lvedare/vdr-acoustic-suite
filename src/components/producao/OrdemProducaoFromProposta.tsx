@@ -1,134 +1,161 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Package } from 'lucide-react';
-import { usePropostas } from '@/hooks/usePropostas';
-import { useOrdensProducao, useProdutosAcabados } from '@/hooks/useSupabaseModules';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Eye, Plus, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
+import { formatCurrency } from "@/types/orcamento";
+import { usePropostas } from "@/hooks/usePropostas";
+import { useOrdemProducaoService } from "@/hooks/useSupabaseModules";
 
-export const OrdemProducaoFromProposta = () => {
-  const [selectedPropostaId, setSelectedPropostaId] = useState<string>("");
-  const [selectedProdutoId, setSelectedProdutoId] = useState<string>("");
-  
-  const { propostasAprovadas, converterParaOrdemProducao } = usePropostas();
-  const { criarOrdem, isCriando } = useOrdensProducao();
-  const { produtos } = useProdutosAcabados();
+export function OrdemProducaoFromProposta() {
+  const { propostasAprovadas, isLoading } = usePropostas();
+  const { criarOrdem } = useOrdemProducaoService();
+  const [expandedPropostaId, setExpandedPropostaId] = useState<number | null>(null);
 
-  const handleCriarOrdemProducao = () => {
-    if (!selectedPropostaId) {
-      toast.error('Selecione uma proposta aprovada');
-      return;
-    }
-
-    const proposta = propostasAprovadas.find(p => p.id.toString() === selectedPropostaId);
-    if (!proposta) {
-      toast.error('Proposta não encontrada');
-      return;
-    }
-
-    const ordensProducao = converterParaOrdemProducao(proposta);
-    
-    if (ordensProducao.length === 0) {
-      toast.error('Nenhuma ordem de produção pode ser gerada desta proposta');
-      return;
-    }
-
-    // Se um produto específico foi selecionado, criar apenas uma ordem para ele
-    if (selectedProdutoId) {
-      const produto = produtos.find(p => p.id === selectedProdutoId);
-      if (produto) {
-        const ordemEspecifica = {
-          ...ordensProducao[0],
-          produto_id: selectedProdutoId,
-          numero: `OP-${proposta.numero}-${produto.codigo}`,
-          observacoes: `OP para ${produto.nome} da proposta ${proposta.numero}`
+  const handleGerarOrdemProducao = async (proposta: any) => {
+    try {
+      for (const item of proposta.itens) {
+        const ordem = {
+          numero: `OP-${proposta.numero}-${item.codigo}`,
+          produto_id: null, // Será definido depois ao selecionar o produto
+          quantidade: item.quantidade,
+          status: 'pendente' as const,
+          data_pedido: new Date().toISOString().split('T')[0],
+          data_previsao: null,
+          data_conclusao: null,
+          observacoes: `OP gerada da proposta ${proposta.numero} - ${item.descricao}\nCliente: ${proposta.cliente.nome}`
         };
-        criarOrdem(ordemEspecifica);
+        
+        await criarOrdem(ordem);
       }
-    } else {
-      // Criar uma ordem para cada item da proposta
-      ordensProducao.forEach((ordem, index) => {
-        setTimeout(() => {
-          criarOrdem(ordem);
-        }, index * 100); // Delay pequeno entre criações para evitar conflitos
-      });
+      
+      toast.success(`${proposta.itens.length} ordem(ns) de produção criada(s) com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao criar ordens de produção:', error);
+      toast.error('Erro ao criar ordens de produção');
     }
-
-    setSelectedPropostaId("");
-    setSelectedProdutoId("");
   };
 
-  const propostaSelecionada = propostasAprovadas.find(p => p.id.toString() === selectedPropostaId);
+  const toggleExpanded = (propostaId: number) => {
+    setExpandedPropostaId(expandedPropostaId === propostaId ? null : propostaId);
+  };
+
+  const formatDate = (dateString: string): string => {
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="text-lg font-medium text-muted-foreground">
+              Carregando propostas aprovadas...
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <Package className="mr-2 h-5 w-5" />
-          Criar Ordem de Produção a partir de Proposta
+        <CardTitle className="flex items-center gap-2">
+          <CheckCircle className="h-5 w-5 text-green-600" />
+          Criar Ordem de Produção
         </CardTitle>
+        <CardDescription>
+          Selecione uma proposta aprovada para gerar ordens de produção
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <label className="text-sm font-medium">Proposta Aprovada:</label>
-          <Select value={selectedPropostaId} onValueChange={setSelectedPropostaId}>
-            <SelectTrigger className="w-full mt-1">
-              <SelectValue placeholder="Selecione uma proposta aprovada" />
-            </SelectTrigger>
-            <SelectContent>
-              {propostasAprovadas.map((proposta) => (
-                <SelectItem key={proposta.id} value={proposta.id.toString()}>
-                  {proposta.numero} - {proposta.cliente.nome} (R$ {proposta.valorTotal.toFixed(2)})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {propostaSelecionada && (
-          <div>
-            <label className="text-sm font-medium">Produto (opcional - deixe vazio para criar para todos os itens):</label>
-            <Select value={selectedProdutoId} onValueChange={setSelectedProdutoId}>
-              <SelectTrigger className="w-full mt-1">
-                <SelectValue placeholder="Selecione um produto específico (opcional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos os itens da proposta</SelectItem>
-                {produtos.map((produto) => (
-                  <SelectItem key={produto.id} value={produto.id}>
-                    {produto.codigo} - {produto.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <CardContent>
+        {propostasAprovadas.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="text-muted-foreground">
+              Nenhuma proposta aprovada encontrada.
+            </div>
+            <div className="text-sm text-muted-foreground mt-2">
+              Aprove propostas na seção de Orçamentos para gerar ordens de produção.
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {propostasAprovadas.map((proposta) => (
+              <div key={proposta.id} className="border rounded-lg">
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold">{proposta.numero}</h3>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        APROVADA
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      <span className="font-medium">Cliente:</span> {proposta.cliente.nome}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <span className="font-medium">Data:</span> {formatDate(proposta.data)} | 
+                      <span className="font-medium"> Valor:</span> {formatCurrency(proposta.valorTotal)} |
+                      <span className="font-medium"> Itens:</span> {proposta.itens.length}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleExpanded(proposta.id)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      {expandedPropostaId === proposta.id ? 'Ocultar' : 'Ver Itens'}
+                    </Button>
+                    <Button
+                      onClick={() => handleGerarOrdemProducao(proposta)}
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Gerar OP
+                    </Button>
+                  </div>
+                </div>
+                
+                {expandedPropostaId === proposta.id && (
+                  <div className="border-t bg-muted/50">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Código</TableHead>
+                          <TableHead>Descrição</TableHead>
+                          <TableHead>Quantidade</TableHead>
+                          <TableHead>Unidade</TableHead>
+                          <TableHead className="text-right">Valor Unit.</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {proposta.itens.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.codigo}</TableCell>
+                            <TableCell>{item.descricao}</TableCell>
+                            <TableCell>{item.quantidade}</TableCell>
+                            <TableCell>{item.unidade}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(item.valorUnitario)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(item.valorTotal)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
-
-        {propostaSelecionada && (
-          <div className="p-3 bg-muted rounded-lg">
-            <h4 className="font-medium text-sm mb-2">Itens da proposta:</h4>
-            <ul className="text-sm space-y-1">
-              {propostaSelecionada.itens.map((item, index) => (
-                <li key={index} className="flex justify-between">
-                  <span>{item.descricao}</span>
-                  <span>Qtd: {item.quantidade}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <Button 
-          onClick={handleCriarOrdemProducao}
-          disabled={!selectedPropostaId || isCriando}
-          className="w-full"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {isCriando ? "Criando..." : "Criar Ordem(s) de Produção"}
-        </Button>
       </CardContent>
     </Card>
   );
-};
+}

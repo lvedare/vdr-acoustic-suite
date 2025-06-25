@@ -11,7 +11,7 @@ import {
 import {
   BarChart3,
   Building2,
-  ClipboardList,
+  Calendar,
   FileText,
   Hammer,
   HomeIcon,
@@ -87,6 +87,9 @@ export function AppSidebar() {
           <SidebarItem to="/clientes" icon={User2}>
             Clientes
           </SidebarItem>
+          <SidebarItem to="/cronograma" icon={Calendar}>
+            Cronograma
+          </SidebarItem>
         </div>
 
         <Separator className="my-4 bg-sidebar-border" />
@@ -95,14 +98,11 @@ export function AppSidebar() {
           <SidebarItem to="/producao" icon={Hammer}>
             Produção
           </SidebarItem>
-          <SidebarItem to="/projetos" icon={ClipboardList}>
-            Projetos
+          <SidebarItem to="/obras" icon={Building2}>
+            Obras
           </SidebarItem>
           <SidebarItem to="/estoque" icon={Package}>
             Estoque
-          </SidebarItem>
-          <SidebarItem to="/obras" icon={Building2}>
-            Obras
           </SidebarItem>
         </div>
 

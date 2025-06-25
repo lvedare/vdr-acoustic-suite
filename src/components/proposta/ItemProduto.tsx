@@ -30,20 +30,35 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
   const [filtroProduto, setFiltroProduto] = useState("");
   const [dialogProdutosAberto, setDialogProdutosAberto] = useState(false);
 
-  // Convert Supabase products to the expected format
+  // Convert Supabase products to the expected format - APENAS COM ESTOQUE
   const produtosDisponiveis: ProdutoAcabado[] = produtosEstoque
-    .filter(produto => produto.quantidade_estoque > 0)
-    .map(produto => ({
-      id: parseInt(produto.id.toString().replace(/-/g, '').substring(0, 8), 16),
-      codigo: produto.codigo,
-      nome: produto.nome,
-      descricao: produto.descricao || "",
-      categoria: produto.categoria,
-      unidadeMedida: produto.unidade_medida,
-      valorBase: produto.valor_base,
-      quantidadeEstoque: produto.quantidade_estoque,
-      dataCadastro: produto.data_cadastro
-    }));
+    .filter(produto => produto.quantidade_estoque > 0) // FILTRO APENAS PRODUTOS COM ESTOQUE
+    .map(produto => {
+      // Gerar ID numérico baseado no hash do UUID
+      let numericId = 0;
+      if (produto.id) {
+        const str = produto.id.toString();
+        for (let i = 0; i < str.length; i++) {
+          numericId = ((numericId << 5) - numericId + str.charCodeAt(i)) & 0xffffffff;
+        }
+        numericId = Math.abs(numericId);
+      }
+      
+      return {
+        id: numericId,
+        codigo: produto.codigo || `COD-${numericId}`,
+        nome: produto.nome || "Produto sem nome",
+        descricao: produto.descricao || "",
+        categoria: produto.categoria || "Sem categoria",
+        unidadeMedida: produto.unidade_medida || "un",
+        valorBase: Number(produto.valor_base) || 0,
+        quantidadeEstoque: produto.quantidade_estoque || 0,
+        dataCadastro: produto.data_cadastro || new Date().toISOString().split('T')[0]
+      };
+    });
+
+  console.log('Produtos do estoque (Supabase):', produtosEstoque);
+  console.log('Produtos disponíveis (formatados):', produtosDisponiveis);
 
   const handleAdicionarProdutoAcabado = (produto: ProdutoAcabado) => {
     const novoItem: ItemProposta = {

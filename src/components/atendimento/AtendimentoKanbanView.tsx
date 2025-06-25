@@ -97,6 +97,7 @@ export function AtendimentoKanbanView({
                             variant="ghost" 
                             size="sm"
                             onClick={() => onConverterEmOrcamento(atendimento)}
+                            title="Criar Proposta"
                           >
                             <FileText className="h-3 w-3" />
                           </Button>
@@ -105,6 +106,7 @@ export function AtendimentoKanbanView({
                             size="sm"
                             onClick={() => handleDeleteClick(atendimento)}
                             className="text-red-600 hover:text-red-700"
+                            title="Excluir Atendimento"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>

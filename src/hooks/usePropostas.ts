@@ -58,15 +58,21 @@ export const usePropostas = () => {
     },
   });
 
-  // Mutation para excluir proposta
+  // Mutation para excluir proposta - CORRIGIDA
   const excluirPropostaMutation = useMutation({
-    mutationFn: propostaService.excluir,
-    onSuccess: () => {
+    mutationFn: async (id: number) => {
+      console.log('Excluindo proposta ID:', id);
+      const result = await propostaService.excluir(id);
+      console.log('Resultado da exclusão:', result);
+      return result;
+    },
+    onSuccess: (_, id) => {
+      console.log('Proposta excluída com sucesso, ID:', id);
       queryClient.invalidateQueries({ queryKey: ['propostas'] });
       toast.success('Proposta excluída com sucesso!');
     },
-    onError: (error) => {
-      console.error('Erro ao excluir proposta:', error);
+    onError: (error, id) => {
+      console.error('Erro ao excluir proposta ID:', id, 'Erro:', error);
       toast.error('Erro ao excluir proposta');
     },
   });
@@ -159,7 +165,7 @@ export const usePropostas = () => {
     // Ações
     criarProposta: criarPropostaMutation.mutate,
     atualizarProposta: atualizarPropostaMutation.mutate,
-    excluirProposta: excluirPropostaMutation.mutate,
+    excluirProposta: excluirPropostaMutation.mutate, // Função corrigida
     atualizarStatus: atualizarStatusMutation.mutate,
     refetch,
     
