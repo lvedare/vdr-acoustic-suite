@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Eye, Plus, CheckCircle } from "lucide-react";
+import { Eye, Plus, CheckCircle, User } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/types/orcamento";
 import { usePropostas } from "@/hooks/usePropostas";
@@ -17,25 +17,24 @@ export function OrdemProducaoFromProposta() {
 
   const handleGerarOrdemProducao = async (proposta: any) => {
     try {
-      for (const item of proposta.itens) {
-        const ordem = {
-          numero: `OP-${proposta.numero}-${item.codigo}`,
-          produto_id: null, // Será definido depois ao selecionar o produto
-          quantidade: item.quantidade,
-          status: 'pendente' as const,
-          data_pedido: new Date().toISOString().split('T')[0],
-          data_previsao: null,
-          data_conclusao: null,
-          observacoes: `OP gerada da proposta ${proposta.numero} - ${item.descricao}\nCliente: ${proposta.cliente.nome}`
-        };
-        
-        await criarOrdem(ordem);
-      }
+      // Criar uma ordem de produção única por cliente/proposta
+      const ordem = {
+        numero: `OP-${proposta.numero}`,
+        produto_id: null, // Será definido depois ao selecionar o produto específico
+        quantidade: proposta.itens.reduce((total: number, item: any) => total + item.quantidade, 0),
+        status: 'pendente' as const,
+        data_pedido: new Date().toISOString().split('T')[0],
+        data_previsao: null,
+        data_conclusao: null,
+        observacoes: `OP gerada da proposta ${proposta.numero}\nCliente: ${proposta.cliente.nome}\n\nItens da proposta:\n${proposta.itens.map((item: any) => `- ${item.descricao} (${item.quantidade} ${item.unidade})`).join('\n')}\n\nValor total: ${formatCurrency(proposta.valorTotal)}`
+      };
       
-      toast.success(`${proposta.itens.length} ordem(ns) de produção criada(s) com sucesso!`);
+      await criarOrdem(ordem);
+      
+      toast.success(`Ordem de produção criada com sucesso para o cliente ${proposta.cliente.nome}!`);
     } catch (error) {
-      console.error('Erro ao criar ordens de produção:', error);
-      toast.error('Erro ao criar ordens de produção');
+      console.error('Erro ao criar ordem de produção:', error);
+      toast.error('Erro ao criar ordem de produção');
     }
   };
 
@@ -67,10 +66,10 @@ export function OrdemProducaoFromProposta() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CheckCircle className="h-5 w-5 text-green-600" />
-          Criar Ordem de Produção
+          Criar Ordem de Produção por Cliente
         </CardTitle>
         <CardDescription>
-          Selecione uma proposta aprovada para gerar ordens de produção
+          Selecione uma proposta aprovada para gerar uma ordem de produção para o cliente
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -95,7 +94,8 @@ export function OrdemProducaoFromProposta() {
                         APROVADA
                       </Badge>
                     </div>
-                    <div className="text-sm text-muted-foreground mt-1">
+                    <div className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                      <User className="h-4 w-4" />
                       <span className="font-medium">Cliente:</span> {proposta.cliente.nome}
                     </div>
                     <div className="text-sm text-muted-foreground">
@@ -118,37 +118,46 @@ export function OrdemProducaoFromProposta() {
                       size="sm"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Gerar OP
+                      Gerar OP Cliente
                     </Button>
                   </div>
                 </div>
                 
                 {expandedPropostaId === proposta.id && (
                   <div className="border-t bg-muted/50">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Código</TableHead>
-                          <TableHead>Descrição</TableHead>
-                          <TableHead>Quantidade</TableHead>
-                          <TableHead>Unidade</TableHead>
-                          <TableHead className="text-right">Valor Unit.</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {proposta.itens.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.codigo}</TableCell>
-                            <TableCell>{item.descricao}</TableCell>
-                            <TableCell>{item.quantidade}</TableCell>
-                            <TableCell>{item.unidade}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(item.valorUnitario)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(item.valorTotal)}</TableCell>
+                    <div className="p-4">
+                      <h4 className="font-medium mb-3">Itens da proposta que serão produzidos:</h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Código</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead>Quantidade</TableHead>
+                            <TableHead>Unidade</TableHead>
+                            <TableHead className="text-right">Valor Unit.</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {proposta.itens.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell className="font-medium">{item.codigo}</TableCell>
+                              <TableCell>{item.descricao}</TableCell>
+                              <TableCell>{item.quantidade}</TableCell>
+                              <TableCell>{item.unidade}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(item.valorUnitario)}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(item.valorTotal)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          <strong>Observação:</strong> Será criada uma ordem de produção única para este cliente 
+                          com todos os itens da proposta. Total de {proposta.itens.reduce((total: number, item: any) => total + item.quantidade, 0)} unidades.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

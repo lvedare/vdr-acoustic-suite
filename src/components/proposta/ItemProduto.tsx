@@ -30,9 +30,9 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
   const [filtroProduto, setFiltroProduto] = useState("");
   const [dialogProdutosAberto, setDialogProdutosAberto] = useState(false);
 
-  // Convert Supabase products to the expected format - APENAS COM ESTOQUE
+  // Convert Supabase products to the expected format - COM ESTOQUE MAIOR QUE 0
   const produtosDisponiveis: ProdutoAcabado[] = produtosEstoque
-    .filter(produto => produto.quantidade_estoque > 0) // FILTRO APENAS PRODUTOS COM ESTOQUE
+    .filter(produto => produto.quantidade_estoque > 0) // APENAS PRODUTOS COM ESTOQUE
     .map(produto => {
       // Gerar ID numérico baseado no hash do UUID
       let numericId = 0;
@@ -58,7 +58,7 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
     });
 
   console.log('Produtos do estoque (Supabase):', produtosEstoque);
-  console.log('Produtos disponíveis (formatados):', produtosDisponiveis);
+  console.log('Produtos disponíveis (formatados com estoque > 0):', produtosDisponiveis);
 
   const handleAdicionarProdutoAcabado = (produto: ProdutoAcabado) => {
     const novoItem: ItemProposta = {
@@ -143,13 +143,18 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
             <p className="text-sm text-muted-foreground">
               {loadingProdutos ? "Carregando..." : `${produtosDisponiveis.length} produtos com estoque disponível`}
             </p>
+            {!loadingProdutos && produtosEstoque.length > 0 && produtosDisponiveis.length === 0 && (
+              <p className="text-sm text-amber-600 mt-1">
+                Há {produtosEstoque.length} produtos cadastrados, mas nenhum com estoque disponível
+              </p>
+            )}
           </div>
           <Button 
             onClick={() => setDialogProdutosAberto(true)}
             disabled={loadingProdutos || produtosDisponiveis.length === 0}
           >
             <Package className="h-4 w-4 mr-2" />
-            Selecionar Produto
+            {produtosDisponiveis.length === 0 ? "Sem produtos disponíveis" : "Selecionar Produto"}
           </Button>
         </div>
         

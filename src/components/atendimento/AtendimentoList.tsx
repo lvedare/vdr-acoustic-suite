@@ -1,6 +1,8 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Trash2, FileText } from "lucide-react";
 import { getStatusColor } from "./utils";
 
 type Atendimento = {
@@ -19,12 +21,16 @@ interface AtendimentoListProps {
   atendimentos: Atendimento[];
   selectedAtendimento: Atendimento;
   onSelectAtendimento: (atendimento: Atendimento) => void;
+  onDeleteAtendimento?: (id: number) => void;
+  onConverterEmOrcamento?: (atendimento: Atendimento) => void;
 }
 
 const AtendimentoList = ({ 
   atendimentos, 
   selectedAtendimento, 
-  onSelectAtendimento 
+  onSelectAtendimento,
+  onDeleteAtendimento,
+  onConverterEmOrcamento
 }: AtendimentoListProps) => {
   return (
     <div className="rounded-md border">
@@ -46,9 +52,38 @@ const AtendimentoList = ({
             >
               <div className="flex items-center justify-between">
                 <div className="font-medium">{atendimento.cliente}</div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>{atendimento.data}</span>
-                  <span>{atendimento.hora}</span>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs text-muted-foreground">
+                    <span>{atendimento.data}</span>
+                    <span className="ml-2">{atendimento.hora}</span>
+                  </div>
+                  {onConverterEmOrcamento && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onConverterEmOrcamento(atendimento);
+                      }}
+                      title="Criar Proposta"
+                    >
+                      <FileText className="h-3 w-3" />
+                    </Button>
+                  )}
+                  {onDeleteAtendimento && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteAtendimento(atendimento.id);
+                      }}
+                      className="text-red-600 hover:text-red-700"
+                      title="Excluir Atendimento"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="mt-1 text-sm">{atendimento.assunto}</div>

@@ -58,8 +58,10 @@ const Atendimento = () => {
     localStorage.setItem("atendimentos", JSON.stringify(filteredSaved));
     
     if (selectedAtendimento?.id === id) {
-      setSelectedAtendimento(atendimentos[0]);
+      setSelectedAtendimento(updatedAtendimentos[0] || atendimentosData[0]);
     }
+    
+    toast.success("Atendimento excluído com sucesso!");
   };
 
   // Function to change status
@@ -140,6 +142,7 @@ const Atendimento = () => {
             onSelectAtendimento={setSelectedAtendimento}
             onViewHistory={handleViewHistory}
             onConverterEmOrcamento={handleConverterEmOrcamento}
+            onDeleteAtendimento={handleDeleteAtendimento}
           />
         </TabsContent>
 
