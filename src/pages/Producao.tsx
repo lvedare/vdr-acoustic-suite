@@ -9,16 +9,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { OrdemProducaoFromProposta } from "@/components/producao/OrdemProducaoFromProposta";
+import { ProducaoDialog } from "@/components/producao/ProducaoDialog";
 import { useOrdensProducao } from "@/hooks/useSupabaseModules";
 import { ConfirmDeleteDialog } from "@/components/common/ConfirmDeleteDialog";
+
+interface OrdemExemplo {
+  id: string;
+  numero: string;
+  produto: string;
+  quantidade: number;
+  unidade: string;
+  status: string;
+  progresso: number;
+  dataInicio: string;
+  dataPrevisao: string;
+  responsavel: string;
+  cliente: string;
+}
 
 const Producao = () => {
   const { ordensProducao, excluirOrdem, isLoading } = useOrdensProducao();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ordemToDelete, setOrdemToDelete] = useState<any>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedOrdem, setSelectedOrdem] = useState<any>(null);
 
   // Dados de exemplo para ordens de produção
-  const ordensExemplo = [
+  const ordensExemplo: OrdemExemplo[] = [
     {
       id: "OP-2025-001",
       numero: "OP-2025-001",
@@ -137,11 +154,37 @@ const Producao = () => {
   };
 
   const handleViewDetails = (ordem: any) => {
-    toast.info(`Visualizando detalhes da ordem ${ordem.numero}`);
+    setSelectedOrdem(ordem);
+    setDialogOpen(true);
   };
 
   const handleEdit = (ordem: any) => {
-    toast.info(`Editando ordem ${ordem.numero}`);
+    setSelectedOrdem(ordem);
+    setDialogOpen(true);
+  };
+
+  const getProdutoName = (ordem: any) => {
+    return ordem.produto || (ordem.produtos_acabados ? ordem.produtos_acabados.nome : 'Produto não encontrado');
+  };
+
+  const getClienteName = (ordem: any) => {
+    return ordem.cliente || 'Cliente não informado';
+  };
+
+  const getUnidade = (ordem: any) => {
+    return ordem.unidade || (ordem.produtos_acabados ? ordem.produtos_acabados.unidade_medida : 'un');
+  };
+
+  const getProgresso = (ordem: any) => {
+    return ordem.progresso || 0;
+  };
+
+  const getDataPrevisao = (ordem: any) => {
+    return ordem.dataPrevisao || ordem.data_previsao;
+  };
+
+  const getResponsavel = (ordem: any) => {
+    return ordem.responsavel || 'Não atribuído';
   };
 
   return (
@@ -198,9 +241,9 @@ const Producao = () => {
                       todasOrdens.map((ordem) => (
                         <TableRow key={ordem.id}>
                           <TableCell className="font-medium">{ordem.numero}</TableCell>
-                          <TableCell>{ordem.produto}</TableCell>
-                          <TableCell>{ordem.cliente}</TableCell>
-                          <TableCell>{ordem.quantidade} {ordem.unidade}</TableCell>
+                          <TableCell>{getProdutoName(ordem)}</TableCell>
+                          <TableCell>{getClienteName(ordem)}</TableCell>
+                          <TableCell>{ordem.quantidade} {getUnidade(ordem)}</TableCell>
                           <TableCell>
                             <Badge variant="secondary" className={getStatusColor(ordem.status)}>
                               {ordem.status.toUpperCase()}
@@ -208,12 +251,12 @@ const Producao = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Progress value={ordem.progresso} className="h-2 w-16" />
-                              <span className="text-xs">{ordem.progresso}%</span>
+                              <Progress value={getProgresso(ordem)} className="h-2 w-16" />
+                              <span className="text-xs">{getProgresso(ordem)}%</span>
                             </div>
                           </TableCell>
-                          <TableCell>{formatarData(ordem.dataPrevisao)}</TableCell>
-                          <TableCell>{ordem.responsavel}</TableCell>
+                          <TableCell>{formatarData(getDataPrevisao(ordem))}</TableCell>
+                          <TableCell>{getResponsavel(ordem)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button 
@@ -259,6 +302,12 @@ const Producao = () => {
         onConfirm={handleConfirmDelete}
         title="Excluir Ordem de Produção"
         itemName={ordemToDelete?.numero}
+      />
+
+      <ProducaoDialog
+        isOpen={dialogOpen}
+        onOpenChange={setDialogOpen}
+        ordem={selectedOrdem}
       />
     </div>
   );

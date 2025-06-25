@@ -34,7 +34,7 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
   const produtosDisponiveis: ProdutoAcabado[] = produtosEstoque
     .filter(produto => produto.quantidade_estoque > 0)
     .map(produto => ({
-      id: produto.id,
+      id: parseInt(produto.id.toString().replace(/-/g, '').substring(0, 8), 16),
       codigo: produto.codigo,
       nome: produto.nome,
       descricao: produto.descricao || "",

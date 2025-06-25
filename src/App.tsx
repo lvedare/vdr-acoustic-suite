@@ -24,6 +24,7 @@ import AccessRequests from "./pages/AccessRequests";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import NotFound from "./pages/NotFound";
 import Cadastros from "./pages/Cadastros";
+import { Outlet } from "react-router-dom";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -37,7 +38,7 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route path="/" element={<AppLayout />}>
+              <Route path="/" element={<AppLayout><Outlet /></AppLayout>}>
                 <Route index element={<Index />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="orcamentos" element={<Orcamentos />} />
