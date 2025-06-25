@@ -2,16 +2,14 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, ExternalLink } from "lucide-react";
+import { Package, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { 
   ItemProposta, 
-  NovoItemInput, 
   ProdutoAcabado, 
   Proposta
 } from "@/types/orcamento";
-import { ItemForm } from "./ItemForm";
 import { ItemsTable } from "./ItemsTable";
 import { ItemEditDialog } from "./ItemEditDialog";
 import { ProdutoSelectionDialog } from "./ProdutoSelectionDialog";
@@ -27,64 +25,44 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
   const navigate = useNavigate();
   const { produtos: produtosEstoque, isLoading: loadingProdutos } = useProdutosAcabados();
   
-  const [novoItem, setNovoItem] = useState<NovoItemInput>({
-    codigo: "",
-    descricao: "",
-    unidade: "PÇ",
-    quantidade: 1,
-    valorUnitario: 0
-  });
-  
   const [itemEmEdicao, setItemEmEdicao] = useState<ItemProposta | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [filtroProduto, setFiltroProduto] = useState("");
   const [dialogProdutosAberto, setDialogProdutosAberto] = useState(false);
 
-  // Usar apenas produtos que estão no estoque
-  const produtosDisponiveis = produtosEstoque.filter(produto => produto.quantidade_estoque > 0);
-
-  const handleAdicionarItem = () => {
-    if (!novoItem.codigo || !novoItem.descricao || novoItem.quantidade <= 0 || novoItem.valorUnitario <= 0) {
-      toast.error("Preencha todos os campos do item corretamente");
-      return;
-    }
-    
-    const valorTotal = novoItem.quantidade * novoItem.valorUnitario;
-    
-    setProposta(prev => ({
-      ...prev,
-      itens: [
-        ...prev.itens,
-        {
-          id: Date.now(),
-          ...novoItem,
-          valorTotal
-        }
-      ]
+  // Convert Supabase products to the expected format
+  const produtosDisponiveis: ProdutoAcabado[] = produtosEstoque
+    .filter(produto => produto.quantidade_estoque > 0)
+    .map(produto => ({
+      id: produto.id,
+      codigo: produto.codigo,
+      nome: produto.nome,
+      descricao: produto.descricao || "",
+      categoria: produto.categoria,
+      unidadeMedida: produto.unidade_medida,
+      valorBase: produto.valor_base,
+      quantidadeEstoque: produto.quantidade_estoque,
+      dataCadastro: produto.data_cadastro
     }));
-    
-    setNovoItem({
-      codigo: "",
-      descricao: "",
-      unidade: "PÇ",
-      quantidade: 1,
-      valorUnitario: 0
-    });
-    
-    toast.success("Item adicionado com sucesso!");
-  };
 
-  const handleAdicionarProdutoAcabado = (produto: any) => {
-    setNovoItem({
+  const handleAdicionarProdutoAcabado = (produto: ProdutoAcabado) => {
+    const novoItem: ItemProposta = {
+      id: Date.now(),
       codigo: produto.codigo,
       descricao: produto.nome,
-      unidade: produto.unidade_medida,
+      unidade: produto.unidadeMedida,
       quantidade: 1,
-      valorUnitario: produto.valor_base
-    });
+      valorUnitario: produto.valorBase,
+      valorTotal: produto.valorBase
+    };
+
+    setProposta(prev => ({
+      ...prev,
+      itens: [...prev.itens, novoItem]
+    }));
 
     setDialogProdutosAberto(false);
-    toast.success("Produto selecionado, ajuste a quantidade se necessário");
+    toast.success("Produto adicionado! Ajuste a quantidade se necessário");
   };
 
   const handleEditarItem = (item: ItemProposta) => {
@@ -155,17 +133,10 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
             onClick={() => setDialogProdutosAberto(true)}
             disabled={loadingProdutos || produtosDisponiveis.length === 0}
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Selecionar do Estoque
+            <Package className="h-4 w-4 mr-2" />
+            Selecionar Produto
           </Button>
         </div>
-
-        <ItemForm
-          novoItem={novoItem}
-          onItemChange={setNovoItem}
-          onAdicionarItem={handleAdicionarItem}
-          onOpenProdutoDialog={() => setDialogProdutosAberto(true)}
-        />
         
         <ItemsTable
           itens={proposta.itens}

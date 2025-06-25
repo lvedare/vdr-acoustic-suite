@@ -35,15 +35,23 @@ const NovoOrcamento = () => {
   const [originalPropostaId, setOriginalPropostaId] = useState<number | null>(null);
   const [title, setTitle] = useState("Nova Proposta");
   const [isEdit, setIsEdit] = useState(false);
+  const [clientePreSelecionado, setClientePreSelecionado] = useState(false);
 
   // Verificar se estamos carregando uma proposta existente para edição ou revisão
   useEffect(() => {
     if (location.state) {
-      const { propostaId, isEdit: editMode, isRevisao, propostaOriginal, propostaOriginalId, clienteId, atendimento } = location.state;
+      const { 
+        propostaId, 
+        isEdit: editMode, 
+        isRevisao, 
+        propostaOriginal, 
+        propostaOriginalId, 
+        atendimento,
+        clientePreSelecionado: clientePre
+      } = location.state;
 
       // Carregar proposta existente para edição
       if (propostaId && editMode) {
-        // Buscar proposta nas propostas carregadas pelo hook
         setIsEdit(true);
         setTitle("Editar Proposta");
       }
@@ -52,10 +60,10 @@ const NovoOrcamento = () => {
       else if (propostaOriginal && isRevisao) {
         const revisaoProposta: Proposta = {
           ...propostaOriginal,
-          id: Date.now(), // Novo ID para a revisão
-          numero: `${propostaOriginal.numero}-REV${new Date().toISOString().slice(0,10)}`, // Adiciona REV ao número
-          data: new Date().toISOString().split('T')[0], // Data atual
-          status: "rascunho", // Inicia como rascunho
+          id: Date.now(),
+          numero: `${propostaOriginal.numero}-REV${new Date().toISOString().slice(0,10)}`,
+          data: new Date().toISOString().split('T')[0],
+          status: "rascunho",
         };
         
         setProposta(revisaoProposta);
@@ -64,33 +72,28 @@ const NovoOrcamento = () => {
         setOriginalPropostaId(propostaOriginalId);
       }
       
-      // Verificar se há um cliente pré-selecionado da página de atendimento
-      else if (clienteId && clientes.length > 0) {
-        const clienteSelecionado = clientes.find(c => c.id === clienteId);
+      // Verificar se há um atendimento pré-selecionado
+      else if (atendimento) {
+        setClientePreSelecionado(true);
         
-        if (clienteSelecionado) {
-          setProposta(prev => ({
-            ...prev,
-            cliente: clienteSelecionado
-          }));
-          
-          // Verificar se temos dados do atendimento para preencher a proposta
-          if (atendimento) {
-            setTitle(`Nova Proposta (Atendimento #${atendimento.id})`);
-            
-            // Adicionar observações do atendimento
-            if (atendimento.mensagem) {
-              setProposta(prev => ({
-                ...prev,
-                observacoes: `Atendimento: ${atendimento.mensagem}\n\n${prev.observacoes}`
-              }));
-            }
-            
-            toast.info(`Cliente ${clienteSelecionado.nome} selecionado do atendimento`);
-          } else {
-            toast.info(`Cliente ${clienteSelecionado.nome} selecionado`);
-          }
-        }
+        // Criar cliente mockado baseado nos dados do atendimento
+        const clienteMockado: ClienteSimplificado = {
+          id: atendimento.clienteId || Date.now(),
+          nome: atendimento.cliente,
+          email: atendimento.contato.includes('@') ? atendimento.contato : '',
+          telefone: atendimento.contato.includes('(') ? atendimento.contato : '',
+          empresa: atendimento.cliente.includes('Empresa') ? atendimento.cliente : '',
+          cnpj: ''
+        };
+        
+        setProposta(prev => ({
+          ...prev,
+          cliente: clienteMockado,
+          observacoes: `Atendimento: ${atendimento.assunto}\n\nDetalhes: ${atendimento.mensagem || ''}\n\nCanal: ${atendimento.canal}\n\n${prev.observacoes}`
+        }));
+        
+        setTitle(`Nova Proposta - ${atendimento.cliente}`);
+        toast.success(`Dados do atendimento carregados automaticamente`);
       }
     }
   }, [location.state, clientes]);
@@ -104,8 +107,13 @@ const NovoOrcamento = () => {
     }));
   }, [proposta.itens]);
   
-  // Handler para selecionar cliente
+  // Handler para selecionar cliente - só funciona se não há cliente pré-selecionado
   const handleClienteChange = (clienteId: number) => {
+    if (clientePreSelecionado) {
+      toast.info("Cliente já foi selecionado do atendimento");
+      return;
+    }
+    
     const clienteSelecionado = clientes.find(c => c.id === clienteId);
     if (clienteSelecionado) {
       setProposta(prev => ({
@@ -192,6 +200,7 @@ const NovoOrcamento = () => {
         produtosAcabados={produtosAcabados}
         gerarNumeroProposta={gerarNumeroProposta}
         handleClienteChange={handleClienteChange}
+        clienteDesabilitado={clientePreSelecionado}
       />
       
       <PropostaActions 
@@ -204,6 +213,14 @@ const NovoOrcamento = () => {
         <div className="bg-amber-50 border border-amber-200 p-3 rounded-md">
           <p className="text-amber-800 text-sm">
             Esta é uma revisão da proposta original. A proposta original será mantida para referência.
+          </p>
+        </div>
+      )}
+      
+      {clientePreSelecionado && (
+        <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
+          <p className="text-blue-800 text-sm">
+            Cliente carregado automaticamente do atendimento. Os dados podem ser ajustados se necessário.
           </p>
         </div>
       )}

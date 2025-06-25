@@ -30,7 +30,8 @@ const atendimentosExemplo = [
     hora: "09:30",
     canal: "WhatsApp",
     status: "Novo",
-    mensagem: "Olá, gostaria de um orçamento para tratamento acústico em meu home studio."
+    mensagem: "Olá, gostaria de um orçamento para tratamento acústico em meu home studio.",
+    clienteId: 1
   },
   {
     id: 2,
@@ -41,7 +42,8 @@ const atendimentosExemplo = [
     hora: "10:15",
     canal: "Email",
     status: "Em andamento",
-    mensagem: "Bom dia, gostaria de saber qual o melhor material para isolamento acústico em uma sala pequena."
+    mensagem: "Bom dia, gostaria de saber qual o melhor material para isolamento acústico em uma sala pequena.",
+    clienteId: 2
   },
   {
     id: 3,
@@ -52,7 +54,8 @@ const atendimentosExemplo = [
     hora: "11:00",
     canal: "Telefone",
     status: "Agendado",
-    mensagem: "Preciso de uma visita técnica para avaliar o isolamento acústico de salas de reunião."
+    mensagem: "Preciso de uma visita técnica para avaliar o isolamento acústico de salas de reunião.",
+    clienteId: 3
   }
 ];
 
@@ -113,14 +116,12 @@ const Orcamentos = () => {
     atualizarStatus({ id, status: newStatus });
   };
 
-  // Função para converter um atendimento em orçamento
+  // Função para converter um atendimento em orçamento - CORRIGIDA
   const handleCriarPropostaFromAtendimento = (atendimento: any) => {
     navigate("/novo-orcamento", {
       state: { 
-        clienteId: atendimento.clienteId,
-        fromAtendimento: true, 
-        atendimentoId: atendimento.id,
-        atendimento: atendimento
+        atendimento: atendimento,
+        clientePreSelecionado: true
       }
     });
   };

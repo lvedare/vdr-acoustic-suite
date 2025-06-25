@@ -13,6 +13,7 @@ interface InformacoesGeraisProps {
   clientes: ClienteSimplificado[];
   gerarNumeroProposta: () => string;
   handleClienteChange: (clienteId: number) => void;
+  clienteDesabilitado?: boolean;
 }
 
 const InformacoesGerais = ({ 
@@ -20,7 +21,8 @@ const InformacoesGerais = ({
   setProposta, 
   clientes, 
   gerarNumeroProposta,
-  handleClienteChange 
+  handleClienteChange,
+  clienteDesabilitado = false
 }: InformacoesGeraisProps) => {
   return (
     <Card>
@@ -60,22 +62,29 @@ const InformacoesGerais = ({
         
         <div className="space-y-2">
           <Label htmlFor="cliente">Cliente</Label>
-          <Select
-            value={proposta.cliente.id > 0 ? proposta.cliente.id.toString() : "selecionar"}
-            onValueChange={(value) => handleClienteChange(value === "selecionar" ? 0 : Number(value))}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecione um cliente" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="selecionar">Selecione um cliente</SelectItem>
-              {clientes.map((cliente) => (
-                <SelectItem key={cliente.id} value={cliente.id.toString()}>
-                  {cliente.nome} {cliente.empresa && `(${cliente.empresa})`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {clienteDesabilitado ? (
+            <div className="p-3 bg-muted rounded-md">
+              <p className="font-medium">{proposta.cliente.nome}</p>
+              <p className="text-sm text-muted-foreground">Cliente carregado automaticamente do atendimento</p>
+            </div>
+          ) : (
+            <Select
+              value={proposta.cliente.id > 0 ? proposta.cliente.id.toString() : "selecionar"}
+              onValueChange={(value) => handleClienteChange(value === "selecionar" ? 0 : Number(value))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione um cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="selecionar">Selecione um cliente</SelectItem>
+                {clientes.map((cliente) => (
+                  <SelectItem key={cliente.id} value={cliente.id.toString()}>
+                    {cliente.nome} {cliente.empresa && `(${cliente.empresa})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         
         {proposta.cliente.id > 0 && (
