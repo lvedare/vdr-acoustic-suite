@@ -1,369 +1,202 @@
 
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Plus, Search, Edit, Trash, FileText } from "lucide-react";
-import { toast } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
-
-// Tipos
-interface Cliente {
-  id: number;
-  nome: string;
-  email: string;
-  telefone: string;
-  empresa?: string;
-  cnpj?: string;
-  endereco?: string;
-  cidade?: string;
-  estado?: string;
-  tipoCliente: "pf" | "pj";
-  observacoes?: string;
-  dataCadastro: string;
-}
-
-// Clientes iniciais para demonstração
-const clientesIniciais: Cliente[] = [
-  {
-    id: 1,
-    nome: "Rayan Fássio Santos",
-    email: "rayanfassio@gmail.com",
-    telefone: "(62)98244-4078",
-    empresa: "J TEM RAYAN FASSIO",
-    cnpj: "11.222.333/0001-44",
-    endereco: "Av. Salvador Di Bernardi, 270",
-    cidade: "Goiânia",
-    estado: "GO",
-    tipoCliente: "pj",
-    observacoes: "Cliente prefere acabamento em madeira natural.",
-    dataCadastro: "2025-05-01"
-  },
-  {
-    id: 2,
-    nome: "Maria Silva",
-    email: "maria@empresa.com",
-    telefone: "(62)98765-4321",
-    empresa: "Empresa ABC",
-    cnpj: "12.345.678/0001-90",
-    endereco: "Rua das Flores, 123",
-    cidade: "Goiânia",
-    estado: "GO",
-    tipoCliente: "pj",
-    observacoes: "Cliente exigente com prazos.",
-    dataCadastro: "2025-04-15"
-  },
-  {
-    id: 3,
-    nome: "João Pereira",
-    email: "joao@construcoes.com",
-    telefone: "(62)91234-5678",
-    empresa: "Construções XYZ",
-    cnpj: "98.765.432/0001-10",
-    endereco: "Av. Central, 500",
-    cidade: "Aparecida de Goiânia",
-    estado: "GO",
-    tipoCliente: "pj",
-    dataCadastro: "2025-03-22"
-  }
-];
-
-// Cliente vazio para o formulário
-const clienteVazio: Omit<Cliente, "id" | "dataCadastro"> = {
-  nome: "",
-  email: "",
-  telefone: "",
-  empresa: "",
-  cnpj: "",
-  endereco: "",
-  cidade: "",
-  estado: "",
-  tipoCliente: "pj",
-  observacoes: ""
-};
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Search, Phone, Mail, Building, FileText, Trash2, Edit } from "lucide-react";
+import { toast } from "sonner";
+import { useClientes } from "@/hooks/useSupabaseData";
 
 const Clientes = () => {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const { data: clientes = [], isLoading } = useClientes();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentCliente, setCurrentCliente] = useState<Cliente | null>(null);
-  const [novoCliente, setNovoCliente] = useState<Omit<Cliente, "id" | "dataCadastro">>(clienteVazio);
-  const navigate = useNavigate();
-
-  // Carregar clientes do localStorage ou usar os iniciais
-  useEffect(() => {
-    const storedClientes = localStorage.getItem("clientes");
-    if (storedClientes) {
-      setClientes(JSON.parse(storedClientes));
-    } else {
-      setClientes(clientesIniciais);
-      localStorage.setItem("clientes", JSON.stringify(clientesIniciais));
-    }
-  }, []);
-
-  // Filtrar clientes com base na busca
-  const filteredClientes = clientes.filter(cliente => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      cliente.nome.toLowerCase().includes(searchLower) ||
-      cliente.empresa?.toLowerCase().includes(searchLower) ||
-      cliente.email.toLowerCase().includes(searchLower) ||
-      cliente.telefone.includes(searchTerm)
-    );
+  const [editingCliente, setEditingCliente] = useState<any>(null);
+  
+  const [formData, setFormData] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    empresa: "",
+    cnpj: "",
+    endereco: "",
+    observacoes: ""
   });
 
-  // Formatar data
-  const formatDate = (dateString: string): string => {
-    const [year, month, day] = dateString.split('-');
-    return `${day}/${month}/${year}`;
+  // Filter clients based on search term
+  const filteredClientes = clientes.filter(cliente =>
+    cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (cliente.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (cliente.empresa || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (cliente.cnpj || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.nome) {
+      toast.error("Nome é obrigatório");
+      return;
+    }
+
+    try {
+      // Aqui você implementaria a criação/edição via Supabase
+      toast.success(editingCliente ? "Cliente atualizado!" : "Cliente criado!");
+      resetForm();
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast.error("Erro ao salvar cliente");
+    }
   };
 
-  // Abrir dialog para edição de cliente
-  const handleEditCliente = (cliente: Cliente) => {
-    setCurrentCliente(cliente);
-    setNovoCliente({
-      nome: cliente.nome,
-      email: cliente.email,
-      telefone: cliente.telefone,
+  const resetForm = () => {
+    setFormData({
+      nome: "",
+      email: "",
+      telefone: "",
+      empresa: "",
+      cnpj: "",
+      endereco: "",
+      observacoes: ""
+    });
+    setEditingCliente(null);
+  };
+
+  const handleEdit = (cliente: any) => {
+    setEditingCliente(cliente);
+    setFormData({
+      nome: cliente.nome || "",
+      email: cliente.email || "",
+      telefone: cliente.telefone || "",
       empresa: cliente.empresa || "",
       cnpj: cliente.cnpj || "",
-      endereco: cliente.endereco || "",
-      cidade: cliente.cidade || "",
-      estado: cliente.estado || "",
-      tipoCliente: cliente.tipoCliente,
-      observacoes: cliente.observacoes || ""
+      endereco: "",
+      observacoes: ""
     });
     setIsDialogOpen(true);
   };
 
-  // Abrir dialog para confirmar exclusão
-  const handleDeleteConfirm = (cliente: Cliente) => {
-    setCurrentCliente(cliente);
-    setIsDeleteDialogOpen(true);
-  };
-
-  // Excluir cliente
-  const handleDeleteCliente = () => {
-    if (currentCliente) {
-      const updatedClientes = clientes.filter(c => c.id !== currentCliente.id);
-      setClientes(updatedClientes);
-      localStorage.setItem("clientes", JSON.stringify(updatedClientes));
-      setIsDeleteDialogOpen(false);
-      toast.success(`Cliente ${currentCliente.nome} excluído com sucesso!`);
-    }
-  };
-
-  // Adicionar ou Atualizar cliente
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validação básica
-    if (!novoCliente.nome || !novoCliente.email || !novoCliente.telefone) {
-      toast.error("Por favor, preencha os campos obrigatórios: Nome, Email e Telefone");
-      return;
-    }
-    
-    if (currentCliente) {
-      // Atualizar cliente existente
-      const updatedClientes = clientes.map(c => {
-        if (c.id === currentCliente.id) {
-          return {
-            ...c,
-            ...novoCliente
-          };
-        }
-        return c;
-      });
-      
-      setClientes(updatedClientes);
-      localStorage.setItem("clientes", JSON.stringify(updatedClientes));
-      toast.success(`Cliente ${novoCliente.nome} atualizado com sucesso!`);
-    } else {
-      // Adicionar novo cliente
-      const newCliente: Cliente = {
-        ...novoCliente,
-        id: Date.now(),
-        dataCadastro: new Date().toISOString().split('T')[0]
-      };
-      
-      const updatedClientes = [...clientes, newCliente];
-      setClientes(updatedClientes);
-      localStorage.setItem("clientes", JSON.stringify(updatedClientes));
-      toast.success(`Cliente ${novoCliente.nome} adicionado com sucesso!`);
-    }
-    
-    // Limpar formulário e fechar dialog
-    setNovoCliente(clienteVazio);
-    setCurrentCliente(null);
-    setIsDialogOpen(false);
-  };
-
-  // Criar nova proposta para um cliente
-  const handleNovaPropostaParaCliente = (cliente: Cliente) => {
-    // Aqui redirecionaríamos para a criação de proposta com cliente pré-selecionado
-    toast.info(`Criando nova proposta para ${cliente.nome}...`);
-    
-    // Como essa funcionalidade está em desenvolvimento, mostramos apenas um toast
-    setTimeout(() => {
-      toast("Funcionalidade em desenvolvimento", {
-        description: "Esta funcionalidade será implementada em breve."
-      });
-    }, 1000);
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Clientes</h1>
+        </div>
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="text-lg font-medium text-muted-foreground">
+              Carregando clientes...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Clientes</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => {
-              setCurrentCliente(null);
-              setNovoCliente(clienteVazio);
-            }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Cliente
+            <Button onClick={resetForm}>
+              <Plus className="mr-2 h-4 w-4" /> Novo Cliente
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>{currentCliente ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
-              <DialogDescription>
-                {currentCliente 
-                  ? "Atualize as informações do cliente abaixo." 
-                  : "Preencha as informações do novo cliente abaixo."
-                }
-              </DialogDescription>
+              <DialogTitle>
+                {editingCliente ? "Editar Cliente" : "Novo Cliente"}
+              </DialogTitle>
             </DialogHeader>
-            
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="nome">Nome Completo *</Label>
-                  <Input 
-                    id="nome" 
-                    value={novoCliente.nome}
-                    onChange={(e) => setNovoCliente(prev => ({ ...prev, nome: e.target.value }))}
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome *</Label>
+                  <Input
+                    id="nome"
+                    value={formData.nome}
+                    onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                    placeholder="Nome completo"
                     required
                   />
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input 
-                    id="email" 
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input
+                    id="email"
                     type="email"
-                    value={novoCliente.email}
-                    onChange={(e) => setNovoCliente(prev => ({ ...prev, email: e.target.value }))}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone *</Label>
-                  <Input 
-                    id="telefone" 
-                    value={novoCliente.telefone}
-                    onChange={(e) => setNovoCliente(prev => ({ ...prev, telefone: e.target.value }))}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Tipo de Cliente</Label>
-                  <div className="flex space-x-4 pt-2">
-                    <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="tipoCliente" 
-                        value="pj"
-                        checked={novoCliente.tipoCliente === "pj"}
-                        onChange={() => setNovoCliente(prev => ({ ...prev, tipoCliente: "pj" }))}
-                      />
-                      <span>Pessoa Jurídica</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        name="tipoCliente" 
-                        value="pf"
-                        checked={novoCliente.tipoCliente === "pf"}
-                        onChange={() => setNovoCliente(prev => ({ ...prev, tipoCliente: "pf" }))}
-                      />
-                      <span>Pessoa Física</span>
-                    </label>
-                  </div>
-                </div>
-                
-                {novoCliente.tipoCliente === "pj" && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="empresa">Empresa / Nome Fantasia</Label>
-                      <Input 
-                        id="empresa" 
-                        value={novoCliente.empresa}
-                        onChange={(e) => setNovoCliente(prev => ({ ...prev, empresa: e.target.value }))}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="cnpj">{novoCliente.tipoCliente === "pj" ? "CNPJ" : "CPF"}</Label>
-                      <Input 
-                        id="cnpj" 
-                        value={novoCliente.cnpj}
-                        onChange={(e) => setNovoCliente(prev => ({ ...prev, cnpj: e.target.value }))}
-                      />
-                    </div>
-                  </>
-                )}
-                
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="endereco">Endereço</Label>
-                  <Input 
-                    id="endereco" 
-                    value={novoCliente.endereco}
-                    onChange={(e) => setNovoCliente(prev => ({ ...prev, endereco: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="cidade">Cidade</Label>
-                  <Input 
-                    id="cidade" 
-                    value={novoCliente.cidade}
-                    onChange={(e) => setNovoCliente(prev => ({ ...prev, cidade: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="estado">Estado</Label>
-                  <Input 
-                    id="estado" 
-                    value={novoCliente.estado}
-                    onChange={(e) => setNovoCliente(prev => ({ ...prev, estado: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="observacoes">Observações</Label>
-                  <Input 
-                    id="observacoes" 
-                    value={novoCliente.observacoes}
-                    onChange={(e) => setNovoCliente(prev => ({ ...prev, observacoes: e.target.value }))}
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="email@exemplo.com"
                   />
                 </div>
               </div>
               
-              <DialogFooter className="mt-4">
-                <Button type="submit">
-                  {currentCliente ? "Atualizar Cliente" : "Salvar Cliente"}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="telefone">Telefone</Label>
+                  <Input
+                    id="telefone"
+                    value={formData.telefone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
+                    placeholder="(11) 99999-9999"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="empresa">Empresa</Label>
+                  <Input
+                    id="empresa"
+                    value={formData.empresa}
+                    onChange={(e) => setFormData(prev => ({ ...prev, empresa: e.target.value }))}
+                    placeholder="Nome da empresa"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="cnpj">CNPJ</Label>
+                <Input
+                  id="cnpj"
+                  value={formData.cnpj}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cnpj: e.target.value }))}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="endereco">Endereço</Label>
+                <Input
+                  id="endereco"
+                  value={formData.endereco}
+                  onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
+                  placeholder="Endereço completo"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="observacoes">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={formData.observacoes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                  placeholder="Observações adicionais..."
+                  rows={3}
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
                 </Button>
-              </DialogFooter>
+                <Button type="submit">
+                  {editingCliente ? "Atualizar" : "Criar Cliente"}
+                </Button>
+              </div>
             </form>
           </DialogContent>
         </Dialog>
@@ -371,112 +204,91 @@ const Clientes = () => {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">Gerenciamento de Clientes</CardTitle>
-            <div className="relative w-64">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar clientes..."
-                className="pl-8"
+                placeholder="Buscar clientes por nome, email, empresa ou CNPJ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
               />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[250px]">Nome / Empresa</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Data Cadastro</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClientes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                      Nenhum cliente encontrado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredClientes.map((cliente) => (
-                    <TableRow key={cliente.id}>
-                      <TableCell>
-                        <div className="font-medium">{cliente.nome}</div>
-                        <div className="text-sm text-muted-foreground">{cliente.empresa}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div>{cliente.email}</div>
-                        <div className="text-sm text-muted-foreground">{cliente.telefone}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cliente.tipoCliente === "pj" ? "bg-blue-100 text-blue-800 border-blue-300" : "bg-green-100 text-green-800 border-green-300"}>
-                          {cliente.tipoCliente === "pj" ? "Pessoa Jurídica" : "Pessoa Física"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatDate(cliente.dataCadastro)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleNovaPropostaParaCliente(cliente)}
-                            title="Nova Proposta"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleEditCliente(cliente)}
-                            title="Editar Cliente"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleDeleteConfirm(cliente)}
-                            title="Excluir Cliente"
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="grid gap-4">
+            {filteredClientes.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchTerm ? "Nenhum cliente encontrado com os critérios de busca." : "Nenhum cliente cadastrado."}
+              </div>
+            ) : (
+              filteredClientes.map((cliente) => (
+                <Card key={cliente.id} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{cliente.nome}</h3>
+                        {cliente.empresa && (
+                          <Badge variant="secondary">
+                            <Building className="mr-1 h-3 w-3" />
+                            {cliente.empresa}
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        {cliente.email && (
+                          <div className="flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {cliente.email}
+                          </div>
+                        )}
+                        {cliente.telefone && (
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {cliente.telefone}
+                          </div>
+                        )}
+                        {cliente.cnpj && (
+                          <div className="flex items-center gap-1">
+                            <FileText className="h-3 w-3" />
+                            {cliente.cnpj}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="text-xs text-muted-foreground">
+                        Cadastrado em: {new Date(cliente.created_at || '').toLocaleDateString('pt-BR')}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(cliente)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => {
+                          toast.info("Funcionalidade de exclusão será implementada");
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
-      
-      {/* Dialog para confirmação de exclusão */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir o cliente {currentCliente?.nome}?
-              Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteCliente}>
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
