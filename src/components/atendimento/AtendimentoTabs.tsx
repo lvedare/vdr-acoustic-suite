@@ -28,6 +28,7 @@ interface AtendimentoTabsProps {
   onSelectAtendimento: (atendimento: Atendimento) => void;
   onViewHistory: () => void;
   onConverterEmOrcamento: (atendimento: Atendimento) => void;
+  onDeleteAtendimento: (id: number) => void;
 }
 
 const AtendimentoTabs = ({
@@ -38,6 +39,7 @@ const AtendimentoTabs = ({
   onSelectAtendimento,
   onViewHistory,
   onConverterEmOrcamento,
+  onDeleteAtendimento,
 }: AtendimentoTabsProps) => {
   return (
     <Tabs defaultValue="atendimentos" className="w-full">
@@ -65,6 +67,8 @@ const AtendimentoTabs = ({
                 atendimentos={atendimentos}
                 selectedAtendimento={selectedAtendimento}
                 onSelectAtendimento={onSelectAtendimento}
+                onDeleteAtendimento={onDeleteAtendimento}
+                onConverterEmOrcamento={onConverterEmOrcamento}
               />
               <div className="rounded-md border">
                 <AtendimentoDetail
