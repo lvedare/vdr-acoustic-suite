@@ -31,7 +31,11 @@ export const financeiroService = {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      tipo: item.tipo as 'receita' | 'despesa',
+      status: item.status as 'pendente' | 'pago' | 'vencido'
+    }));
   },
 
   async criar(item: Omit<Financeiro, 'id' | 'created_at' | 'updated_at'>): Promise<Financeiro> {
@@ -46,7 +50,11 @@ export const financeiroService = {
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      tipo: data.tipo as 'receita' | 'despesa',
+      status: data.status as 'pendente' | 'pago' | 'vencido'
+    };
   },
 
   async atualizar(id: string, item: Partial<Financeiro>): Promise<Financeiro> {
@@ -62,7 +70,11 @@ export const financeiroService = {
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      tipo: data.tipo as 'receita' | 'despesa',
+      status: data.status as 'pendente' | 'pago' | 'vencido'
+    };
   },
 
   async excluir(id: string): Promise<void> {

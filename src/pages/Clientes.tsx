@@ -9,13 +9,35 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Search, Phone, Mail, Building, FileText, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
-import { useClientes } from "@/hooks/useSupabaseData";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { Tables } from "@/integrations/supabase/types";
+
+type Cliente = Tables<'clientes'>;
 
 const Clientes = () => {
-  const { data: clientes = [], isLoading } = useClientes();
+  const queryClient = useQueryClient();
+  
+  const { data: clientes = [], isLoading } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: async (): Promise<Cliente[]> => {
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .order('nome', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao buscar clientes:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCliente, setEditingCliente] = useState<any>(null);
+  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   
   const [formData, setFormData] = useState({
     nome: "",
@@ -25,6 +47,72 @@ const Clientes = () => {
     cnpj: "",
     endereco: "",
     observacoes: ""
+  });
+
+  const criarClienteMutation = useMutation({
+    mutationFn: async (cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('clientes')
+        .insert(cliente)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      toast.success('Cliente criado com sucesso!');
+      resetForm();
+      setIsDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error('Erro ao criar cliente:', error);
+      toast.error('Erro ao criar cliente');
+    },
+  });
+
+  const atualizarClienteMutation = useMutation({
+    mutationFn: async ({ id, cliente }: { id: string; cliente: Partial<Cliente> }) => {
+      const { data, error } = await supabase
+        .from('clientes')
+        .update(cliente)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      toast.success('Cliente atualizado com sucesso!');
+      resetForm();
+      setIsDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error('Erro ao atualizar cliente:', error);
+      toast.error('Erro ao atualizar cliente');
+    },
+  });
+
+  const excluirClienteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('clientes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      toast.success('Cliente excluído com sucesso!');
+    },
+    onError: (error) => {
+      console.error('Erro ao excluir cliente:', error);
+      toast.error('Erro ao excluir cliente');
+    },
   });
 
   // Filter clients based on search term
@@ -43,13 +131,18 @@ const Clientes = () => {
       return;
     }
 
-    try {
-      // Aqui você implementaria a criação/edição via Supabase
-      toast.success(editingCliente ? "Cliente atualizado!" : "Cliente criado!");
-      resetForm();
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast.error("Erro ao salvar cliente");
+    const clienteData = {
+      nome: formData.nome,
+      email: formData.email || null,
+      telefone: formData.telefone || null,
+      empresa: formData.empresa || null,
+      cnpj: formData.cnpj || null,
+    };
+
+    if (editingCliente) {
+      atualizarClienteMutation.mutate({ id: editingCliente.id, cliente: clienteData });
+    } else {
+      criarClienteMutation.mutate(clienteData);
     }
   };
 
@@ -66,7 +159,7 @@ const Clientes = () => {
     setEditingCliente(null);
   };
 
-  const handleEdit = (cliente: any) => {
+  const handleEdit = (cliente: Cliente) => {
     setEditingCliente(cliente);
     setFormData({
       nome: cliente.nome || "",
@@ -78,6 +171,12 @@ const Clientes = () => {
       observacoes: ""
     });
     setIsDialogOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('Tem certeza que deseja excluir este cliente?')) {
+      excluirClienteMutation.mutate(id);
+    }
   };
 
   if (isLoading) {
@@ -168,32 +267,11 @@ const Clientes = () => {
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="endereco">Endereço</Label>
-                <Input
-                  id="endereco"
-                  value={formData.endereco}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
-                  placeholder="Endereço completo"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="observacoes">Observações</Label>
-                <Textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
-                  placeholder="Observações adicionais..."
-                  rows={3}
-                />
-              </div>
-              
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={criarClienteMutation.isPending || atualizarClienteMutation.isPending}>
                   {editingCliente ? "Atualizar" : "Criar Cliente"}
                 </Button>
               </div>
@@ -275,9 +353,8 @@ const Clientes = () => {
                         variant="outline"
                         size="sm"
                         className="text-red-600 hover:text-red-700"
-                        onClick={() => {
-                          toast.info("Funcionalidade de exclusão será implementada");
-                        }}
+                        onClick={() => handleDelete(cliente.id)}
+                        disabled={excluirClienteMutation.isPending}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
