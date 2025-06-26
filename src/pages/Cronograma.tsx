@@ -1,335 +1,374 @@
 
 import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, FileText, Hammer, AlertTriangle } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Search, Calendar, Clock, User, Trash2, Edit } from "lucide-react";
+import { useCronograma } from "@/hooks/useCronograma";
+import { useClientes } from "@/hooks/useClientes";
 
 const Cronograma = () => {
-  // Dados de exemplo para obras em andamento
-  const obrasAndamento = [
-    {
-      id: 1,
-      nome: "Obra - Residencial Vila Nova",
-      tipo: "obra",
-      cliente: "João Silva",
-      status: "em_andamento",
-      dataInicio: "2025-02-15",
-      dataPrevisao: "2025-05-20",
-      progresso: 65,
-      responsavel: "Equipe A",
-      prioridade: "alta"
-    },
-    {
-      id: 2,
-      nome: "Obra - Edifício Comercial Centro",
-      tipo: "obra", 
-      cliente: "Construtora ABC",
-      status: "planejamento",
-      dataInicio: "2025-03-01",
-      dataPrevisao: "2025-07-15",
-      progresso: 10,
-      responsavel: "Equipe B",
-      prioridade: "media"
+  const {
+    eventos,
+    isLoading,
+    criarEvento,
+    atualizarEvento,
+    excluirEvento,
+    isCriando,
+    isAtualizando,
+    isExcluindo
+  } = useCronograma();
+
+  const { clientes } = useClientes();
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEvento, setEditingEvento] = useState<any>(null);
+  
+  const [formData, setFormData] = useState({
+    titulo: "",
+    descricao: "",
+    data_inicio: "",
+    data_fim: "",
+    status: "planejado",
+    prioridade: "media",
+    responsavel: "",
+    cliente_id: "",
+    cor: "#3B82F6"
+  });
+
+  // Filter events based on search term
+  const filteredEventos = eventos.filter(evento =>
+    evento.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (evento.descricao || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (evento.responsavel || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.titulo || !formData.data_inicio || !formData.data_fim) {
+      return;
     }
-  ];
 
-  // Dados de exemplo para produção em andamento
-  const producaoAndamento = [
-    {
-      id: "OP-2025-001",
-      nome: "Painel Acústico 60mm",
-      tipo: "producao",
-      cliente: "Studio XYZ",
-      status: "em_andamento",
-      dataInicio: "2025-05-05",
-      dataPrevisao: "2025-05-15",
-      progresso: 45,
-      responsavel: "João Silva",
-      prioridade: "alta"
-    },
-    {
-      id: "OP-2025-002",
-      nome: "Porta Acústica 40dB",
-      tipo: "producao",
-      cliente: "Clínica Saúde Total",
-      status: "aguardando",
-      dataInicio: "2025-05-07",
-      dataPrevisao: "2025-05-20",
-      progresso: 0,
-      responsavel: "Ana Costa",
-      prioridade: "media"
-    },
-    {
-      id: "OP-2025-005",
-      nome: "Isolamento Acústico Especial",
-      tipo: "producao",
-      cliente: "Condomínio Green Park",
-      status: "atrasado",
-      dataInicio: "2025-04-20",
-      dataPrevisao: "2025-05-05",
-      progresso: 75,
-      responsavel: "Ana Costa",
-      prioridade: "critica"
+    const eventoData = {
+      titulo: formData.titulo,
+      descricao: formData.descricao || undefined,
+      data_inicio: formData.data_inicio,
+      data_fim: formData.data_fim,
+      status: formData.status,
+      prioridade: formData.prioridade,
+      responsavel: formData.responsavel || undefined,
+      cliente_id: formData.cliente_id || undefined,
+      cor: formData.cor
+    };
+
+    if (editingEvento) {
+      atualizarEvento({ id: editingEvento.id, evento: eventoData });
+    } else {
+      criarEvento(eventoData);
     }
-  ];
 
-  // Combinar todos os itens
-  const todosItens = [...obrasAndamento, ...producaoAndamento];
-
-  // Formatação para data
-  const formatarData = (data: string) => {
-    if (!data) return "-";
-    const [ano, mes, dia] = data.split("-");
-    return `${dia}/${mes}/${ano}`;
+    resetForm();
+    setIsDialogOpen(false);
   };
 
-  // Obter cor do status
+  const resetForm = () => {
+    setFormData({
+      titulo: "",
+      descricao: "",
+      data_inicio: "",
+      data_fim: "",
+      status: "planejado",
+      prioridade: "media",
+      responsavel: "",
+      cliente_id: "",
+      cor: "#3B82F6"
+    });
+    setEditingEvento(null);
+  };
+
+  const handleEdit = (evento: any) => {
+    setEditingEvento(evento);
+    setFormData({
+      titulo: evento.titulo,
+      descricao: evento.descricao || "",
+      data_inicio: evento.data_inicio,
+      data_fim: evento.data_fim,
+      status: evento.status,
+      prioridade: evento.prioridade,
+      responsavel: evento.responsavel || "",
+      cliente_id: evento.cliente_id || "",
+      cor: evento.cor || "#3B82F6"
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('Tem certeza que deseja excluir este evento?')) {
+      excluirEvento(id);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "planejamento":
-        return "bg-blue-100 text-blue-800";
-      case "em_andamento":
-        return "bg-amber-100 text-amber-800";
-      case "aguardando":
-        return "bg-purple-100 text-purple-800";
-      case "concluido":
-        return "bg-emerald-100 text-emerald-800";
-      case "atrasado":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+      case "concluido": return "bg-green-100 text-green-800";
+      case "em_andamento": return "bg-blue-100 text-blue-800";
+      case "atrasado": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  // Obter cor da prioridade
   const getPrioridadeColor = (prioridade: string) => {
     switch (prioridade) {
-      case "critica":
-        return "bg-red-500 text-white";
-      case "alta":
-        return "bg-orange-500 text-white";
-      case "media":
-        return "bg-yellow-500 text-white";
-      case "baixa":
-        return "bg-green-500 text-white";
-      default:
-        return "bg-gray-500 text-white";
+      case "alta": return "bg-red-100 text-red-800";
+      case "media": return "bg-yellow-100 text-yellow-800";
+      case "baixa": return "bg-green-100 text-green-800";
+      default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  // Calcular dias restantes
-  const calcularDiasRestantes = (dataPrevisao: string) => {
-    const hoje = new Date();
-    const previsao = new Date(dataPrevisao);
-    const diferenca = Math.ceil((previsao.getTime() - hoje.getTime()) / (1000 * 3600 * 24));
-    return diferenca;
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Cronograma</h1>
+        </div>
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="text-lg font-medium text-muted-foreground">
+              Carregando cronograma...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-3xl font-bold">Cronograma Geral</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Calendar className="mr-2 h-4 w-4" />
-            Exportar Cronograma
-          </Button>
-        </div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Cronograma</h1>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={resetForm}>
+              <Plus className="mr-2 h-4 w-4" /> Novo Evento
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingEvento ? "Editar Evento" : "Novo Evento"}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="titulo">Título *</Label>
+                <Input
+                  id="titulo"
+                  value={formData.titulo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
+                  placeholder="Título do evento"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="descricao">Descrição</Label>
+                <Textarea
+                  id="descricao"
+                  value={formData.descricao}
+                  onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
+                  placeholder="Descrição do evento..."
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="data_inicio">Data de Início *</Label>
+                  <Input
+                    id="data_inicio"
+                    type="date"
+                    value={formData.data_inicio}
+                    onChange={(e) => setFormData(prev => ({ ...prev, data_inicio: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="data_fim">Data de Fim *</Label>
+                  <Input
+                    id="data_fim"
+                    type="date"
+                    value={formData.data_fim}
+                    onChange={(e) => setFormData(prev => ({ ...prev, data_fim: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="planejado">Planejado</SelectItem>
+                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                      <SelectItem value="concluido">Concluído</SelectItem>
+                      <SelectItem value="atrasado">Atrasado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="prioridade">Prioridade</Label>
+                  <Select value={formData.prioridade} onValueChange={(value) => setFormData(prev => ({ ...prev, prioridade: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="baixa">Baixa</SelectItem>
+                      <SelectItem value="media">Média</SelectItem>
+                      <SelectItem value="alta">Alta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="responsavel">Responsável</Label>
+                  <Input
+                    id="responsavel"
+                    value={formData.responsavel}
+                    onChange={(e) => setFormData(prev => ({ ...prev, responsavel: e.target.value }))}
+                    placeholder="Nome do responsável"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cliente_id">Cliente</Label>
+                  <Select value={formData.cliente_id} onValueChange={(value) => setFormData(prev => ({ ...prev, cliente_id: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientes.map((cliente) => (
+                        <SelectItem key={cliente.id} value={cliente.id}>
+                          {cliente.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cor">Cor</Label>
+                <Input
+                  id="cor"
+                  type="color"
+                  value={formData.cor}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cor: e.target.value }))}
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isCriando || isAtualizando}>
+                  {editingEvento ? "Atualizar" : "Criar Evento"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Itens</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{todosItens.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Em Andamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{todosItens.filter(i => i.status === "em_andamento").length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Atrasados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{todosItens.filter(i => i.status === "atrasado").length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Críticos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{todosItens.filter(i => i.prioridade === "critica").length}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Cronograma Principal */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Calendar className="mr-2 h-5 w-5" />
-            Cronograma Integrado - Obras e Produção
-          </CardTitle>
-          <CardDescription>
-            Visualização unificada de todas as obras e ordens de produção em andamento
-          </CardDescription>
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar eventos por título, descrição ou responsável..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Nome/ID</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Responsável</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Progresso</TableHead>
-                  <TableHead>Previsão</TableHead>
-                  <TableHead>Dias Restantes</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {todosItens.map((item) => {
-                  const diasRestantes = calcularDiasRestantes(item.dataPrevisao);
-                  
-                  return (
-                    <TableRow key={`${item.tipo}-${item.id}`}>
-                      <TableCell>
-                        <div className="flex items-center">
-                          {item.tipo === "obra" ? (
-                            <Hammer className="h-4 w-4 mr-2 text-blue-600" />
-                          ) : (
-                            <FileText className="h-4 w-4 mr-2 text-green-600" />
-                          )}
-                          <span className="capitalize">{item.tipo}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{item.nome}</TableCell>
-                      <TableCell>{item.cliente}</TableCell>
-                      <TableCell>{item.responsavel}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={getStatusColor(item.status)}>
-                          {item.status.replace("_", " ").toUpperCase()}
+          <div className="grid gap-4">
+            {filteredEventos.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchTerm ? "Nenhum evento encontrado." : "Nenhum evento cadastrado."}
+              </div>
+            ) : (
+              filteredEventos.map((evento) => (
+                <Card key={evento.id} className="p-4" style={{ borderLeft: `4px solid ${evento.cor}` }}>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{evento.titulo}</h3>
+                        <Badge className={getStatusColor(evento.status)} variant="secondary">
+                          {evento.status}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getPrioridadeColor(item.prioridade)}>
-                          {item.prioridade.toUpperCase()}
+                        <Badge className={getPrioridadeColor(evento.prioridade)} variant="secondary">
+                          {evento.prioridade}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={item.progresso} className="h-2 w-16" />
-                          <span className="text-xs">{item.progresso}%</span>
+                      </div>
+                      
+                      {evento.descricao && (
+                        <p className="text-sm text-muted-foreground">{evento.descricao}</p>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(evento.data_inicio).toLocaleDateString('pt-BR')} - {new Date(evento.data_fim).toLocaleDateString('pt-BR')}
                         </div>
-                      </TableCell>
-                      <TableCell>{formatarData(item.dataPrevisao)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {diasRestantes < 0 && (
-                            <AlertTriangle className="h-4 w-4 text-red-500" />
-                          )}
-                          <span className={diasRestantes < 0 ? "text-red-600 font-medium" : 
-                                         diasRestantes <= 7 ? "text-orange-600 font-medium" : ""}>
-                            {diasRestantes < 0 ? `${Math.abs(diasRestantes)} dias atrasado` : 
-                             diasRestantes === 0 ? "Hoje" :
-                             `${diasRestantes} dias`}
-                          </span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        {evento.responsavel && (
+                          <div className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {evento.responsavel}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(evento)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDelete(evento.id!)}
+                        disabled={isExcluindo}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
-
-      {/* Alertas e Prioridades */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="text-red-800 flex items-center">
-              <AlertTriangle className="mr-2 h-5 w-5" />
-              Itens Críticos e Atrasados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {todosItens
-                .filter(item => item.status === "atrasado" || item.prioridade === "critica")
-                .map(item => (
-                  <div key={`${item.tipo}-${item.id}`} className="flex items-center justify-between p-2 bg-white rounded border">
-                    <div className="flex items-center gap-2">
-                      {item.tipo === "obra" ? (
-                        <Hammer className="h-4 w-4 text-blue-600" />
-                      ) : (
-                        <FileText className="h-4 w-4 text-green-600" />
-                      )}
-                      <span className="font-medium">{item.nome}</span>
-                    </div>
-                    <Badge className={item.status === "atrasado" ? "bg-red-500" : "bg-orange-500"}>
-                      {item.status === "atrasado" ? "ATRASADO" : "CRÍTICO"}
-                    </Badge>
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="text-blue-800 flex items-center">
-              <Clock className="mr-2 h-5 w-5" />
-              Próximos Prazos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {todosItens
-                .filter(item => {
-                  const dias = calcularDiasRestantes(item.dataPrevisao);
-                  return dias >= 0 && dias <= 7;
-                })
-                .sort((a, b) => calcularDiasRestantes(a.dataPrevisao) - calcularDiasRestantes(b.dataPrevisao))
-                .map(item => (
-                  <div key={`${item.tipo}-${item.id}`} className="flex items-center justify-between p-2 bg-white rounded border">
-                    <div className="flex items-center gap-2">
-                      {item.tipo === "obra" ? (
-                        <Hammer className="h-4 w-4 text-blue-600" />
-                      ) : (
-                        <FileText className="h-4 w-4 text-green-600" />
-                      )}
-                      <span className="font-medium">{item.nome}</span>
-                    </div>
-                    <span className="text-sm text-orange-600 font-medium">
-                      {calcularDiasRestantes(item.dataPrevisao) === 0 ? "Hoje" : `${calcularDiasRestantes(item.dataPrevisao)} dias`}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };

@@ -6,113 +6,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Plus, Search, Phone, Mail, Building, FileText, Trash2, Edit } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Tables } from "@/integrations/supabase/types";
-
-type Cliente = Tables<'clientes'>;
+import { useClientes } from "@/hooks/useClientes";
 
 const Clientes = () => {
-  const queryClient = useQueryClient();
-  
-  const { data: clientes = [], isLoading } = useQuery({
-    queryKey: ['clientes'],
-    queryFn: async (): Promise<Cliente[]> => {
-      const { data, error } = await supabase
-        .from('clientes')
-        .select('*')
-        .order('nome', { ascending: true });
-
-      if (error) {
-        console.error('Erro ao buscar clientes:', error);
-        throw error;
-      }
-
-      return data || [];
-    },
-  });
+  const {
+    clientes,
+    isLoading,
+    criarCliente,
+    atualizarCliente,
+    excluirCliente,
+    isCriando,
+    isAtualizando,
+    isExcluindo
+  } = useClientes();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
+  const [editingCliente, setEditingCliente] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
     telefone: "",
     empresa: "",
-    cnpj: "",
-    endereco: "",
-    observacoes: ""
-  });
-
-  const criarClienteMutation = useMutation({
-    mutationFn: async (cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('clientes')
-        .insert(cliente)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientes'] });
-      toast.success('Cliente criado com sucesso!');
-      resetForm();
-      setIsDialogOpen(false);
-    },
-    onError: (error) => {
-      console.error('Erro ao criar cliente:', error);
-      toast.error('Erro ao criar cliente');
-    },
-  });
-
-  const atualizarClienteMutation = useMutation({
-    mutationFn: async ({ id, cliente }: { id: string; cliente: Partial<Cliente> }) => {
-      const { data, error } = await supabase
-        .from('clientes')
-        .update(cliente)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientes'] });
-      toast.success('Cliente atualizado com sucesso!');
-      resetForm();
-      setIsDialogOpen(false);
-    },
-    onError: (error) => {
-      console.error('Erro ao atualizar cliente:', error);
-      toast.error('Erro ao atualizar cliente');
-    },
-  });
-
-  const excluirClienteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('clientes')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientes'] });
-      toast.success('Cliente excluído com sucesso!');
-    },
-    onError: (error) => {
-      console.error('Erro ao excluir cliente:', error);
-      toast.error('Erro ao excluir cliente');
-    },
+    cnpj: ""
   });
 
   // Filter clients based on search term
@@ -127,7 +45,6 @@ const Clientes = () => {
     e.preventDefault();
     
     if (!formData.nome) {
-      toast.error("Nome é obrigatório");
       return;
     }
 
@@ -140,10 +57,13 @@ const Clientes = () => {
     };
 
     if (editingCliente) {
-      atualizarClienteMutation.mutate({ id: editingCliente.id, cliente: clienteData });
+      atualizarCliente({ id: editingCliente.id, cliente: clienteData });
     } else {
-      criarClienteMutation.mutate(clienteData);
+      criarCliente(clienteData);
     }
+
+    resetForm();
+    setIsDialogOpen(false);
   };
 
   const resetForm = () => {
@@ -152,30 +72,26 @@ const Clientes = () => {
       email: "",
       telefone: "",
       empresa: "",
-      cnpj: "",
-      endereco: "",
-      observacoes: ""
+      cnpj: ""
     });
     setEditingCliente(null);
   };
 
-  const handleEdit = (cliente: Cliente) => {
+  const handleEdit = (cliente: any) => {
     setEditingCliente(cliente);
     setFormData({
       nome: cliente.nome || "",
       email: cliente.email || "",
       telefone: cliente.telefone || "",
       empresa: cliente.empresa || "",
-      cnpj: cliente.cnpj || "",
-      endereco: "",
-      observacoes: ""
+      cnpj: cliente.cnpj || ""
     });
     setIsDialogOpen(true);
   };
 
   const handleDelete = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este cliente?')) {
-      excluirClienteMutation.mutate(id);
+      excluirCliente(id);
     }
   };
 
@@ -271,7 +187,7 @@ const Clientes = () => {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={criarClienteMutation.isPending || atualizarClienteMutation.isPending}>
+                <Button type="submit" disabled={isCriando || isAtualizando}>
                   {editingCliente ? "Atualizar" : "Criar Cliente"}
                 </Button>
               </div>
@@ -354,7 +270,7 @@ const Clientes = () => {
                         size="sm"
                         className="text-red-600 hover:text-red-700"
                         onClick={() => handleDelete(cliente.id)}
-                        disabled={excluirClienteMutation.isPending}
+                        disabled={isExcluindo}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
