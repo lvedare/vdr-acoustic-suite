@@ -19,7 +19,8 @@ import PropostaActions from "@/components/proposta/PropostaActions";
 // Import utilities and hooks
 import { gerarNumeroProposta, getPropostaVazia } from "@/utils/propostaUtils";
 import { usePropostas } from "@/hooks/usePropostas";
-import { useClientes, useProdutosAcabados } from "@/hooks/useSupabaseData";
+import { useClientes } from "@/hooks/useClientes";
+import { useProdutosAcabados } from "@/hooks/useProdutosAcabados";
 
 const NovoOrcamento = () => {
   const navigate = useNavigate();
@@ -27,8 +28,8 @@ const NovoOrcamento = () => {
   const { atualizarProposta, criarProposta, isCriando, isAtualizando } = usePropostas();
   
   // Hooks para dados do Supabase
-  const { data: clientes = [], isLoading: loadingClientes } = useClientes();
-  const { data: produtosAcabados = [], isLoading: loadingProdutos } = useProdutosAcabados();
+  const { clientes, isLoading: loadingClientes } = useClientes();
+  const { produtos: produtosAcabados, isLoading: loadingProdutos } = useProdutosAcabados();
   
   const [proposta, setProposta] = useState<Proposta>(getPropostaVazia());
   const [isRevision, setIsRevision] = useState(false);
@@ -179,6 +180,40 @@ const NovoOrcamento = () => {
       </div>
     );
   }
+
+  // Converter produtos do Supabase para o formato esperado
+  const produtosFormatados: ProdutoAcabado[] = produtosAcabados.map(produto => {
+    let numericId = 0;
+    if (produto.id) {
+      const str = produto.id.toString();
+      for (let i = 0; i < str.length; i++) {
+        numericId = ((numericId << 5) - numericId + str.charCodeAt(i)) & 0xffffffff;
+      }
+      numericId = Math.abs(numericId);
+    }
+    
+    return {
+      id: numericId,
+      codigo: produto.codigo || `COD-${numericId}`,
+      nome: produto.nome || "Produto sem nome",
+      descricao: produto.descricao || "",
+      categoria: produto.categoria || "Sem categoria",
+      unidadeMedida: produto.unidade_medida || "un",
+      valorBase: Number(produto.valor_base) || 0,
+      quantidadeEstoque: produto.quantidade_estoque || 0,
+      dataCadastro: produto.data_cadastro || new Date().toISOString().split('T')[0]
+    };
+  });
+
+  // Converter clientes do Supabase para o formato esperado
+  const clientesFormatados: ClienteSimplificado[] = clientes.map(cliente => ({
+    id: parseInt(cliente.id?.substring(0, 8) || '0', 16),
+    nome: cliente.nome,
+    email: cliente.email || '',
+    telefone: cliente.telefone || '',
+    empresa: cliente.empresa || '',
+    cnpj: cliente.cnpj || ''
+  }));
   
   return (
     <div className="space-y-6">
@@ -196,8 +231,8 @@ const NovoOrcamento = () => {
       <PropostaTabs 
         proposta={proposta}
         setProposta={setProposta}
-        clientes={clientes}
-        produtosAcabados={produtosAcabados}
+        clientes={clientesFormatados}
+        produtosAcabados={produtosFormatados}
         gerarNumeroProposta={gerarNumeroProposta}
         handleClienteChange={handleClienteChange}
         clienteDesabilitado={clientePreSelecionado}

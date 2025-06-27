@@ -7,23 +7,15 @@ import { useObras, useProjetos } from "@/hooks/useSupabaseModules";
 import { usePropostas } from "@/hooks/usePropostas";
 
 const ObrasTab = () => {
-  const { obras, isLoading: loadingObras, criarObra, isCriando: criandoObra } = useObras();
+  const { obras, isLoading: loadingObras } = useObras();
   const { projetos } = useProjetos();
   const { clientes } = usePropostas();
-
-  const handleCreateTest = () => {
-    const clienteId = clientes.length > 0 ? clientes[0].id.toString() : null;
-    const projetoId = projetos.length > 0 ? projetos[0].id : null;
-    criarObra(createTestData.obra(clienteId, projetoId));
-  };
 
   return (
     <TestTabContent 
       title="Obras" 
       count={obras.length}
       isLoading={loadingObras}
-      onCreateTest={handleCreateTest}
-      isCreating={criandoObra}
     >
       {obras.map((obra) => (
         <div key={obra.id} className="flex items-center justify-between p-2 border rounded">
@@ -39,6 +31,13 @@ const ObrasTab = () => {
           </div>
         </div>
       ))}
+      
+      {obras.length === 0 && !loadingObras && (
+        <div className="text-center p-4 text-muted-foreground">
+          <p>Nenhuma obra cadastrada.</p>
+          <p className="text-sm mt-1">As obras são criadas automaticamente a partir de propostas aprovadas.</p>
+        </div>
+      )}
     </TestTabContent>
   );
 };

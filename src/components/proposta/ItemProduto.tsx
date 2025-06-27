@@ -13,7 +13,7 @@ import {
 import { ItemsTable } from "./ItemsTable";
 import { ItemEditDialog } from "./ItemEditDialog";
 import { ProdutoSelectionDialog } from "./ProdutoSelectionDialog";
-import { useProdutosAcabados } from "@/hooks/useSupabaseModules";
+import { useProdutosAcabados } from "@/hooks/useProdutosAcabados";
 
 interface ItemProdutoProps {
   proposta: Proposta;

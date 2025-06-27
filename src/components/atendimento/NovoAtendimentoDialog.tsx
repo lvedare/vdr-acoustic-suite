@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClienteSimplificado } from "@/types/orcamento";
+import { useClientes } from "@/hooks/useClientes";
 
 interface NovoAtendimentoDialogProps {
   isOpen: boolean;
@@ -30,7 +30,7 @@ export default function NovoAtendimentoDialog({
   onSubmit
 }: NovoAtendimentoDialogProps) {
   const navigate = useNavigate();
-  const [clientes, setClientes] = useState<ClienteSimplificado[]>([]);
+  const { clientes } = useClientes();
   const [selectedClienteId, setSelectedClienteId] = useState<string>("");
   const [formData, setFormData] = useState({
     cliente: "",
@@ -39,14 +39,6 @@ export default function NovoAtendimentoDialog({
     mensagem: "",
     canal: "WhatsApp",
   });
-
-  // Carregar clientes do localStorage
-  useEffect(() => {
-    const savedClientes = localStorage.getItem("clientes");
-    if (savedClientes) {
-      setClientes(JSON.parse(savedClientes));
-    }
-  }, [isOpen]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -59,20 +51,18 @@ export default function NovoAtendimentoDialog({
     setSelectedClienteId(value);
     
     if (value === "novo") {
-      // Redirecionar para cadastro de clientes
       onOpenChange(false);
       navigate("/clientes", { state: { openNewClient: true } });
       return;
     }
     
-    const clienteId = parseInt(value);
-    const selectedCliente = clientes.find(c => c.id === clienteId);
+    const selectedCliente = clientes.find(c => c.id === value);
     
     if (selectedCliente) {
       setFormData(prev => ({
         ...prev,
         cliente: selectedCliente.nome,
-        contato: selectedCliente.telefone,
+        contato: selectedCliente.telefone || selectedCliente.email || '',
       }));
     }
   };
@@ -80,13 +70,21 @@ export default function NovoAtendimentoDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Criar data no formato ISO (YYYY-MM-DD)
+    const now = new Date();
+    const dataISO = now.toISOString().split('T')[0];
+    const horaFormatada = now.toTimeString().slice(0, 5);
+    
     const atendimentoData = {
-      id: Date.now(),
-      ...formData,
-      data: new Date().toLocaleDateString(),
-      hora: new Date().toLocaleTimeString().slice(0, 5),
+      cliente_nome: formData.cliente,
+      contato: formData.contato,
+      assunto: formData.assunto,
+      mensagem: formData.mensagem,
+      data: dataISO, // Formato correto para Supabase
+      hora: horaFormatada,
+      canal: formData.canal,
       status: "Novo",
-      clienteId: selectedClienteId !== "novo" ? parseInt(selectedClienteId) : null,
+      cliente_id: selectedClienteId !== "novo" && selectedClienteId ? selectedClienteId : null,
     };
     
     onSubmit(atendimentoData);
@@ -130,7 +128,7 @@ export default function NovoAtendimentoDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {clientes.map((cliente) => (
-                      <SelectItem key={cliente.id} value={cliente.id.toString()}>
+                      <SelectItem key={cliente.id} value={cliente.id}>
                         {cliente.nome} - {cliente.empresa || "Pessoa Física"}
                       </SelectItem>
                     ))}
