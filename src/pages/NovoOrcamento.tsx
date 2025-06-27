@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -115,11 +114,34 @@ const NovoOrcamento = () => {
       return;
     }
     
-    const clienteSelecionado = clientes.find(c => c.id === clienteId);
+    // Buscar o cliente usando o ID numérico convertido
+    const clienteSelecionado = clientes.find(c => {
+      // Converter UUID para número da mesma forma que fazemos na formatação
+      let numericId = 0;
+      if (c.id) {
+        const str = c.id.toString();
+        for (let i = 0; i < str.length; i++) {
+          numericId = ((numericId << 5) - numericId + str.charCodeAt(i)) & 0xffffffff;
+        }
+        numericId = Math.abs(numericId);
+      }
+      return numericId === clienteId;
+    });
+    
     if (clienteSelecionado) {
+      // Converter para o formato esperado pela proposta
+      const clienteFormatado: ClienteSimplificado = {
+        id: clienteId, // Usar o ID numérico já convertido
+        nome: clienteSelecionado.nome,
+        email: clienteSelecionado.email || '',
+        telefone: clienteSelecionado.telefone || '',
+        empresa: clienteSelecionado.empresa || '',
+        cnpj: clienteSelecionado.cnpj || ''
+      };
+      
       setProposta(prev => ({
         ...prev,
-        cliente: clienteSelecionado
+        cliente: clienteFormatado
       }));
     }
   };
@@ -206,14 +228,26 @@ const NovoOrcamento = () => {
   });
 
   // Converter clientes do Supabase para o formato esperado
-  const clientesFormatados: ClienteSimplificado[] = clientes.map(cliente => ({
-    id: parseInt(cliente.id?.substring(0, 8) || '0', 16),
-    nome: cliente.nome,
-    email: cliente.email || '',
-    telefone: cliente.telefone || '',
-    empresa: cliente.empresa || '',
-    cnpj: cliente.cnpj || ''
-  }));
+  const clientesFormatados: ClienteSimplificado[] = clientes.map(cliente => {
+    // Gerar ID numérico baseado no hash do UUID
+    let numericId = 0;
+    if (cliente.id) {
+      const str = cliente.id.toString();
+      for (let i = 0; i < str.length; i++) {
+        numericId = ((numericId << 5) - numericId + str.charCodeAt(i)) & 0xffffffff;
+      }
+      numericId = Math.abs(numericId);
+    }
+    
+    return {
+      id: numericId,
+      nome: cliente.nome,
+      email: cliente.email || '',
+      telefone: cliente.telefone || '',
+      empresa: cliente.empresa || '',
+      cnpj: cliente.cnpj || ''
+    };
+  });
   
   return (
     <div className="space-y-6">
