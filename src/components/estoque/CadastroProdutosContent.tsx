@@ -16,7 +16,8 @@ export const CadastroProdutosContent = () => {
     produtoAtual, 
     setProdutoAtual, 
     setNovoProduto, 
-    produtoVazio 
+    produtoVazio,
+    isLoading 
   } = useProdutos();
   
   const handleNovoProduto = () => {
@@ -31,13 +32,14 @@ export const CadastroProdutosContent = () => {
         <div>
           <CardTitle className="flex items-center">
             <Package className="mr-2 h-5 w-5" />
-            Produtos
+            Produtos ({produtos.length})
           </CardTitle>
           <CardDescription>
             Gerencie o cadastro de produtos acabados
+            {isLoading && " - Carregando..."}
           </CardDescription>
         </div>
-        <Button onClick={handleNovoProduto}>
+        <Button onClick={handleNovoProduto} disabled={isLoading}>
           <Plus className="mr-1 h-4 w-4" /> Novo Produto
         </Button>
       </CardHeader>

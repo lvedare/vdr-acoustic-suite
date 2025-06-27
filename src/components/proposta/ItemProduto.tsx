@@ -23,16 +23,22 @@ interface ItemProdutoProps {
 
 const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoProps) => {
   const navigate = useNavigate();
-  const { produtos: produtosEstoque, isLoading: loadingProdutos } = useProdutosAcabados();
+  const { produtos: produtosSupabase, isLoading: loadingProdutos } = useProdutosAcabados();
   
   const [itemEmEdicao, setItemEmEdicao] = useState<ItemProposta | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [filtroProduto, setFiltroProduto] = useState("");
   const [dialogProdutosAberto, setDialogProdutosAberto] = useState(false);
 
-  // Convert Supabase products to the expected format - COM ESTOQUE MAIOR QUE 0
-  const produtosDisponiveis: ProdutoAcabado[] = produtosEstoque
-    .filter(produto => produto.quantidade_estoque > 0) // APENAS PRODUTOS COM ESTOQUE
+  console.log('Produtos do Supabase carregados:', produtosSupabase);
+  console.log('Loading produtos:', loadingProdutos);
+
+  // Converter produtos do Supabase para o formato esperado - COM ESTOQUE MAIOR QUE 0
+  const produtosDisponiveis: ProdutoAcabado[] = produtosSupabase
+    .filter(produto => {
+      console.log(`Produto ${produto.nome}: estoque = ${produto.quantidade_estoque}`);
+      return produto.quantidade_estoque > 0;
+    })
     .map(produto => {
       // Gerar ID numérico baseado no hash do UUID
       let numericId = 0;
@@ -57,8 +63,9 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
       };
     });
 
-  console.log('Produtos do estoque (Supabase):', produtosEstoque);
   console.log('Produtos disponíveis (formatados com estoque > 0):', produtosDisponiveis);
+  console.log('Total produtos no Supabase:', produtosSupabase.length);
+  console.log('Total produtos disponíveis:', produtosDisponiveis.length);
 
   const handleAdicionarProdutoAcabado = (produto: ProdutoAcabado) => {
     const novoItem: ItemProposta = {
@@ -143,9 +150,14 @@ const ItemProduto = ({ proposta, setProposta, produtosAcabados }: ItemProdutoPro
             <p className="text-sm text-muted-foreground">
               {loadingProdutos ? "Carregando..." : `${produtosDisponiveis.length} produtos com estoque disponível`}
             </p>
-            {!loadingProdutos && produtosEstoque.length > 0 && produtosDisponiveis.length === 0 && (
+            {!loadingProdutos && produtosSupabase.length > 0 && produtosDisponiveis.length === 0 && (
               <p className="text-sm text-amber-600 mt-1">
-                Há {produtosEstoque.length} produtos cadastrados, mas nenhum com estoque disponível
+                Há {produtosSupabase.length} produtos cadastrados, mas nenhum com estoque disponível
+              </p>
+            )}
+            {!loadingProdutos && produtosSupabase.length === 0 && (
+              <p className="text-sm text-red-600 mt-1">
+                Nenhum produto cadastrado no sistema. Cadastre produtos primeiro.
               </p>
             )}
           </div>

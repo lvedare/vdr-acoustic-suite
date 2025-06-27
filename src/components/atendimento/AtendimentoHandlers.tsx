@@ -22,19 +22,23 @@ export const useAtendimentoHandlers = () => {
     atendimentos.length > 0 ? atendimentos[0] : null
   );
 
-  // Function to create a new service record
+  // Function to create a new service record - CORRIGIDO
   const handleNovoAtendimento = (data: any) => {
+    console.log('Dados recebidos para criar atendimento:', data);
+    
     const atendimentoData = {
-      cliente_nome: data.cliente,
+      cliente_nome: data.cliente_nome, // Corrigido: usar cliente_nome
       contato: data.contato,
       assunto: data.assunto,
       mensagem: data.mensagem || '',
       data: data.data,
       hora: data.hora,
       canal: data.canal,
-      status: data.status || 'Novo'
+      status: data.status || 'Novo',
+      cliente_id: data.cliente_id || null
     };
 
+    console.log('Dados formatados para Supabase:', atendimentoData);
     criarAtendimento(atendimentoData);
   };
 
