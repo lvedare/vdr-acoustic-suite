@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { ProdutoAcabado } from "@/types/orcamento";
 import { useProdutosSupabase } from "@/hooks/useProdutosSupabase";
@@ -150,10 +151,16 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const salvarProduto = (produto: ProdutoAcabado) => {
     if (produto.id === 0) {
-      // Criar novo produto
+      // Criar novo produto - Supabase gerará o UUID automaticamente
       const novoProdutoData = {
-        ...produto,
-        id: Date.now() // Será ignorado pelo Supabase que gerará um UUID
+        codigo: produto.codigo,
+        nome: produto.nome,
+        descricao: produto.descricao,
+        categoria: produto.categoria,
+        unidadeMedida: produto.unidadeMedida,
+        valorBase: produto.valorBase,
+        quantidadeEstoque: produto.quantidadeEstoque,
+        dataCadastro: produto.dataCadastro
       };
       criarProdutoSupabase(novoProdutoData);
     } else {
