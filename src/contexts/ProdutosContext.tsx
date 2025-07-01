@@ -74,7 +74,7 @@ interface ProdutosContextType {
 const ProdutosContext = createContext<ProdutosContextType | undefined>(undefined);
 
 export const produtoVazio: ProdutoAcabado = {
-  id: 0,
+  id: "0",
   codigo: "",
   nome: "",
   descricao: "",
@@ -151,22 +151,13 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const salvarProduto = (produto: ProdutoAcabado) => {
-    if (produto.id === 0) {
-      // Criar novo produto - passar objeto sem ID para que o Supabase gere o UUID
-      const novoProdutoData = {
-        codigo: produto.codigo,
-        nome: produto.nome,
-        descricao: produto.descricao,
-        categoria: produto.categoria,
-        unidadeMedida: produto.unidadeMedida,
-        valorBase: produto.valorBase,
-        quantidadeEstoque: produto.quantidadeEstoque,
-        dataCadastro: produto.dataCadastro
-      };
-      criarProdutoSupabase(novoProdutoData);
+    if (produto.id === "0") {
+      // Criar novo produto - passar dados sem ID para que o Supabase gere o UUID
+      criarProdutoSupabase(produto);
     } else {
       // Atualizar produto existente - encontrar o UUID original
-      const originalUUID = findOriginalUUID(produto.id);
+      const numericId = typeof produto.id === 'string' ? parseInt(produto.id) : produto.id;
+      const originalUUID = findOriginalUUID(numericId);
       
       if (originalUUID) {
         atualizarProdutoSupabase(originalUUID, produto);
@@ -199,7 +190,8 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const handleExcluirProduto = () => {
     if (produtoAtual) {
-      excluirProduto(produtoAtual.id);
+      const numericId = typeof produtoAtual.id === 'string' ? parseInt(produtoAtual.id) : produtoAtual.id;
+      excluirProduto(numericId);
       setIsDeleteDialogOpen(false);
       setProdutoAtual(null);
     }
@@ -207,7 +199,8 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const handleForceExcluirProduto = () => {
     if (produtoAtual) {
-      excluirProduto(produtoAtual.id);
+      const numericId = typeof produtoAtual.id === 'string' ? parseInt(produtoAtual.id) : produtoAtual.id;
+      excluirProduto(numericId);
       setIsConfirmDialogOpen(false);
       setProdutoAtual(null);
     }
