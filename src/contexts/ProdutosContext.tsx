@@ -152,7 +152,8 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const salvarProduto = (produto: ProdutoAcabado) => {
     if (produto.id === 0) {
       // Criar novo produto - passar dados sem ID para que o Supabase gere o UUID
-      criarProdutoSupabase(produto);
+      const { id, ...produtoSemId } = produto;
+      criarProdutoSupabase(produtoSemId);
     } else {
       // Atualizar produto existente - encontrar o UUID original
       const originalUUID = findOriginalUUID(produto.id);
