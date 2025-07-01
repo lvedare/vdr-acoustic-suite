@@ -72,7 +72,7 @@ interface ProdutosContextType {
 const ProdutosContext = createContext<ProdutosContextType | undefined>(undefined);
 
 export const produtoVazio: ProdutoAcabado = {
-  id: "",
+  id: 0,
   codigo: "",
   nome: "",
   descricao: "",
@@ -149,9 +149,9 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const salvarProduto = (produto: ProdutoAcabado) => {
-    if (produto.id === "" || produto.id === "0") {
-      // Criar novo produto - passar dados sem ID para que o Supabase gere o UUID
-      const produtoParaCriar = {
+    if (produto.id === 0) {
+      // Criar novo produto - usar a função de criação que aceita objeto sem ID
+      criarProdutoSupabase({
         codigo: produto.codigo,
         nome: produto.nome,
         descricao: produto.descricao,
@@ -160,11 +160,14 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         valor_base: produto.valorBase,
         quantidade_estoque: produto.quantidadeEstoque,
         data_cadastro: produto.dataCadastro
-      };
-      criarProdutoSupabase(produtoParaCriar);
+      });
     } else {
-      // Atualizar produto existente - usar o ID string diretamente
-      atualizarProdutoSupabase(produto.id, produto);
+      // Atualizar produto existente - encontrar o UUID original
+      const originalUUID = findOriginalUUID(produto.id);
+      
+      if (originalUUID) {
+        atualizarProdutoSupabase(originalUUID, produto);
+      }
     }
   };
 
