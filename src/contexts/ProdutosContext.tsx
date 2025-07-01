@@ -145,7 +145,7 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return generatedId === numericId;
     });
     
-    return produtoOriginal?.id || null;
+    return produtoOriginal?.id?.toString() || null;
   };
 
   const salvarProduto = (produto: ProdutoAcabado) => {
