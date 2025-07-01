@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { ProdutoAcabado } from "@/types/orcamento";
 import { useProdutosSupabase } from "@/hooks/useProdutosSupabase";
@@ -73,7 +72,7 @@ interface ProdutosContextType {
 const ProdutosContext = createContext<ProdutosContextType | undefined>(undefined);
 
 export const produtoVazio: ProdutoAcabado = {
-  id: 0,
+  id: "",
   codigo: "",
   nome: "",
   descricao: "",
@@ -150,26 +149,22 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const salvarProduto = (produto: ProdutoAcabado) => {
-    if (produto.id === 0) {
+    if (produto.id === "" || produto.id === "0") {
       // Criar novo produto - passar dados sem ID para que o Supabase gere o UUID
       const produtoParaCriar = {
         codigo: produto.codigo,
         nome: produto.nome,
         descricao: produto.descricao,
         categoria: produto.categoria,
-        unidadeMedida: produto.unidadeMedida,
-        valorBase: produto.valorBase,
-        quantidadeEstoque: produto.quantidadeEstoque,
-        dataCadastro: produto.dataCadastro
+        unidade_medida: produto.unidadeMedida,
+        valor_base: produto.valorBase,
+        quantidade_estoque: produto.quantidadeEstoque,
+        data_cadastro: produto.dataCadastro
       };
       criarProdutoSupabase(produtoParaCriar);
     } else {
-      // Atualizar produto existente - encontrar o UUID original
-      const originalUUID = findOriginalUUID(produto.id);
-      
-      if (originalUUID) {
-        atualizarProdutoSupabase(originalUUID, produto);
-      }
+      // Atualizar produto existente - usar o ID string diretamente
+      atualizarProdutoSupabase(produto.id, produto);
     }
   };
 
