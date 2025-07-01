@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { ProdutoAcabado } from "@/types/orcamento";
 import { useProdutosSupabase } from "@/hooks/useProdutosSupabase";
@@ -132,6 +131,23 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   }, [produtosSupabase, searchTerm, filtroCategoria, filtroEstoque]);
 
+  // Helper function to find original UUID by numeric ID
+  const findOriginalUUID = (numericId: number): string | null => {
+    const produtoOriginal = produtosSupabase.find(p => {
+      let generatedId = 0;
+      if (p.id) {
+        const str = p.id.toString();
+        for (let i = 0; i < str.length; i++) {
+          generatedId = ((generatedId << 5) - generatedId + str.charCodeAt(i)) & 0xffffffff;
+        }
+        generatedId = Math.abs(generatedId);
+      }
+      return generatedId === numericId;
+    });
+    
+    return produtoOriginal?.id || null;
+  };
+
   const salvarProduto = (produto: ProdutoAcabado) => {
     if (produto.id === 0) {
       // Criar novo produto
@@ -142,20 +158,10 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       criarProdutoSupabase(novoProdutoData);
     } else {
       // Atualizar produto existente - encontrar o UUID original
-      const produtoOriginal = produtosSupabase.find(p => {
-        let numericId = 0;
-        if (p.id) {
-          const str = p.id.toString();
-          for (let i = 0; i < str.length; i++) {
-            numericId = ((numericId << 5) - numericId + str.charCodeAt(i)) & 0xffffffff;
-          }
-          numericId = Math.abs(numericId);
-        }
-        return numericId === produto.id;
-      });
+      const originalUUID = findOriginalUUID(produto.id);
       
-      if (produtoOriginal?.id) {
-        atualizarProdutoSupabase(produtoOriginal.id, produto);
+      if (originalUUID) {
+        atualizarProdutoSupabase(originalUUID, produto);
       }
     }
   };
@@ -168,20 +174,10 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const excluirProduto = (id: number) => {
     // Encontrar o UUID original do produto
-    const produtoOriginal = produtosSupabase.find(p => {
-      let numericId = 0;
-      if (p.id) {
-        const str = p.id.toString();
-        for (let i = 0; i < str.length; i++) {
-          numericId = ((numericId << 5) - numericId + str.charCodeAt(i)) & 0xffffffff;
-        }
-        numericId = Math.abs(numericId);
-      }
-      return numericId === id;
-    });
+    const originalUUID = findOriginalUUID(id);
     
-    if (produtoOriginal?.id) {
-      excluirProdutoSupabase(produtoOriginal.id);
+    if (originalUUID) {
+      excluirProdutoSupabase(originalUUID);
     }
   };
 
