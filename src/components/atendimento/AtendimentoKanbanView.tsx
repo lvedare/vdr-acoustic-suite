@@ -1,161 +1,73 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Trash2, FileText, Phone, Mail } from "lucide-react";
-import { ConfirmDeleteDialog } from "@/components/common/ConfirmDeleteDialog";
-import { toast } from "sonner";
-
-interface Atendimento {
-  id: number;
-  cliente: string;
-  contato: string;
-  assunto: string;
-  data: string;
-  hora: string;
-  canal: string;
-  status: string;
-  mensagem: string;
-}
+import { formatDate } from "@/lib/utils";
+import { AtendimentoActions } from "./AtendimentoActions";
 
 interface AtendimentoKanbanViewProps {
-  atendimentos: Atendimento[];
-  onDeleteAtendimento: (id: number) => void;
-  onChangeStatus: (id: number, newStatus: string) => void;
-  onConverterEmOrcamento: (atendimento: Atendimento) => void;
+  atendimentos: any[];
+  onVerDetalhes: (atendimento: any) => void;
+  onExcluir: (atendimento: any) => void;
+  onEnviarParaOrcamento: (atendimento: any) => void;
 }
 
-const statusColumns = [
-  { key: "Novo", label: "Novos", color: "bg-blue-50 border-blue-200" },
-  { key: "Em andamento", label: "Em Andamento", color: "bg-amber-50 border-amber-200" },
-  { key: "Agendado", label: "Agendados", color: "bg-purple-50 border-purple-200" },
-  { key: "Convertido", label: "Convertidos", color: "bg-green-50 border-green-200" },
-  { key: "Crítico", label: "Críticos", color: "bg-red-50 border-red-200" }
-];
+export const AtendimentoKanbanView: React.FC<AtendimentoKanbanViewProps> = ({
+  atendimentos,
+  onVerDetalhes,
+  onExcluir,
+  onEnviarParaOrcamento
+}) => {
+  const statusColumns = [
+    { key: 'Novo', title: 'Novos', color: 'bg-blue-50 border-blue-200' },
+    { key: 'Em Andamento', title: 'Em Andamento', color: 'bg-yellow-50 border-yellow-200' },
+    { key: 'Resolvido', title: 'Resolvidos', color: 'bg-green-50 border-green-200' },
+    { key: 'Fechado', title: 'Fechados', color: 'bg-gray-50 border-gray-200' }
+  ];
 
-export function AtendimentoKanbanView({ 
-  atendimentos, 
-  onDeleteAtendimento, 
-  onChangeStatus, 
-  onConverterEmOrcamento 
-}: AtendimentoKanbanViewProps) {
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [atendimentoToDelete, setAtendimentoToDelete] = useState<Atendimento | null>(null);
-
-  const handleDeleteClick = (atendimento: Atendimento) => {
-    setAtendimentoToDelete(atendimento);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (atendimentoToDelete) {
-      onDeleteAtendimento(atendimentoToDelete.id);
-      setDeleteDialogOpen(false);
-      setAtendimentoToDelete(null);
-      toast.success("Atendimento excluído com sucesso!");
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Novo": return "bg-blue-100 text-blue-800";
-      case "Em andamento": return "bg-amber-100 text-amber-800";
-      case "Agendado": return "bg-purple-100 text-purple-800";
-      case "Convertido": return "bg-green-100 text-green-800";
-      case "Crítico": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const handleStatusChange = (atendimentoId: number, newStatus: string) => {
-    onChangeStatus(atendimentoId, newStatus);
-    toast.success(`Status alterado para ${newStatus}`);
+  const getAtendimentosByStatus = (status: string) => {
+    return atendimentos.filter(atendimento => atendimento.status === status);
   };
 
   return (
-    <div className="h-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 h-full">
-        {statusColumns.map((column) => {
-          const columnAtendimentos = atendimentos.filter(a => a.status === column.key);
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {statusColumns.map((column) => (
+        <div key={column.key} className={`border rounded-lg p-4 ${column.color}`}>
+          <h3 className="font-semibold mb-4 flex items-center justify-between">
+            {column.title}
+            <Badge variant="secondary" className="ml-2">
+              {getAtendimentosByStatus(column.key).length}
+            </Badge>
+          </h3>
           
-          return (
-            <div key={column.key} className={`${column.color} p-4 rounded-lg border`}>
-              <h3 className="font-semibold text-center mb-4 flex items-center justify-center gap-2">
-                {column.label}
-                <Badge variant="secondary">{columnAtendimentos.length}</Badge>
-              </h3>
-              
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {columnAtendimentos.map((atendimento) => (
-                  <Card key={atendimento.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-medium">{atendimento.cliente}</CardTitle>
-                        <div className="flex gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => onConverterEmOrcamento(atendimento)}
-                            title="Criar Proposta"
-                          >
-                            <FileText className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDeleteClick(atendimento)}
-                            className="text-red-600 hover:text-red-700"
-                            title="Excluir Atendimento"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground">{atendimento.assunto}</p>
-                        <div className="flex items-center gap-2 text-xs">
-                          {atendimento.canal === "WhatsApp" && <Phone className="h-3 w-3" />}
-                          {atendimento.canal === "Email" && <Mail className="h-3 w-3" />}
-                          <span>{atendimento.canal}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{atendimento.data} às {atendimento.hora}</p>
-                        
-                        {/* Botões para mudar status */}
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {statusColumns
-                            .filter(s => s.key !== atendimento.status)
-                            .map((status) => (
-                              <Button
-                                key={status.key}
-                                variant="outline"
-                                size="sm"
-                                className="text-xs h-6"
-                                onClick={() => handleStatusChange(atendimento.id, status.key)}
-                              >
-                                {status.key}
-                              </Button>
-                            ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <ConfirmDeleteDialog
-        isOpen={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleConfirmDelete}
-        title="Excluir Atendimento"
-        itemName={atendimentoToDelete?.cliente}
-      />
+          <div className="space-y-3">
+            {getAtendimentosByStatus(column.key).map((atendimento) => (
+              <Card key={atendimento.id} className="bg-white shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {atendimento.cliente_nome}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {atendimento.assunto}
+                  </p>
+                  <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
+                    <span>{atendimento.canal}</span>
+                    <span>{formatDate(atendimento.data)}</span>
+                  </div>
+                  <AtendimentoActions
+                    atendimento={atendimento}
+                    onVerDetalhes={onVerDetalhes}
+                    onExcluir={onExcluir}
+                    onEnviarParaOrcamento={onEnviarParaOrcamento}
+                  />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
-}
+};

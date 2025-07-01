@@ -1,109 +1,78 @@
 
 import React from "react";
+import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Trash2, FileText } from "lucide-react";
-import { getStatusColor } from "./utils";
-
-type Atendimento = {
-  id: number;
-  cliente: string;
-  contato: string;
-  assunto: string;
-  data: string;
-  hora: string;
-  canal: string;
-  status: string;
-  mensagem: string;
-};
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AtendimentoActions } from "./AtendimentoActions";
 
 interface AtendimentoListProps {
-  atendimentos: Atendimento[];
-  selectedAtendimento: Atendimento;
-  onSelectAtendimento: (atendimento: Atendimento) => void;
-  onDeleteAtendimento?: (id: number) => void;
-  onConverterEmOrcamento?: (atendimento: Atendimento) => void;
+  atendimentos: any[];
+  onVerDetalhes: (atendimento: any) => void;
+  onExcluir: (atendimento: any) => void;
+  onEnviarParaOrcamento: (atendimento: any) => void;
 }
 
-const AtendimentoList = ({ 
-  atendimentos, 
-  selectedAtendimento, 
-  onSelectAtendimento,
-  onDeleteAtendimento,
-  onConverterEmOrcamento
-}: AtendimentoListProps) => {
+export const AtendimentoList: React.FC<AtendimentoListProps> = ({
+  atendimentos,
+  onVerDetalhes,
+  onExcluir,
+  onEnviarParaOrcamento
+}) => {
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      'Novo': { variant: 'default' as const, color: 'bg-blue-500' },
+      'Em Andamento': { variant: 'secondary' as const, color: 'bg-yellow-500' },
+      'Resolvido': { variant: 'outline' as const, color: 'bg-green-500' },
+      'Fechado': { variant: 'outline' as const, color: 'bg-gray-500' }
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['Novo'];
+    return <Badge variant={config.variant}>{status}</Badge>;
+  };
+
   return (
-    <div className="rounded-md border">
-      <div className="flex flex-col divide-y">
-        {atendimentos.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground">
-            Nenhum atendimento encontrado.
-          </div>
-        ) : (
-          atendimentos.map((atendimento) => (
-            <div
-              key={atendimento.id}
-              className={`cursor-pointer p-4 transition-colors hover:bg-muted/50 ${
-                selectedAtendimento.id === atendimento.id
-                  ? "bg-muted/50"
-                  : ""
-              }`}
-              onClick={() => onSelectAtendimento(atendimento)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="font-medium">{atendimento.cliente}</div>
-                <div className="flex items-center gap-2">
-                  <div className="text-xs text-muted-foreground">
-                    <span>{atendimento.data}</span>
-                    <span className="ml-2">{atendimento.hora}</span>
-                  </div>
-                  {onConverterEmOrcamento && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onConverterEmOrcamento(atendimento);
-                      }}
-                      title="Criar Proposta"
-                    >
-                      <FileText className="h-3 w-3" />
-                    </Button>
-                  )}
-                  {onDeleteAtendimento && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteAtendimento(atendimento.id);
-                      }}
-                      className="text-red-600 hover:text-red-700"
-                      title="Excluir Atendimento"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-              <div className="mt-1 text-sm">{atendimento.assunto}</div>
-              <div className="mt-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{atendimento.canal}</Badge>
-                  <Badge
-                    className={getStatusColor(atendimento.status)}
-                    variant="secondary"
-                  >
-                    {atendimento.status}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+    <div className="border rounded-md">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Cliente</TableHead>
+            <TableHead>Assunto</TableHead>
+            <TableHead>Canal</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Data</TableHead>
+            <TableHead>Contato</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {atendimentos.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-10">
+                <p className="text-muted-foreground">Nenhum atendimento encontrado</p>
+              </TableCell>
+            </TableRow>
+          ) : (
+            atendimentos.map((atendimento) => (
+              <TableRow key={atendimento.id}>
+                <TableCell className="font-medium">{atendimento.cliente_nome}</TableCell>
+                <TableCell>{atendimento.assunto}</TableCell>
+                <TableCell>{atendimento.canal}</TableCell>
+                <TableCell>{getStatusBadge(atendimento.status)}</TableCell>
+                <TableCell>{formatDate(atendimento.data)}</TableCell>
+                <TableCell>{atendimento.contato}</TableCell>
+                <TableCell className="text-right">
+                  <AtendimentoActions
+                    atendimento={atendimento}
+                    onVerDetalhes={onVerDetalhes}
+                    onExcluir={onExcluir}
+                    onEnviarParaOrcamento={onEnviarParaOrcamento}
+                  />
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 };
-
-export default AtendimentoList;

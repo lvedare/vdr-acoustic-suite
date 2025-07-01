@@ -1,32 +1,51 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, FileText } from "lucide-react";
+import { Eye, Trash2, MessageSquare } from "lucide-react";
 
 interface AtendimentoActionsProps {
-  onDelete: () => void;
-  onConverterEmOrcamento: () => void;
+  atendimento: any;
+  onVerDetalhes: (atendimento: any) => void;
+  onExcluir: (atendimento: any) => void;
+  onEnviarParaOrcamento: (atendimento: any) => void;
 }
 
-export function AtendimentoActions({ onDelete, onConverterEmOrcamento }: AtendimentoActionsProps) {
+export const AtendimentoActions: React.FC<AtendimentoActionsProps> = ({
+  atendimento,
+  onVerDetalhes,
+  onExcluir,
+  onEnviarParaOrcamento
+}) => {
   return (
     <div className="flex gap-2">
-      <Button 
+      <Button
+        variant="ghost"
         size="sm"
-        onClick={onConverterEmOrcamento}
-        className="bg-vdr-blue hover:bg-blue-800"
+        onClick={() => onVerDetalhes(atendimento)}
+        title="Ver detalhes"
       >
-        <FileText className="h-4 w-4 mr-2" />
-        Criar Proposta
+        <Eye className="h-4 w-4" />
       </Button>
-      <Button 
-        variant="destructive" 
+      
+      <Button
+        variant="ghost"
         size="sm"
-        onClick={onDelete}
+        onClick={() => onEnviarParaOrcamento(atendimento)}
+        title="Enviar para orçamento"
+        className="text-blue-600 hover:text-blue-700"
       >
-        <Trash2 className="h-4 w-4 mr-2" />
-        Excluir
+        <MessageSquare className="h-4 w-4" />
+      </Button>
+      
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onExcluir(atendimento)}
+        title="Excluir atendimento"
+        className="text-red-600 hover:text-red-700"
+      >
+        <Trash2 className="h-4 w-4" />
       </Button>
     </div>
   );
-}
+};

@@ -1,167 +1,200 @@
 
-import React, { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Eye, Plus, Search } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import { toast } from "sonner";
 
-interface AtendimentosTabProps {
-  atendimentos: any[];
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-  onCriarProposta: (atendimento: any) => void;
-}
+export const AtendimentosTab = () => {
+  const [atendimentosParaOrcamento, setAtendimentosParaOrcamento] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
-const AtendimentosTab = ({ 
-  atendimentos, 
-  searchTerm, 
-  onSearchChange,
-  onCriarProposta
-}: AtendimentosTabProps) => {
-  const [selectedAtendimento, setSelectedAtendimento] = useState<any | null>(null);
-  
-  // Get status color for atendimentos
-  const getAtendimentoStatusColor = (status: string) => {
-    switch (status) {
-      case "Novo":
-        return "bg-blue-100 text-blue-800";
-      case "Em andamento":
-        return "bg-amber-100 text-amber-800";
-      case "Agendado":
-        return "bg-purple-100 text-purple-800";
-      case "Convertido":
-        return "bg-emerald-100 text-emerald-800";
-      case "Crítico":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  // Carregar atendimentos enviados do CRM
+  useEffect(() => {
+    const loadAtendimentos = () => {
+      const atendimentos = JSON.parse(localStorage.getItem('atendimentos_para_orcamento') || '[]');
+      setAtendimentosParaOrcamento(atendimentos);
+    };
+
+    loadAtendimentos();
+    
+    // Escutar mudanças no localStorage
+    const handleStorageChange = () => {
+      loadAtendimentos();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Filtrar atendimentos
+  const atendimentosFiltrados = atendimentosParaOrcamento.filter(atendimento => {
+    const matchesSearch = !searchTerm || 
+      atendimento.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      atendimento.assunto?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = !statusFilter || atendimento.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleCriarOrcamento = (atendimento: any) => {
+    // Criar novo orçamento baseado no atendimento
+    const novoOrcamento = {
+      id: Date.now(),
+      numero: `ORC-${Date.now()}`,
+      cliente_nome: atendimento.cliente_nome,
+      cliente_id: atendimento.cliente_id,
+      data: new Date().toISOString().split('T')[0],
+      status: 'rascunho',
+      valor_total: 0,
+      atendimento_origem: atendimento,
+      observacoes: atendimento.observacoes_orcamento || ''
+    };
+
+    // Salvar no localStorage
+    const orcamentos = JSON.parse(localStorage.getItem('orcamentos_do_atendimento') || '[]');
+    orcamentos.push(novoOrcamento);
+    localStorage.setItem('orcamentos_do_atendimento', JSON.stringify(orcamentos));
+
+    toast.success("Orçamento criado com sucesso!");
+    
+    // Remover da lista de atendimentos pendentes
+    const atendimentosAtualizados = atendimentosParaOrcamento.filter(a => a.id !== atendimento.id);
+    setAtendimentosParaOrcamento(atendimentosAtualizados);
+    localStorage.setItem('atendimentos_para_orcamento', JSON.stringify(atendimentosAtualizados));
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      'Novo': { variant: 'default' as const, color: 'bg-blue-500' },
+      'Em Andamento': { variant: 'secondary' as const, color: 'bg-yellow-500' },
+      'Resolvido': { variant: 'outline' as const, color: 'bg-green-500' },
+      'Fechado': { variant: 'outline' as const, color: 'bg-gray-500' }
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['Novo'];
+    return <Badge variant={config.variant}>{status}</Badge>;
   };
 
   return (
-    <div className="space-y-4">
-      <div className="relative w-full">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar atendimentos..."
-          className="pl-8"
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium mb-4">Atendimentos Recebidos do CRM</h3>
+        <p className="text-sm text-muted-foreground mb-6">
+          Atendimentos enviados do módulo de CRM que estão aguardando criação de orçamento.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Lista de atendimentos */}
-        <div className="rounded-md border">
-          <div className="flex flex-col divide-y">
-            {atendimentos.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground">
-                Nenhum atendimento encontrado.
-              </div>
-            ) : (
-              atendimentos.map((atendimento) => (
-                <div
-                  key={atendimento.id}
-                  className={`cursor-pointer p-4 transition-colors hover:bg-muted/50 ${
-                    selectedAtendimento?.id === atendimento.id
-                      ? "bg-muted/50"
-                      : ""
-                  }`}
-                  onClick={() => setSelectedAtendimento(atendimento)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">{atendimento.cliente}</div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{atendimento.data}</span>
-                      <span>{atendimento.hora}</span>
-                    </div>
-                  </div>
-                  <div className="mt-1 text-sm">{atendimento.assunto}</div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">{atendimento.canal}</Badge>
-                      <Badge
-                        className={getAtendimentoStatusColor(atendimento.status)}
-                        variant="secondary"
-                      >
-                        {atendimento.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+      {/* Filtros */}
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar por cliente ou assunto..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filtrar por status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Todos os status</SelectItem>
+            <SelectItem value="Novo">Novo</SelectItem>
+            <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+            <SelectItem value="Resolvido">Resolvido</SelectItem>
+            <SelectItem value="Fechado">Fechado</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-        {/* Detalhes do atendimento selecionado */}
-        <div className="rounded-md border">
-          {selectedAtendimento ? (
-            <div className="p-4">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-medium">
-                  Detalhes do Atendimento
-                </h3>
-                <Badge
-                  className={getAtendimentoStatusColor(selectedAtendimento.status)}
-                  variant="secondary"
-                >
-                  {selectedAtendimento.status}
-                </Badge>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex flex-col space-y-3">
+      {/* Lista de Atendimentos */}
+      <div className="grid gap-4">
+        {atendimentosFiltrados.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <p className="text-muted-foreground">
+                {atendimentosParaOrcamento.length === 0 
+                  ? "Nenhum atendimento foi enviado do CRM ainda."
+                  : "Nenhum atendimento encontrado com os filtros aplicados."
+                }
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Os atendimentos enviados do módulo de CRM aparecerão aqui.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          atendimentosFiltrados.map((atendimento) => (
+            <Card key={atendimento.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
                   <div>
-                    <div className="text-sm text-muted-foreground">Cliente</div>
-                    <div className="font-medium">{selectedAtendimento.cliente}</div>
+                    <CardTitle className="text-lg">{atendimento.cliente_nome}</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {atendimento.assunto}
+                    </p>
                   </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Contato</div>
-                    <div>{selectedAtendimento.contato}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Assunto</div>
-                    <div>{selectedAtendimento.assunto}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Data e Hora</div>
-                    <div>{selectedAtendimento.data} às {selectedAtendimento.hora}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground">Canal</div>
-                    <Badge variant="outline">{selectedAtendimento.canal}</Badge>
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(atendimento.status)}
                   </div>
                 </div>
-                
-                <div>
-                  <div className="text-sm text-muted-foreground mb-1">Mensagem</div>
-                  <div className="rounded-md bg-muted p-3 text-sm">
-                    {selectedAtendimento.mensagem}
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Canal</p>
+                    <p className="text-sm">{atendimento.canal}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Contato</p>
+                    <p className="text-sm">{atendimento.contato}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Data do Atendimento</p>
+                    <p className="text-sm">{formatDate(atendimento.data)}</p>
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-6 flex justify-end">
-                <Button 
-                  className="bg-vdr-blue hover:bg-blue-800"
-                  onClick={() => onCriarProposta(selectedAtendimento)}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Criar Proposta
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex h-full items-center justify-center p-4 text-muted-foreground">
-              Selecione um atendimento para ver os detalhes.
-            </div>
-          )}
-        </div>
+                {atendimento.observacoes_orcamento && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-muted-foreground">Observações para Orçamento</p>
+                    <p className="text-sm bg-gray-50 p-2 rounded mt-1">
+                      {atendimento.observacoes_orcamento}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {/* Ver detalhes do atendimento */}}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Detalhes
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleCriarOrcamento(atendimento)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Orçamento
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
 };
-
-export default AtendimentosTab;

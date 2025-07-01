@@ -1,90 +1,124 @@
 
 import React, { useState } from "react";
-import AtendimentoHeader from "@/components/atendimento/AtendimentoHeader";
-import AtendimentoContent from "@/components/atendimento/AtendimentoContent";
-import AtendimentoLoadingState from "@/components/atendimento/AtendimentoLoadingState";
-import { useAtendimentoHandlers } from "@/components/atendimento/AtendimentoHandlers";
-import { convertAtendimentosData, convertSelectedAtendimento } from "@/components/atendimento/AtendimentoDataConverter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Search, List, Kanban } from "lucide-react";
+import { AtendimentoContent } from "@/components/atendimento/AtendimentoContent";
+import { NovoAtendimentoDialog } from "@/components/atendimento/NovoAtendimentoDialog";
+import { useAtendimentos } from "@/hooks/useAtendimentos";
+import { toast } from "sonner";
 
 const Atendimento = () => {
+  const [view, setView] = useState<'lista' | 'kanban'>('lista');
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [canalFilter, setCanalFilter] = useState("");
   const [isNovoAtendimentoOpen, setIsNovoAtendimentoOpen] = useState(false);
-  const [isLigacaoDialogOpen, setIsLigacaoDialogOpen] = useState(false);
-  
-  const {
-    atendimentos,
-    isLoading,
-    selectedAtendimento,
-    setSelectedAtendimento,
-    handleNovoAtendimento,
-    handleDeleteAtendimento,
-    handleChangeStatus,
-    handleViewHistory,
-    handleConverterEmOrcamento
-  } = useAtendimentoHandlers();
 
-  // Update selected atendimento when data loads
-  React.useEffect(() => {
-    if (atendimentos.length > 0 && !selectedAtendimento) {
-      setSelectedAtendimento(atendimentos[0]);
-    }
-  }, [atendimentos, selectedAtendimento, setSelectedAtendimento]);
+  const { criarAtendimento } = useAtendimentos();
 
-  // Filter atendimentos based on search term
-  const filteredAtendimentos = atendimentos.filter(
-    (item) =>
-      item.cliente_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.assunto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.mensagem && item.mensagem.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  // Function to register a call
-  const handleRegistrarLigacao = () => {
-    setIsLigacaoDialogOpen(true);
-  };
-
-  const handleNovoAtendimentoSubmit = (data: any) => {
-    handleNovoAtendimento(data);
-    setIsNovoAtendimentoOpen(false);
-  };
-
-  const convertedAtendimentos = convertAtendimentosData(filteredAtendimentos);
-  const convertedSelectedAtendimento = convertSelectedAtendimento(selectedAtendimento, convertedAtendimentos);
-
-  const handleSelectAtendimento = (atendimento: any) => {
-    const originalAtendimento = atendimentos.find(a => 
-      parseInt(a.id?.substring(0, 8) || '0', 16) === atendimento.id
-    );
-    if (originalAtendimento) {
-      setSelectedAtendimento(originalAtendimento);
+  const handleNovoAtendimento = async (novoAtendimento: any) => {
+    try {
+      await criarAtendimento(novoAtendimento);
+      toast.success("Atendimento criado com sucesso!");
+      setIsNovoAtendimentoOpen(false);
+    } catch (error) {
+      console.error("Erro ao criar atendimento:", error);
+      toast.error("Erro ao criar atendimento");
     }
   };
-
-  if (isLoading) {
-    return <AtendimentoLoadingState />;
-  }
 
   return (
     <div className="space-y-6">
-      <AtendimentoHeader
-        isNovoAtendimentoOpen={isNovoAtendimentoOpen}
-        setIsNovoAtendimentoOpen={setIsNovoAtendimentoOpen}
-        onNovoAtendimento={handleNovoAtendimentoSubmit}
-        onRegistrarLigacao={handleRegistrarLigacao}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Atendimento</h1>
+          <p className="text-muted-foreground">
+            Gerencie todos os atendimentos e contatos com clientes
+          </p>
+        </div>
+        <Button onClick={() => setIsNovoAtendimentoOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Atendimento
+        </Button>
+      </div>
+
+      {/* Filtros e Controles */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex gap-4 items-center flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar atendimentos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="Novo">Novo</SelectItem>
+              <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+              <SelectItem value="Resolvido">Resolvido</SelectItem>
+              <SelectItem value="Fechado">Fechado</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={canalFilter} onValueChange={setCanalFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Canal" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="WhatsApp">WhatsApp</SelectItem>
+              <SelectItem value="Telefone">Telefone</SelectItem>
+              <SelectItem value="Email">Email</SelectItem>
+              <SelectItem value="Presencial">Presencial</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Controles de Visualização */}
+        <div className="flex gap-2">
+          <Button
+            variant={view === 'lista' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setView('lista')}
+          >
+            <List className="h-4 w-4 mr-2" />
+            Lista
+          </Button>
+          <Button
+            variant={view === 'kanban' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setView('kanban')}
+          >
+            <Kanban className="h-4 w-4 mr-2" />
+            Kanban
+          </Button>
+        </div>
+      </div>
+
+      {/* Conteúdo Principal */}
+      <AtendimentoContent
+        view={view}
+        searchTerm={searchTerm}
+        statusFilter={statusFilter}
+        canalFilter={canalFilter}
       />
 
-      <AtendimentoContent
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        convertedAtendimentos={convertedAtendimentos}
-        convertedSelectedAtendimento={convertedSelectedAtendimento}
-        onSelectAtendimento={handleSelectAtendimento}
-        onViewHistory={handleViewHistory}
-        onConverterEmOrcamento={handleConverterEmOrcamento}
-        onDeleteAtendimento={handleDeleteAtendimento}
-        onChangeStatus={handleChangeStatus}
-        isLigacaoDialogOpen={isLigacaoDialogOpen}
-        setIsLigacaoDialogOpen={setIsLigacaoDialogOpen}
+      {/* Dialog Novo Atendimento */}
+      <NovoAtendimentoDialog
+        isOpen={isNovoAtendimentoOpen}
+        onOpenChange={setIsNovoAtendimentoOpen}
+        onSalvar={handleNovoAtendimento}
       />
     </div>
   );
