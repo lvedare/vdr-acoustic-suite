@@ -55,7 +55,7 @@ export const useProdutosSupabase = () => {
     return criarProdutoSupabase(supabaseData);
   };
 
-  // Função para atualizar produto
+  // Função para atualizar produto - corrigir tipo do parâmetro id
   const atualizarProduto = (id: string, produtoData: Partial<ProdutoAcabado>) => {
     const supabaseData = {
       ...(produtoData.codigo && { codigo: produtoData.codigo }),

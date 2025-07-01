@@ -1,9 +1,9 @@
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { ProdutoAcabado } from "@/types/orcamento";
 import { useProdutosSupabase } from "@/hooks/useProdutosSupabase";
 
-interface VendaProduto {
+export interface VendaProduto {
   id: number;
   produtoId: number;
   quantidade: number;
@@ -13,6 +13,17 @@ interface VendaProduto {
   cliente: string;
 }
 
+export const categorias = [
+  "Eletrônicos",
+  "Roupas",
+  "Casa e Jardim",
+  "Esportes",
+  "Livros",
+  "Saúde e Beleza",
+  "Automóveis",
+  "Outros"
+];
+
 interface ProdutosContextType {
   produtos: ProdutoAcabado[];
   vendasProdutos: VendaProduto[];
@@ -21,16 +32,40 @@ interface ProdutosContextType {
   isProdutoDialogOpen: boolean;
   isComposicaoDialogOpen: boolean;
   isDeleteDialogOpen: boolean;
+  isConfirmDialogOpen: boolean;
+  isProdutoDetailOpen: boolean;
   produtoVazio: ProdutoAcabado;
+  searchTerm: string;
+  filtroCategoria: string;
+  filtroEstoque: string;
+  produtosFiltrados: ProdutoAcabado[];
+  composicaoAtual: any;
   setVendasProdutos: React.Dispatch<React.SetStateAction<VendaProduto[]>>;
   setProdutoAtual: React.Dispatch<React.SetStateAction<ProdutoAcabado | null>>;
   setNovoProduto: React.Dispatch<React.SetStateAction<ProdutoAcabado>>;
   setIsProdutoDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setIsComposicaoDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setIsDeleteDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsConfirmDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsProdutoDetailOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
+  setFiltroCategoria: React.Dispatch<React.SetStateAction<string>>;
+  setFiltroEstoque: React.Dispatch<React.SetStateAction<string>>;
+  setComposicaoAtual: React.Dispatch<React.SetStateAction<any>>;
   salvarProduto: (produto: ProdutoAcabado) => void;
   editarProduto: (produto: ProdutoAcabado) => void;
   excluirProduto: (id: number) => void;
+  handleSalvarProduto: () => void;
+  handleExcluirProduto: () => void;
+  handleForceExcluirProduto: () => void;
+  handleEditarProduto: (produto: ProdutoAcabado) => void;
+  handlePreExcluirProduto: (produto: ProdutoAcabado) => void;
+  handleVerDetalhesProduto: (produto: ProdutoAcabado) => void;
+  handleCriarItemOrcamento: (produto: ProdutoAcabado) => void;
+  handleEditarComposicao: (produto: ProdutoAcabado) => void;
+  handleSalvarComposicao: () => void;
+  formatarData: (data: string) => string;
+  calcularValorTotal: () => number;
   isLoading: boolean;
   isSaving: boolean;
 }
@@ -68,6 +103,12 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isProdutoDialogOpen, setIsProdutoDialogOpen] = useState(false);
   const [isComposicaoDialogOpen, setIsComposicaoDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isProdutoDetailOpen, setIsProdutoDetailOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState("");
+  const [filtroEstoque, setFiltroEstoque] = useState("");
+  const [composicaoAtual, setComposicaoAtual] = useState<any>(null);
 
   // Carregar vendas do localStorage (manter por enquanto)
   useEffect(() => {
@@ -76,6 +117,20 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setVendasProdutos(JSON.parse(vendasSalvas));
     }
   }, []);
+
+  // Filtrar produtos
+  const produtosFiltrados = useMemo(() => {
+    return produtosSupabase.filter(produto => {
+      const matchesSearch = produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           produto.codigo.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategoria = !filtroCategoria || produto.categoria === filtroCategoria;
+      const matchesEstoque = !filtroEstoque || 
+        (filtroEstoque === "baixo" && produto.quantidadeEstoque < 10) ||
+        (filtroEstoque === "alto" && produto.quantidadeEstoque >= 10);
+      
+      return matchesSearch && matchesCategoria && matchesEstoque;
+    });
+  }, [produtosSupabase, searchTerm, filtroCategoria, filtroEstoque]);
 
   const salvarProduto = (produto: ProdutoAcabado) => {
     if (produto.id === 0) {
@@ -130,6 +185,67 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  // Handlers for components
+  const handleSalvarProduto = () => {
+    salvarProduto(novoProduto);
+    setIsProdutoDialogOpen(false);
+    setNovoProduto(produtoVazio);
+    setProdutoAtual(null);
+  };
+
+  const handleExcluirProduto = () => {
+    if (produtoAtual) {
+      excluirProduto(produtoAtual.id);
+      setIsDeleteDialogOpen(false);
+      setProdutoAtual(null);
+    }
+  };
+
+  const handleForceExcluirProduto = () => {
+    if (produtoAtual) {
+      excluirProduto(produtoAtual.id);
+      setIsConfirmDialogOpen(false);
+      setProdutoAtual(null);
+    }
+  };
+
+  const handleEditarProduto = (produto: ProdutoAcabado) => {
+    editarProduto(produto);
+  };
+
+  const handlePreExcluirProduto = (produto: ProdutoAcabado) => {
+    setProdutoAtual(produto);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleVerDetalhesProduto = (produto: ProdutoAcabado) => {
+    setProdutoAtual(produto);
+    setIsProdutoDetailOpen(true);
+  };
+
+  const handleCriarItemOrcamento = (produto: ProdutoAcabado) => {
+    console.log("Criar item orçamento:", produto);
+  };
+
+  const handleEditarComposicao = (produto: ProdutoAcabado) => {
+    setProdutoAtual(produto);
+    setComposicaoAtual(null);
+    setIsComposicaoDialogOpen(true);
+  };
+
+  const handleSalvarComposicao = () => {
+    setIsComposicaoDialogOpen(false);
+    setComposicaoAtual(null);
+  };
+
+  const formatarData = (data: string) => {
+    return new Date(data).toLocaleDateString('pt-BR');
+  };
+
+  const calcularValorTotal = () => {
+    return 0; // Placeholder
+  };
+
   const value: ProdutosContextType = {
     produtos: produtosSupabase,
     vendasProdutos,
@@ -138,16 +254,40 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     isProdutoDialogOpen,
     isComposicaoDialogOpen,
     isDeleteDialogOpen,
+    isConfirmDialogOpen,
+    isProdutoDetailOpen,
     produtoVazio,
+    searchTerm,
+    filtroCategoria,
+    filtroEstoque,
+    produtosFiltrados,
+    composicaoAtual,
     setVendasProdutos,
     setProdutoAtual,
     setNovoProduto,
     setIsProdutoDialogOpen,
     setIsComposicaoDialogOpen,
     setIsDeleteDialogOpen,
+    setIsConfirmDialogOpen,
+    setIsProdutoDetailOpen,
+    setSearchTerm,
+    setFiltroCategoria,
+    setFiltroEstoque,
+    setComposicaoAtual,
     salvarProduto,
     editarProduto,
     excluirProduto,
+    handleSalvarProduto,
+    handleExcluirProduto,
+    handleForceExcluirProduto,
+    handleEditarProduto,
+    handlePreExcluirProduto,
+    handleVerDetalhesProduto,
+    handleCriarItemOrcamento,
+    handleEditarComposicao,
+    handleSalvarComposicao,
+    formatarData,
+    calcularValorTotal,
     isLoading,
     isSaving: isCriando || isAtualizando || isExcluindo
   };
