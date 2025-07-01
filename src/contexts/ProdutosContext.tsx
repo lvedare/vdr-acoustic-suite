@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { ProdutoAcabado } from "@/types/orcamento";
 import { useProdutosSupabase } from "@/hooks/useProdutosSupabase";
@@ -73,7 +72,7 @@ interface ProdutosContextType {
 const ProdutosContext = createContext<ProdutosContextType | undefined>(undefined);
 
 export const produtoVazio: ProdutoAcabado = {
-  id: 0,
+  id: "0",
   codigo: "",
   nome: "",
   descricao: "",
@@ -150,23 +149,13 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const salvarProduto = (produto: ProdutoAcabado) => {
-    if (produto.id === 0) {
-      // Criar novo produto - usar a função de criação que aceita objeto sem ID
-      // Converter para formato snake_case para Supabase
-      const produtoParaSupabase = {
-        codigo: produto.codigo,
-        nome: produto.nome,
-        descricao: produto.descricao,
-        categoria: produto.categoria,
-        unidade_medida: produto.unidadeMedida,
-        valor_base: produto.valorBase,
-        quantidade_estoque: produto.quantidadeEstoque,
-        data_cadastro: produto.dataCadastro
-      };
-      criarProdutoSupabase(produtoParaSupabase);
+    if (produto.id === "0") {
+      // Criar novo produto - usar a função de criação do hook
+      criarProdutoSupabase(produto);
     } else {
       // Atualizar produto existente - encontrar o UUID original
-      const originalUUID = findOriginalUUID(produto.id);
+      const numericId = typeof produto.id === 'string' ? parseInt(produto.id) : produto.id;
+      const originalUUID = findOriginalUUID(numericId);
       
       if (originalUUID) {
         atualizarProdutoSupabase(originalUUID, produto);
@@ -199,7 +188,8 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const handleExcluirProduto = () => {
     if (produtoAtual) {
-      excluirProduto(produtoAtual.id);
+      const numericId = typeof produtoAtual.id === 'string' ? parseInt(produtoAtual.id) : produtoAtual.id;
+      excluirProduto(numericId);
       setIsDeleteDialogOpen(false);
       setProdutoAtual(null);
     }
@@ -207,7 +197,8 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const handleForceExcluirProduto = () => {
     if (produtoAtual) {
-      excluirProduto(produtoAtual.id);
+      const numericId = typeof produtoAtual.id === 'string' ? parseInt(produtoAtual.id) : produtoAtual.id;
+      excluirProduto(numericId);
       setIsConfirmDialogOpen(false);
       setProdutoAtual(null);
     }
