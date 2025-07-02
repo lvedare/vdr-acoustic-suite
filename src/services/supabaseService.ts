@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Proposta, ClienteSimplificado, ItemProposta, CustoProposta } from "@/types/orcamento";
 import { SupabaseCliente, SupabaseProposta, PropostaCompleta } from "@/types/supabase";
@@ -57,12 +56,19 @@ export const clienteService = {
     }
 
     return data.map(cliente => ({
-      id: parseInt(cliente.id.replace(/-/g, '').substring(0, 8), 16),
+      id: cliente.id,
       nome: cliente.nome,
       email: cliente.email || "",
       telefone: cliente.telefone || "",
       empresa: cliente.empresa || "",
-      cnpj: cliente.cnpj || ""
+      cnpj: cliente.cnpj || "",
+      endereco_rua: cliente.endereco_rua || "",
+      endereco_numero: cliente.endereco_numero || "",
+      endereco_bairro: cliente.endereco_bairro || "",
+      endereco_cidade: cliente.endereco_cidade || "",
+      endereco_estado: cliente.endereco_estado || "",
+      endereco_cep: cliente.endereco_cep || "",
+      inscricao_estadual: cliente.inscricao_estadual || ""
     }));
   },
 
@@ -74,7 +80,14 @@ export const clienteService = {
         email: cliente.email || null,
         telefone: cliente.telefone || null,
         empresa: cliente.empresa || null,
-        cnpj: cliente.cnpj || null
+        cnpj: cliente.cnpj || null,
+        endereco_rua: cliente.endereco_rua || null,
+        endereco_numero: cliente.endereco_numero || null,
+        endereco_bairro: cliente.endereco_bairro || null,
+        endereco_cidade: cliente.endereco_cidade || null,
+        endereco_estado: cliente.endereco_estado || null,
+        endereco_cep: cliente.endereco_cep || null,
+        inscricao_estadual: cliente.inscricao_estadual || null
       })
       .select()
       .single();
@@ -85,12 +98,19 @@ export const clienteService = {
     }
 
     return {
-      id: parseInt(data.id.replace(/-/g, '').substring(0, 8), 16),
+      id: data.id,
       nome: data.nome,
       email: data.email || "",
       telefone: data.telefone || "",
       empresa: data.empresa || "",
-      cnpj: data.cnpj || ""
+      cnpj: data.cnpj || "",
+      endereco_rua: data.endereco_rua || "",
+      endereco_numero: data.endereco_numero || "",
+      endereco_bairro: data.endereco_bairro || "",
+      endereco_cidade: data.endereco_cidade || "",
+      endereco_estado: data.endereco_estado || "",
+      endereco_cep: data.endereco_cep || "",
+      inscricao_estadual: data.inscricao_estadual || ""
     };
   }
 };
@@ -98,22 +118,27 @@ export const clienteService = {
 // Serviços para propostas
 export const propostaService = {
   async listarTodas(): Promise<Proposta[]> {
-    const { data, error } = await supabase
-      .from('propostas')
-      .select(`
-        *,
-        cliente:clientes(*),
-        itens:proposta_itens(*),
-        custos:proposta_custos(*)
-      `)
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('propostas')
+        .select(`
+          *,
+          cliente:clientes(*),
+          itens:proposta_itens(*),
+          custos:proposta_custos(*)
+        `)
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Erro ao buscar propostas:', error);
-      throw error;
+      if (error) {
+        console.error('Erro ao buscar propostas:', error);
+        throw error;
+      }
+
+      return data.map(convertSupabaseToLocal);
+    } catch (error) {
+      console.error('Erro na query de propostas:', error);
+      return [];
     }
-
-    return data.map(convertSupabaseToLocal);
   },
 
   async buscarPorId(id: string): Promise<Proposta | null> {

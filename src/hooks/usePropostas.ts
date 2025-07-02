@@ -16,7 +16,15 @@ export const usePropostas = () => {
     refetch
   } = useQuery({
     queryKey: ['propostas'],
-    queryFn: propostaService.listarTodas,
+    queryFn: async () => {
+      try {
+        return await propostaService.listarTodas();
+      } catch (error) {
+        console.error('Erro ao buscar propostas:', error);
+        toast.error('Erro ao carregar propostas');
+        return [];
+      }
+    },
   });
 
   // Query para buscar clientes
@@ -25,7 +33,15 @@ export const usePropostas = () => {
     isLoading: isLoadingClientes
   } = useQuery({
     queryKey: ['clientes'],
-    queryFn: clienteService.listarTodos,
+    queryFn: async () => {
+      try {
+        return await clienteService.listarTodos();
+      } catch (error) {
+        console.error('Erro ao buscar clientes:', error);
+        toast.error('Erro ao carregar clientes');
+        return [];
+      }
+    },
   });
 
   // Propostas aprovadas para integração com outros módulos
@@ -165,7 +181,7 @@ export const usePropostas = () => {
     // Ações
     criarProposta: criarPropostaMutation.mutate,
     atualizarProposta: atualizarPropostaMutation.mutate,
-    excluirProposta: excluirPropostaMutation.mutate, // Função corrigida
+    excluirProposta: excluirPropostaMutation.mutate,
     atualizarStatus: atualizarStatusMutation.mutate,
     refetch,
     
@@ -185,7 +201,6 @@ export const usePropostas = () => {
 // Hook para migrar dados do localStorage para Supabase
 export const useMigrationToSupabase = () => {
   const [isMigrating, setIsMigrating] = useState(false);
-  const { criarProposta } = usePropostas();
 
   const migrarDados = async () => {
     setIsMigrating(true);

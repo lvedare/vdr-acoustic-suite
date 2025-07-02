@@ -18,11 +18,14 @@ export type Database = {
           contato: string
           created_at: string
           data: string
+          endereco_entrega: string | null
+          endereco_obra: string | null
           hora: string
           id: string
           mensagem: string | null
           status: string
           updated_at: string
+          usar_endereco_cliente: boolean | null
         }
         Insert: {
           assunto: string
@@ -32,11 +35,14 @@ export type Database = {
           contato: string
           created_at?: string
           data?: string
+          endereco_entrega?: string | null
+          endereco_obra?: string | null
           hora?: string
           id?: string
           mensagem?: string | null
           status?: string
           updated_at?: string
+          usar_endereco_cliente?: boolean | null
         }
         Update: {
           assunto?: string
@@ -46,11 +52,14 @@ export type Database = {
           contato?: string
           created_at?: string
           data?: string
+          endereco_entrega?: string | null
+          endereco_obra?: string | null
           hora?: string
           id?: string
           mensagem?: string | null
           status?: string
           updated_at?: string
+          usar_endereco_cliente?: boolean | null
         }
         Relationships: [
           {
@@ -68,7 +77,14 @@ export type Database = {
           created_at: string | null
           email: string | null
           empresa: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_estado: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
           id: string
+          inscricao_estadual: string | null
           nome: string
           telefone: string | null
           updated_at: string | null
@@ -78,7 +94,14 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_estado?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
           id?: string
+          inscricao_estadual?: string | null
           nome: string
           telefone?: string | null
           updated_at?: string | null
@@ -88,7 +111,14 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_estado?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
           id?: string
+          inscricao_estadual?: string | null
           nome?: string
           telefone?: string | null
           updated_at?: string | null

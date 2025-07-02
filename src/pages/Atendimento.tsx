@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, List, Kanban } from "lucide-react";
 import { AtendimentoContent } from "@/components/atendimento/AtendimentoContent";
 import NovoAtendimentoDialog from "@/components/atendimento/NovoAtendimentoDialog";
@@ -13,8 +12,8 @@ import { toast } from "sonner";
 const Atendimento = () => {
   const [view, setView] = useState<'lista' | 'kanban'>('lista');
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [canalFilter, setCanalFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [canalFilter, setCanalFilter] = useState("all");
   const [isNovoAtendimentoOpen, setIsNovoAtendimentoOpen] = useState(false);
 
   const { criarAtendimento } = useAtendimentos();

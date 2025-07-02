@@ -1,11 +1,18 @@
 // Tipos utilizados no módulo de orçamentos
 export interface ClienteSimplificado {
-  id: number;
+  id: number | string;
   nome: string;
   email: string;
   telefone: string;
-  empresa?: string;
-  cnpj?: string;
+  empresa: string;
+  cnpj: string;
+  endereco_rua?: string;
+  endereco_numero?: string;
+  endereco_bairro?: string;
+  endereco_cidade?: string;
+  endereco_estado?: string;
+  endereco_cep?: string;
+  inscricao_estadual?: string;
 }
 
 export interface ItemProposta {
@@ -16,14 +23,14 @@ export interface ItemProposta {
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
-  valorOriginal?: number; // Valor original antes da diluição de custos
+  valorOriginal?: number;
 }
 
 export interface CustoProposta {
   id: number;
   descricao: string;
   valor: number;
-  diluido?: boolean; // Indica se o custo está diluído nos itens
+  diluido: boolean;
 }
 
 export interface Proposta {
@@ -42,47 +49,27 @@ export interface Proposta {
   validade: string;
 }
 
-export interface ComposicaoProduto {
-  insumos: {
-    id: number;
-    insumoId: number;
-    nome: string;
-    quantidade: number;
-    valorUnitario: number;
-    valorTotal: number;
-  }[];
-  maoDeObra: {
-    fabricacao: number;
-    instalacao: number;
-  };
-  despesaAdministrativa: number; // valor em porcentagem (%)
-  margemVenda: number; // valor em porcentagem (markup %)
-}
-
-export interface ProdutoAcabado {
+export interface ComposicaoItem {
   id: number;
   codigo: string;
   nome: string;
-  descricao: string;
-  categoria: string;
-  unidadeMedida: string;
-  valorBase: number;
-  quantidadeEstoque: number; // Este campo será gerenciado no módulo de estoque
-  dataCadastro: string;
-  composicao?: ComposicaoProduto;
-}
-
-export interface NovoItemInput {
-  codigo: string;
-  descricao: string;
   unidade: string;
   quantidade: number;
-  valorUnitario: number;
+  valor: number;
+  categoria: "material" | "mao_de_obra" | "equipamento";
 }
 
-export interface NovoCustoInput {
-  descricao: string;
-  valor: number;
+export interface AtendimentoData {
+  id: number;
+  cliente: string;
+  contato: string;
+  assunto: string;
+  data: string;
+  hora: string;
+  canal: string;
+  status: string;
+  mensagem: string;
+  clienteId: number;
 }
 
 // Constantes
