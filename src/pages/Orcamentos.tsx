@@ -19,49 +19,8 @@ import { RascunhoTab } from "@/components/orcamento/RascunhoTab";
 import { usePropostas, useMigrationToSupabase } from "@/hooks/usePropostas";
 import { converterAtendimentoParaProposta } from "@/utils/propostaUtils";
 
-// Dados de exemplo para atendimentos
-const atendimentosExemplo = [
-  {
-    id: 1,
-    cliente: "João Silva",
-    contato: "(11) 98765-4321",
-    assunto: "Orçamento para tratamento acústico",
-    data: "07/05/2025",
-    hora: "09:30",
-    canal: "WhatsApp",
-    status: "Novo",
-    mensagem: "Olá, gostaria de um orçamento para tratamento acústico em meu home studio.",
-    clienteId: 1
-  },
-  {
-    id: 2,
-    cliente: "Maria Oliveira",
-    contato: "(11) 91234-5678",
-    assunto: "Dúvida sobre material",
-    data: "07/05/2025",
-    hora: "10:15",
-    canal: "Email",
-    status: "Em andamento",
-    mensagem: "Bom dia, gostaria de saber qual o melhor material para isolamento acústico em uma sala pequena.",
-    clienteId: 2
-  },
-  {
-    id: 3,
-    cliente: "Empresa ABC",
-    contato: "(11) 3123-4567",
-    assunto: "Visita técnica",
-    data: "07/05/2025",
-    hora: "11:00",
-    canal: "Telefone",
-    status: "Agendado",
-    mensagem: "Preciso de uma visita técnica para avaliar o isolamento acústico de salas de reunião.",
-    clienteId: 3
-  }
-];
-
 const Orcamentos = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchTermAtendimento, setSearchTermAtendimento] = useState("");
   const navigate = useNavigate();
 
   // Usar hooks do Supabase
@@ -84,15 +43,6 @@ const Orcamentos = () => {
     return (
       proposta.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
       proposta.cliente.nome.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
-
-  // Filtrar atendimentos com base no termo de pesquisa
-  const filteredAtendimentos = atendimentosExemplo.filter(atendimento => {
-    return (
-      atendimento.cliente.toLowerCase().includes(searchTermAtendimento.toLowerCase()) ||
-      atendimento.assunto.toLowerCase().includes(searchTermAtendimento.toLowerCase()) ||
-      atendimento.mensagem.toLowerCase().includes(searchTermAtendimento.toLowerCase())
     );
   });
 
@@ -192,12 +142,7 @@ const Orcamentos = () => {
             </TabsList>
 
             <TabsContent value="atendimentos">
-              <AtendimentosTab 
-                atendimentos={filteredAtendimentos}
-                searchTerm={searchTermAtendimento}
-                onSearchChange={(value) => setSearchTermAtendimento(value)}
-                onCriarProposta={handleCriarPropostaFromAtendimento}
-              />
+              <AtendimentosTab />
             </TabsContent>
 
             <TabsContent value="rascunhos">

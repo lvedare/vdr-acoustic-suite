@@ -63,7 +63,7 @@ const Atendimento = () => {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="Novo">Novo</SelectItem>
               <SelectItem value="Em Andamento">Em Andamento</SelectItem>
               <SelectItem value="Resolvido">Resolvido</SelectItem>
@@ -76,7 +76,7 @@ const Atendimento = () => {
               <SelectValue placeholder="Canal" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="WhatsApp">WhatsApp</SelectItem>
               <SelectItem value="Telefone">Telefone</SelectItem>
               <SelectItem value="Email">Email</SelectItem>
@@ -118,7 +118,7 @@ const Atendimento = () => {
       <NovoAtendimentoDialog
         isOpen={isNovoAtendimentoOpen}
         onOpenChange={setIsNovoAtendimentoOpen}
-        onSalvar={handleNovoAtendimento}
+        onSubmit={handleNovoAtendimento}
       />
     </div>
   );

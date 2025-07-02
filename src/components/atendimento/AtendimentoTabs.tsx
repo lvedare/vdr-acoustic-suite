@@ -65,10 +65,9 @@ const AtendimentoTabs = ({
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <AtendimentoList
                 atendimentos={atendimentos}
-                selectedAtendimento={selectedAtendimento}
-                onSelectAtendimento={onSelectAtendimento}
-                onDeleteAtendimento={onDeleteAtendimento}
-                onConverterEmOrcamento={onConverterEmOrcamento}
+                onVerDetalhes={onSelectAtendimento}
+                onExcluir={(atendimento) => onDeleteAtendimento(atendimento.id)}
+                onEnviarParaOrcamento={onConverterEmOrcamento}
               />
               <div className="rounded-md border">
                 <AtendimentoDetail

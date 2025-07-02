@@ -24,7 +24,7 @@ export const AtendimentoContent: React.FC<AtendimentoContentProps> = ({
 }) => {
   const { atendimentos, isLoading, criarAtendimento, excluirAtendimento } = useAtendimentos();
   const [selectedAtendimento, setSelectedAtendimento] = useState<any>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isNovoAtendimentoOpen, setIsNovoAtendimentoOpen] = useState(false);
   const [isEnviarOrcamentoOpen, setIsEnviarOrcamentoOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -45,7 +45,7 @@ export const AtendimentoContent: React.FC<AtendimentoContentProps> = ({
 
   const handleVerDetalhes = (atendimento: any) => {
     setSelectedAtendimento(atendimento);
-    setIsDetailOpen(true);
+    setIsDetailDialogOpen(true);
   };
 
   const handleExcluir = (atendimento: any) => {
@@ -83,6 +83,15 @@ export const AtendimentoContent: React.FC<AtendimentoContentProps> = ({
     }
   };
 
+  const handleViewHistory = () => {
+    // Implementar visualização do histórico
+    console.log("Ver histórico do atendimento");
+  };
+
+  const handleConverterEmOrcamento = (atendimento: any) => {
+    handleEnviarParaOrcamento(atendimento);
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-8">Carregando atendimentos...</div>;
   }
@@ -105,16 +114,32 @@ export const AtendimentoContent: React.FC<AtendimentoContentProps> = ({
         />
       )}
 
-      <AtendimentoDetail
-        atendimento={selectedAtendimento}
-        isOpen={isDetailOpen}
-        onOpenChange={setIsDetailOpen}
-      />
+      {/* Use a Dialog wrapper for AtendimentoDetail */}
+      {selectedAtendimento && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h2 className="text-lg font-semibold">Detalhes do Atendimento</h2>
+              <button 
+                onClick={() => setSelectedAtendimento(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
+            <AtendimentoDetail
+              atendimento={selectedAtendimento}
+              onViewHistory={handleViewHistory}
+              onConverterEmOrcamento={handleConverterEmOrcamento}
+            />
+          </div>
+        </div>
+      )}
 
       <NovoAtendimentoDialog
         isOpen={isNovoAtendimentoOpen}
         onOpenChange={setIsNovoAtendimentoOpen}
-        onSalvar={handleNovoAtendimento}
+        onSubmit={handleNovoAtendimento}
       />
 
       <EnviarParaOrcamentoDialog
