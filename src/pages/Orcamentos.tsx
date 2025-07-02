@@ -10,7 +10,7 @@ import { MessageSquare, Database, Loader2 } from "lucide-react";
 import PropostasSearch from "@/components/orcamento/PropostasSearch";
 import PropostasList from "@/components/orcamento/PropostasList";
 import PropostasFiltradas from "@/components/orcamento/PropostasFiltradas";
-import AtendimentosTab from "@/components/orcamento/AtendimentosTab";
+import { AtendimentosTab } from "@/components/orcamento/AtendimentosTab";
 import PropostasExportButton from "@/components/orcamento/PropostasExportButton";
 import PropostasMetrics from "@/components/orcamento/PropostasMetrics";
 import { RascunhoTab } from "@/components/orcamento/RascunhoTab";

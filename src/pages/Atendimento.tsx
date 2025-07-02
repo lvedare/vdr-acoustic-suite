@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, List, Kanban } from "lucide-react";
 import { AtendimentoContent } from "@/components/atendimento/AtendimentoContent";
-import { NovoAtendimentoDialog } from "@/components/atendimento/NovoAtendimentoDialog";
+import NovoAtendimentoDialog from "@/components/atendimento/NovoAtendimentoDialog";
 import { useAtendimentos } from "@/hooks/useAtendimentos";
 import { toast } from "sonner";
 

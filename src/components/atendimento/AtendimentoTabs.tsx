@@ -2,7 +2,7 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import AtendimentoList from "./AtendimentoList";
+import { AtendimentoList } from "./AtendimentoList";
 import AtendimentoDetail from "./AtendimentoDetail";
 import AtendimentoSearchBar from "./AtendimentoSearchBar";
 import ChatWhatsapp from "./ChatWhatsapp";
