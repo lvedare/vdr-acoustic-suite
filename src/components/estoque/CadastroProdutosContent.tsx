@@ -35,7 +35,7 @@ export const CadastroProdutosContent = () => {
             Produtos ({produtos.length})
           </CardTitle>
           <CardDescription>
-            Gerencie o cadastro de produtos acabados
+            Gerencie o cadastro de produtos acabados e suas composições
             {isLoading && " - Carregando..."}
           </CardDescription>
         </div>

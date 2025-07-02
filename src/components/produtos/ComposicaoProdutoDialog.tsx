@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Dialog, 
@@ -17,6 +16,8 @@ import { ComposicaoProduto, formatCurrency } from "@/types/orcamento";
 import { ProdutoAcabado } from "@/types/orcamento";
 import { useInsumos } from "@/contexts/InsumosContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { composicaoProdutoService } from "@/services/composicaoProdutoService";
+import { toast } from "sonner";
 
 interface ComposicaoProdutoDialogProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ export function ComposicaoProdutoDialog({
   const [insumoSelecionado, setInsumoSelecionado] = useState<number | null>(null);
   const [quantidadeInsumo, setQuantidadeInsumo] = useState<number>(1);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [salvando, setSalvando] = useState(false);
 
   if (!produtoAtual || !composicaoAtual) return null;
 
@@ -93,7 +95,6 @@ export function ComposicaoProdutoDialog({
     setComposicaoAtual(composicaoAtualizada);
   };
   
-  // Alterando para usar despesa administrativa como percentual
   const handleChangeDespesaAdm = (valor: number) => {
     const composicaoAtualizada = {
       ...composicaoAtual,
@@ -103,7 +104,6 @@ export function ComposicaoProdutoDialog({
     setComposicaoAtual(composicaoAtualizada);
   };
   
-  // Alterando para usar markup para a margem
   const handleChangeMargem = (valor: number) => {
     const composicaoAtualizada = {
       ...composicaoAtual,
@@ -111,6 +111,37 @@ export function ComposicaoProdutoDialog({
     };
     
     setComposicaoAtual(composicaoAtualizada);
+  };
+
+  const handleSalvarComposicao = async () => {
+    if (!produtoAtual || !composicaoAtual) return;
+
+    setSalvando(true);
+    try {
+      // Primeiro, excluir composições existentes
+      await composicaoProdutoService.excluirPorProduto(String(produtoAtual.id));
+
+      // Depois, criar as novas composições
+      if (composicaoAtual.insumos.length > 0) {
+        const composicoes = composicaoAtual.insumos.map(insumo => ({
+          produto_id: String(produtoAtual.id),
+          insumo_id: String(insumo.insumoId),
+          quantidade: insumo.quantidade,
+          observacao: `Valor unitário: ${insumo.valorUnitario}`
+        }));
+
+        await composicaoProdutoService.criarMultiplas(composicoes);
+      }
+
+      toast.success('Composição salva com sucesso!');
+      onSalvar();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Erro ao salvar composição:', error);
+      toast.error('Erro ao salvar composição');
+    } finally {
+      setSalvando(false);
+    }
   };
   
   // Cálculo de subtotais
@@ -315,8 +346,8 @@ export function ComposicaoProdutoDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={onSalvar}>
-            Salvar Composição
+          <Button onClick={handleSalvarComposicao} disabled={salvando}>
+            {salvando ? 'Salvando...' : 'Salvar Composição'}
           </Button>
         </DialogFooter>
       </DialogContent>
