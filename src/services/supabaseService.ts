@@ -1,48 +1,7 @@
-import { supabase } from "@/integrations/supabase/client";
-import { Proposta, ClienteSimplificado, ItemProposta, CustoProposta } from "@/types/orcamento";
-import { SupabaseCliente, SupabaseProposta, PropostaCompleta } from "@/types/supabase";
+import { supabase } from '@/integrations/supabase/client';
+import { ClienteSimplificado, Proposta, ItemProposta, CustoProposta, AtendimentoData } from '@/types/orcamento';
 
-// Converter dados do Supabase para tipos locais
-const convertSupabaseToLocal = (supabaseProposta: PropostaCompleta): Proposta => {
-  return {
-    id: parseInt(supabaseProposta.id.replace(/-/g, '').substring(0, 8), 16), // Converter UUID para number
-    numero: supabaseProposta.numero,
-    data: supabaseProposta.data,
-    cliente: {
-      id: parseInt(supabaseProposta.cliente.id.replace(/-/g, '').substring(0, 8), 16),
-      nome: supabaseProposta.cliente.nome,
-      email: supabaseProposta.cliente.email || "",
-      telefone: supabaseProposta.cliente.telefone || "",
-      empresa: supabaseProposta.cliente.empresa || "",
-      cnpj: supabaseProposta.cliente.cnpj || ""
-    },
-    status: supabaseProposta.status,
-    itens: supabaseProposta.itens.map(item => ({
-      id: parseInt(item.id.replace(/-/g, '').substring(0, 8), 16),
-      codigo: item.codigo,
-      descricao: item.descricao,
-      unidade: item.unidade,
-      quantidade: item.quantidade,
-      valorUnitario: parseFloat(item.valor_unitario.toString()),
-      valorTotal: parseFloat(item.valor_total.toString()),
-      valorOriginal: item.valor_original ? parseFloat(item.valor_original.toString()) : undefined
-    })),
-    custos: supabaseProposta.custos.map(custo => ({
-      id: parseInt(custo.id.replace(/-/g, '').substring(0, 8), 16),
-      descricao: custo.descricao,
-      valor: parseFloat(custo.valor.toString()),
-      diluido: custo.diluido
-    })),
-    observacoes: supabaseProposta.observacoes || "",
-    valorTotal: parseFloat(supabaseProposta.valor_total.toString()),
-    formaPagamento: supabaseProposta.forma_pagamento || "",
-    prazoEntrega: supabaseProposta.prazo_entrega || "",
-    prazoObra: supabaseProposta.prazo_obra || "",
-    validade: supabaseProposta.validade || ""
-  };
-};
-
-// Serviços para clientes
+// Serviço de Clientes
 export const clienteService = {
   async listarTodos(): Promise<ClienteSimplificado[]> {
     const { data, error } = await supabase
@@ -58,18 +17,49 @@ export const clienteService = {
     return data.map(cliente => ({
       id: cliente.id,
       nome: cliente.nome,
-      email: cliente.email || "",
-      telefone: cliente.telefone || "",
-      empresa: cliente.empresa || "",
-      cnpj: cliente.cnpj || "",
-      endereco_rua: cliente.endereco_rua || "",
-      endereco_numero: cliente.endereco_numero || "",
-      endereco_bairro: cliente.endereco_bairro || "",
-      endereco_cidade: cliente.endereco_cidade || "",
-      endereco_estado: cliente.endereco_estado || "",
-      endereco_cep: cliente.endereco_cep || "",
-      inscricao_estadual: cliente.inscricao_estadual || ""
+      email: cliente.email || '',
+      telefone: cliente.telefone || '',
+      empresa: cliente.empresa || '',
+      cnpj: cliente.cnpj || '',
+      endereco_rua: cliente.endereco_rua || '',
+      endereco_numero: cliente.endereco_numero || '',
+      endereco_bairro: cliente.endereco_bairro || '',
+      endereco_cidade: cliente.endereco_cidade || '',
+      endereco_estado: cliente.endereco_estado || '',
+      endereco_cep: cliente.endereco_cep || '',
+      inscricao_estadual: cliente.inscricao_estadual || ''
     }));
+  },
+
+  async buscarPorId(id: number | string): Promise<ClienteSimplificado | null> {
+    const { data, error } = await supabase
+      .from('clientes')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Erro ao buscar cliente:', error);
+      throw error;
+    }
+
+    if (!data) return null;
+
+    return {
+      id: data.id,
+      nome: data.nome,
+      email: data.email || '',
+      telefone: data.telefone || '',
+      empresa: data.empresa || '',
+      cnpj: data.cnpj || '',
+      endereco_rua: data.endereco_rua || '',
+      endereco_numero: data.endereco_numero || '',
+      endereco_bairro: data.endereco_bairro || '',
+      endereco_cidade: data.endereco_cidade || '',
+      endereco_estado: data.endereco_estado || '',
+      endereco_cep: data.endereco_cep || '',
+      inscricao_estadual: data.inscricao_estadual || ''
+    };
   },
 
   async criar(cliente: Omit<ClienteSimplificado, 'id'>): Promise<ClienteSimplificado> {
@@ -77,8 +67,8 @@ export const clienteService = {
       .from('clientes')
       .insert({
         nome: cliente.nome,
-        email: cliente.email || null,
-        telefone: cliente.telefone || null,
+        email: cliente.email,
+        telefone: cliente.telefone,
         empresa: cliente.empresa || null,
         cnpj: cliente.cnpj || null,
         endereco_rua: cliente.endereco_rua || null,
@@ -100,320 +90,550 @@ export const clienteService = {
     return {
       id: data.id,
       nome: data.nome,
-      email: data.email || "",
-      telefone: data.telefone || "",
-      empresa: data.empresa || "",
-      cnpj: data.cnpj || "",
-      endereco_rua: data.endereco_rua || "",
-      endereco_numero: data.endereco_numero || "",
-      endereco_bairro: data.endereco_bairro || "",
-      endereco_cidade: data.endereco_cidade || "",
-      endereco_estado: data.endereco_estado || "",
-      endereco_cep: data.endereco_cep || "",
-      inscricao_estadual: data.inscricao_estadual || ""
+      email: data.email || '',
+      telefone: data.telefone || '',
+      empresa: data.empresa || '',
+      cnpj: data.cnpj || '',
+      endereco_rua: data.endereco_rua || '',
+      endereco_numero: data.endereco_numero || '',
+      endereco_bairro: data.endereco_bairro || '',
+      endereco_cidade: data.endereco_cidade || '',
+      endereco_estado: data.endereco_estado || '',
+      endereco_cep: data.endereco_cep || '',
+      inscricao_estadual: data.inscricao_estadual || ''
     };
-  }
-};
-
-// Serviços para propostas
-export const propostaService = {
-  async listarTodas(): Promise<Proposta[]> {
-    try {
-      const { data, error } = await supabase
-        .from('propostas')
-        .select(`
-          *,
-          cliente:clientes(*),
-          itens:proposta_itens(*),
-          custos:proposta_custos(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Erro ao buscar propostas:', error);
-        throw error;
-      }
-
-      return data.map(convertSupabaseToLocal);
-    } catch (error) {
-      console.error('Erro na query de propostas:', error);
-      return [];
-    }
   },
 
-  async buscarPorId(id: string): Promise<Proposta | null> {
+  async atualizar(id: number | string, cliente: Partial<ClienteSimplificado>): Promise<ClienteSimplificado> {
     const { data, error } = await supabase
-      .from('propostas')
-      .select(`
-        *,
-        cliente:clientes(*),
-        itens:proposta_itens(*),
-        custos:proposta_custos(*)
-      `)
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Erro ao buscar proposta:', error);
-      if (error.code === 'PGRST116') return null; // Não encontrado
-      throw error;
-    }
-
-    return convertSupabaseToLocal(data);
-  },
-
-  async criar(proposta: Omit<Proposta, 'id'>): Promise<Proposta> {
-    // Primeiro, criar ou buscar cliente
-    let clienteId: string;
-    
-    if (proposta.cliente.id && proposta.cliente.id > 0) {
-      // Cliente existente - buscar UUID
-      const { data: clienteExistente } = await supabase
-        .from('clientes')
-        .select('id')
-        .eq('nome', proposta.cliente.nome)
-        .single();
-      
-      if (clienteExistente) {
-        clienteId = clienteExistente.id;
-      } else {
-        // Criar novo cliente
-        const novoCliente = await clienteService.criar(proposta.cliente);
-        const { data: clienteCriado } = await supabase
-          .from('clientes')
-          .select('id')
-          .eq('nome', novoCliente.nome)
-          .single();
-        clienteId = clienteCriado!.id;
-      }
-    } else {
-      // Criar novo cliente
-      const novoCliente = await clienteService.criar(proposta.cliente);
-      const { data: clienteCriado } = await supabase
-        .from('clientes')
-        .select('id')
-        .eq('nome', novoCliente.nome)
-        .single();
-      clienteId = clienteCriado!.id;
-    }
-
-    // Criar proposta
-    const { data: propostaCriada, error: propostaError } = await supabase
-      .from('propostas')
-      .insert({
-        numero: proposta.numero,
-        data: proposta.data,
-        cliente_id: clienteId,
-        status: proposta.status,
-        observacoes: proposta.observacoes || null,
-        valor_total: proposta.valorTotal,
-        forma_pagamento: proposta.formaPagamento || null,
-        prazo_entrega: proposta.prazoEntrega || null,
-        prazo_obra: proposta.prazoObra || null,
-        validade: proposta.validade || null
+      .from('clientes')
+      .update({
+        nome: cliente.nome,
+        email: cliente.email,
+        telefone: cliente.telefone,
+        empresa: cliente.empresa || null,
+        cnpj: cliente.cnpj || null,
+        endereco_rua: cliente.endereco_rua || null,
+        endereco_numero: cliente.endereco_numero || null,
+        endereco_bairro: cliente.endereco_bairro || null,
+        endereco_cidade: cliente.endereco_cidade || null,
+        endereco_estado: cliente.endereco_estado || null,
+        endereco_cep: cliente.endereco_cep || null,
+        inscricao_estadual: cliente.inscricao_estadual || null
       })
+      .eq('id', id)
       .select()
       .single();
 
-    if (propostaError) {
-      console.error('Erro ao criar proposta:', propostaError);
-      throw propostaError;
+    if (error) {
+      console.error('Erro ao atualizar cliente:', error);
+      throw error;
     }
 
-    // Criar itens
-    if (proposta.itens.length > 0) {
-      const { error: itensError } = await supabase
-        .from('proposta_itens')
-        .insert(
-          proposta.itens.map(item => ({
-            proposta_id: propostaCriada.id,
-            codigo: item.codigo,
-            descricao: item.descricao,
-            unidade: item.unidade,
-            quantidade: item.quantidade,
-            valor_unitario: item.valorUnitario,
-            valor_total: item.valorTotal,
-            valor_original: item.valorOriginal || null
-          }))
-        );
-
-      if (itensError) {
-        console.error('Erro ao criar itens:', itensError);
-        throw itensError;
-      }
-    }
-
-    // Criar custos
-    if (proposta.custos.length > 0) {
-      const { error: custosError } = await supabase
-        .from('proposta_custos')
-        .insert(
-          proposta.custos.map(custo => ({
-            proposta_id: propostaCriada.id,
-            descricao: custo.descricao,
-            valor: custo.valor,
-            diluido: custo.diluido || false
-          }))
-        );
-
-      if (custosError) {
-        console.error('Erro ao criar custos:', custosError);
-        throw custosError;
-      }
-    }
-
-    // Buscar proposta completa criada
-    return await this.buscarPorId(propostaCriada.id) as Proposta;
+    return {
+      id: data.id,
+      nome: data.nome,
+      email: data.email || '',
+      telefone: data.telefone || '',
+      empresa: data.empresa || '',
+      cnpj: data.cnpj || '',
+      endereco_rua: data.endereco_rua || '',
+      endereco_numero: data.endereco_numero || '',
+      endereco_bairro: data.endereco_bairro || '',
+      endereco_cidade: data.endereco_cidade || '',
+      endereco_estado: data.endereco_estado || '',
+      endereco_cep: data.endereco_cep || '',
+      inscricao_estadual: data.inscricao_estadual || ''
+    };
   },
 
-  async atualizar(id: number, proposta: Partial<Proposta>): Promise<Proposta> {
-    // Converter ID number para UUID (buscar pela proposta existente)
-    const { data: propostaExistente } = await supabase
-      .from('propostas')
-      .select('id')
-      .eq('numero', proposta.numero || '')
-      .single();
+  async excluir(id: number | string): Promise<void> {
+    const { error } = await supabase
+      .from('clientes')
+      .delete()
+      .eq('id', id);
 
-    if (!propostaExistente) {
-      throw new Error('Proposta não encontrada');
+    if (error) {
+      console.error('Erro ao excluir cliente:', error);
+      throw error;
     }
+  }
+};
 
-    const propostaId = propostaExistente.id;
+// Serviço de Propostas
+export const propostaService = {
+  async listarTodas(): Promise<Proposta[]> {
+    try {
+      const { data: propostas, error: propostasError } = await supabase
+        .from('propostas')
+        .select(`
+          *,
+          cliente:clientes(*)
+        `)
+        .order('created_at', { ascending: false });
 
-    // Atualizar proposta
-    const { error: propostaError } = await supabase
-      .from('propostas')
-      .update({
+      if (propostasError) {
+        console.error('Erro ao buscar propostas:', propostasError);
+        throw propostasError;
+      }
+
+      if (!propostas) return [];
+
+      const propostasCompletas = await Promise.all(
+        propostas.map(async (proposta) => {
+          const [itensResult, custosResult] = await Promise.all([
+            supabase
+              .from('proposta_itens')
+              .select('*')
+              .eq('proposta_id', proposta.id),
+            supabase
+              .from('proposta_custos')
+              .select('*')
+              .eq('proposta_id', proposta.id)
+          ]);
+
+          const itens = itensResult.data || [];
+          const custos = custosResult.data || [];
+
+          return {
+            id: proposta.id,
+            numero: proposta.numero,
+            data: proposta.data,
+            cliente: {
+              id: proposta.cliente?.id || '',
+              nome: proposta.cliente?.nome || '',
+              email: proposta.cliente?.email || '',
+              telefone: proposta.cliente?.telefone || '',
+              empresa: proposta.cliente?.empresa || '',
+              cnpj: proposta.cliente?.cnpj || '',
+              endereco_rua: proposta.cliente?.endereco_rua || '',
+              endereco_numero: proposta.cliente?.endereco_numero || '',
+              endereco_bairro: proposta.cliente?.endereco_bairro || '',
+              endereco_cidade: proposta.cliente?.endereco_cidade || '',
+              endereco_estado: proposta.cliente?.endereco_estado || '',
+              endereco_cep: proposta.cliente?.endereco_cep || '',
+              inscricao_estadual: proposta.cliente?.inscricao_estadual || ''
+            },
+            status: proposta.status,
+            itens: itens.map(item => ({
+              id: item.id,
+              codigo: item.codigo,
+              descricao: item.descricao,
+              unidade: item.unidade,
+              quantidade: item.quantidade,
+              valorUnitario: item.valor_unitario,
+              valorTotal: item.valor_total,
+              valorOriginal: item.valor_original
+            })),
+            custos: custos.map(custo => ({
+              id: custo.id,
+              descricao: custo.descricao,
+              valor: custo.valor,
+              diluido: custo.diluido
+            })),
+            observacoes: proposta.observacoes || '',
+            valorTotal: proposta.valor_total,
+            formaPagamento: proposta.forma_pagamento || '',
+            prazoEntrega: proposta.prazo_entrega || '',
+            prazoObra: proposta.prazo_obra || '',
+            validade: proposta.validade || ''
+          };
+        })
+      );
+
+      return propostasCompletas;
+    } catch (error) {
+      console.error('Erro no serviço de propostas:', error);
+      throw error;
+    }
+  },
+
+  async buscarPorId(id: number): Promise<Proposta | null> {
+    try {
+      const { data: proposta, error: propostaError } = await supabase
+        .from('propostas')
+        .select(`
+          *,
+          cliente:clientes(*)
+        `)
+        .eq('id', id)
+        .maybeSingle();
+
+      if (propostaError) {
+        console.error('Erro ao buscar proposta:', propostaError);
+        throw propostaError;
+      }
+
+      if (!proposta) return null;
+
+      const [itensResult, custosResult] = await Promise.all([
+        supabase
+          .from('proposta_itens')
+          .select('*')
+          .eq('proposta_id', proposta.id),
+        supabase
+          .from('proposta_custos')
+          .select('*')
+          .eq('proposta_id', proposta.id)
+      ]);
+
+      const itens = itensResult.data || [];
+      const custos = custosResult.data || [];
+
+      return {
+        id: proposta.id,
+        numero: proposta.numero,
+        data: proposta.data,
+        cliente: {
+          id: proposta.cliente?.id || '',
+          nome: proposta.cliente?.nome || '',
+          email: proposta.cliente?.email || '',
+          telefone: proposta.cliente?.telefone || '',
+          empresa: proposta.cliente?.empresa || '',
+          cnpj: proposta.cliente?.cnpj || ''
+        },
         status: proposta.status,
-        observacoes: proposta.observacoes || null,
-        valor_total: proposta.valorTotal,
-        forma_pagamento: proposta.formaPagamento || null,
-        prazo_entrega: proposta.prazoEntrega || null,
-        prazo_obra: proposta.prazoObra || null,
-        validade: proposta.validade || null
-      })
-      .eq('id', propostaId);
-
-    if (propostaError) {
-      console.error('Erro ao atualizar proposta:', propostaError);
-      throw propostaError;
+        itens: itens.map(item => ({
+          id: item.id,
+          codigo: item.codigo,
+          descricao: item.descricao,
+          unidade: item.unidade,
+          quantidade: item.quantidade,
+          valorUnitario: item.valor_unitario,
+          valorTotal: item.valor_total,
+          valorOriginal: item.valor_original
+        })),
+        custos: custos.map(custo => ({
+          id: custo.id,
+          descricao: custo.descricao,
+          valor: custo.valor,
+          diluido: custo.diluido
+        })),
+        observacoes: proposta.observacoes || '',
+        valorTotal: proposta.valor_total,
+        formaPagamento: proposta.forma_pagamento || '',
+        prazoEntrega: proposta.prazo_entrega || '',
+        prazoObra: proposta.prazo_obra || '',
+        validade: proposta.validade || ''
+      };
+    } catch (error) {
+      console.error('Erro ao buscar proposta por ID:', error);
+      throw error;
     }
+  },
 
-    // Se há itens, removê-los e recriar
-    if (proposta.itens) {
-      await supabase
-        .from('proposta_itens')
-        .delete()
-        .eq('proposta_id', propostaId);
+  async criar(proposta: Omit<Proposta, 'id'>): Promise<Proposta> {
+    try {
+      const { data: novaProposta, error: propostaError } = await supabase
+        .from('propostas')
+        .insert({
+          numero: proposta.numero,
+          data: proposta.data,
+          cliente_id: proposta.cliente.id,
+          status: proposta.status,
+          observacoes: proposta.observacoes,
+          valor_total: proposta.valorTotal,
+          forma_pagamento: proposta.formaPagamento,
+          prazo_entrega: proposta.prazoEntrega,
+          prazo_obra: proposta.prazoObra,
+          validade: proposta.validade
+        })
+        .select()
+        .single();
+
+      if (propostaError) {
+        console.error('Erro ao criar proposta:', propostaError);
+        throw propostaError;
+      }
 
       if (proposta.itens.length > 0) {
         const { error: itensError } = await supabase
           .from('proposta_itens')
           .insert(
             proposta.itens.map(item => ({
-              proposta_id: propostaId,
+              proposta_id: novaProposta.id,
               codigo: item.codigo,
               descricao: item.descricao,
               unidade: item.unidade,
               quantidade: item.quantidade,
               valor_unitario: item.valorUnitario,
               valor_total: item.valorTotal,
-              valor_original: item.valorOriginal || null
+              valor_original: item.valorOriginal
             }))
           );
 
         if (itensError) {
-          console.error('Erro ao atualizar itens:', itensError);
+          console.error('Erro ao criar itens da proposta:', itensError);
           throw itensError;
         }
       }
-    }
-
-    // Se há custos, removê-los e recriar
-    if (proposta.custos) {
-      await supabase
-        .from('proposta_custos')
-        .delete()
-        .eq('proposta_id', propostaId);
 
       if (proposta.custos.length > 0) {
         const { error: custosError } = await supabase
           .from('proposta_custos')
           .insert(
             proposta.custos.map(custo => ({
-              proposta_id: propostaId,
+              proposta_id: novaProposta.id,
               descricao: custo.descricao,
               valor: custo.valor,
-              diluido: custo.diluido || false
+              diluido: custo.diluido
             }))
           );
 
         if (custosError) {
-          console.error('Erro ao atualizar custos:', custosError);
+          console.error('Erro ao criar custos da proposta:', custosError);
           throw custosError;
         }
       }
-    }
 
-    return await this.buscarPorId(propostaId) as Proposta;
+      return {
+        ...proposta,
+        id: novaProposta.id
+      };
+    } catch (error) {
+      console.error('Erro ao criar proposta:', error);
+      throw error;
+    }
+  },
+
+  async atualizar(id: number, proposta: Partial<Proposta>): Promise<Proposta> {
+    try {
+      const { data: propostaAtualizada, error: propostaError } = await supabase
+        .from('propostas')
+        .update({
+          numero: proposta.numero,
+          data: proposta.data,
+          cliente_id: proposta.cliente?.id,
+          status: proposta.status,
+          observacoes: proposta.observacoes,
+          valor_total: proposta.valorTotal,
+          forma_pagamento: proposta.formaPagamento,
+          prazo_entrega: proposta.prazoEntrega,
+          prazo_obra: proposta.prazoObra,
+          validade: proposta.validade
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (propostaError) {
+        console.error('Erro ao atualizar proposta:', propostaError);
+        throw propostaError;
+      }
+
+      if (proposta.itens) {
+        await supabase
+          .from('proposta_itens')
+          .delete()
+          .eq('proposta_id', id);
+
+        if (proposta.itens.length > 0) {
+          const { error: itensError } = await supabase
+            .from('proposta_itens')
+            .insert(
+              proposta.itens.map(item => ({
+                proposta_id: id,
+                codigo: item.codigo,
+                descricao: item.descricao,
+                unidade: item.unidade,
+                quantidade: item.quantidade,
+                valor_unitario: item.valorUnitario,
+                valor_total: item.valorTotal,
+                valor_original: item.valorOriginal
+              }))
+            );
+
+          if (itensError) {
+            console.error('Erro ao atualizar itens da proposta:', itensError);
+            throw itensError;
+          }
+        }
+      }
+
+      if (proposta.custos) {
+        await supabase
+          .from('proposta_custos')
+          .delete()
+          .eq('proposta_id', id);
+
+        if (proposta.custos.length > 0) {
+          const { error: custosError } = await supabase
+            .from('proposta_custos')
+            .insert(
+              proposta.custos.map(custo => ({
+                proposta_id: id,
+                descricao: custo.descricao,
+                valor: custo.valor,
+                diluido: custo.diluido
+              }))
+            );
+
+          if (custosError) {
+            console.error('Erro ao atualizar custos da proposta:', custosError);
+            throw custosError;
+          }
+        }
+      }
+
+      return await this.buscarPorId(id) || proposta as Proposta;
+    } catch (error) {
+      console.error('Erro ao atualizar proposta:', error);
+      throw error;
+    }
   },
 
   async excluir(id: number): Promise<void> {
-    // Buscar proposta por número para obter UUID
-    const propostas = await this.listarTodas();
-    const proposta = propostas.find(p => p.id === id);
-    
-    if (!proposta) {
-      throw new Error('Proposta não encontrada');
-    }
+    try {
+      await Promise.all([
+        supabase.from('proposta_itens').delete().eq('proposta_id', id),
+        supabase.from('proposta_custos').delete().eq('proposta_id', id)
+      ]);
 
-    const { data: propostaExistente } = await supabase
-      .from('propostas')
-      .select('id')
-      .eq('numero', proposta.numero)
-      .single();
+      const { error } = await supabase
+        .from('propostas')
+        .delete()
+        .eq('id', id);
 
-    if (!propostaExistente) {
-      throw new Error('Proposta não encontrada no banco');
-    }
-
-    const { error } = await supabase
-      .from('propostas')
-      .delete()
-      .eq('id', propostaExistente.id);
-
-    if (error) {
+      if (error) {
+        console.error('Erro ao excluir proposta:', error);
+        throw error;
+      }
+    } catch (error) {
       console.error('Erro ao excluir proposta:', error);
       throw error;
     }
   },
 
   async atualizarStatus(id: number, status: Proposta['status']): Promise<void> {
-    // Buscar proposta por ID para obter UUID
-    const propostas = await this.listarTodas();
-    const proposta = propostas.find(p => p.id === id);
-    
-    if (!proposta) {
-      throw new Error('Proposta não encontrada');
-    }
+    try {
+      const { error } = await supabase
+        .from('propostas')
+        .update({ status })
+        .eq('id', id);
 
-    const { data: propostaExistente } = await supabase
-      .from('propostas')
-      .select('id')
-      .eq('numero', proposta.numero)
-      .single();
-
-    if (!propostaExistente) {
-      throw new Error('Proposta não encontrada no banco');
-    }
-
-    const { error } = await supabase
-      .from('propostas')
-      .update({ status })
-      .eq('id', propostaExistente.id);
-
-    if (error) {
+      if (error) {
+        console.error('Erro ao atualizar status da proposta:', error);
+        throw error;
+      }
+    } catch (error) {
       console.error('Erro ao atualizar status:', error);
+      throw error;
+    }
+  }
+};
+
+// Serviço de Atendimentos
+export const atendimentoService = {
+  async listarTodos(): Promise<AtendimentoData[]> {
+    try {
+      const { data, error } = await supabase
+        .from('atendimentos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar atendimentos:', error);
+        throw error;
+      }
+
+      return data.map(atendimento => ({
+        id: atendimento.id,
+        cliente: atendimento.cliente_nome,
+        contato: atendimento.contato,
+        assunto: atendimento.assunto,
+        data: atendimento.data,
+        hora: atendimento.hora,
+        canal: atendimento.canal,
+        status: atendimento.status,
+        mensagem: atendimento.mensagem || '',
+        clienteId: atendimento.cliente_id || 0
+      }));
+    } catch (error) {
+      console.error('Erro no serviço de atendimentos:', error);
+      throw error;
+    }
+  },
+
+  async criar(atendimento: Omit<AtendimentoData, 'id'>): Promise<AtendimentoData> {
+    try {
+      const { data, error } = await supabase
+        .from('atendimentos')
+        .insert({
+          cliente_nome: atendimento.cliente,
+          contato: atendimento.contato,
+          assunto: atendimento.assunto,
+          data: atendimento.data,
+          hora: atendimento.hora,
+          canal: atendimento.canal,
+          status: atendimento.status,
+          mensagem: atendimento.mensagem,
+          cliente_id: atendimento.clienteId || null
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar atendimento:', error);
+        throw error;
+      }
+
+      return {
+        id: data.id,
+        cliente: data.cliente_nome,
+        contato: data.contato,
+        assunto: data.assunto,
+        data: data.data,
+        hora: data.hora,
+        canal: data.canal,
+        status: data.status,
+        mensagem: data.mensagem || '',
+        clienteId: data.cliente_id || 0
+      };
+    } catch (error) {
+      console.error('Erro ao criar atendimento:', error);
+      throw error;
+    }
+  },
+
+  async atualizar(id: number, atendimento: Partial<AtendimentoData>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('atendimentos')
+        .update({
+          cliente_nome: atendimento.cliente,
+          contato: atendimento.contato,
+          assunto: atendimento.assunto,
+          data: atendimento.data,
+          hora: atendimento.hora,
+          canal: atendimento.canal,
+          status: atendimento.status,
+          mensagem: atendimento.mensagem
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao atualizar atendimento:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar atendimento:', error);
+      throw error;
+    }
+  },
+
+  async excluir(id: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('atendimentos')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao excluir atendimento:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Erro ao excluir atendimento:', error);
       throw error;
     }
   }

@@ -69,7 +69,7 @@ const InformacoesGerais = ({
             </div>
           ) : (
             <Select
-              value={proposta.cliente.id > 0 ? proposta.cliente.id.toString() : "selecionar"}
+              value={typeof proposta.cliente.id === 'number' && proposta.cliente.id > 0 ? proposta.cliente.id.toString() : "selecionar"}
               onValueChange={(value) => handleClienteChange(value === "selecionar" ? 0 : Number(value))}
             >
               <SelectTrigger className="w-full">
@@ -87,7 +87,7 @@ const InformacoesGerais = ({
           )}
         </div>
         
-        {proposta.cliente.id > 0 && (
+        {(typeof proposta.cliente.id === 'number' && proposta.cliente.id > 0) && (
           <Card className="bg-muted/30">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Informações do Cliente</CardTitle>

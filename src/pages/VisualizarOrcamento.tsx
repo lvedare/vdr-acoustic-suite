@@ -7,48 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChevronLeft, Printer, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { generateProposalPDF } from "../services/pdfService";
-
-// Tipos
-interface ClienteSimplificado {
-  id: number;
-  nome: string;
-  email: string;
-  telefone: string;
-  empresa?: string;
-  cnpj?: string;
-}
-
-interface ItemProposta {
-  id: number;
-  codigo: string;
-  descricao: string;
-  unidade: string;
-  quantidade: number;
-  valorUnitario: number;
-  valorTotal: number;
-}
-
-interface CustoProposta {
-  id: number;
-  descricao: string;
-  valor: number;
-}
-
-interface Proposta {
-  id: number;
-  numero: string;
-  data: string;
-  cliente: ClienteSimplificado;
-  status: "rascunho" | "enviada" | "aprovada" | "rejeitada" | "expirada";
-  itens: ItemProposta[];
-  custos: CustoProposta[];
-  observacoes: string;
-  valorTotal: number;
-  formaPagamento: string;
-  prazoEntrega: string;
-  prazoObra: string;
-  validade: string;
-}
+import { Proposta } from "@/types/orcamento";
 
 const VisualizarOrcamento = () => {
   const navigate = useNavigate();

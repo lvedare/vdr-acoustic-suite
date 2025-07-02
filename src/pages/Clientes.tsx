@@ -2,115 +2,89 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Phone, Mail, Building, FileText, Trash2, Edit } from "lucide-react";
-import { useClientes } from "@/hooks/useClientes";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { clienteService } from "@/services/supabaseService";
+import { toast } from "sonner";
+import { ClienteSimplificado } from "@/types/orcamento";
 
 const Clientes = () => {
-  const {
-    clientes,
-    isLoading,
-    criarCliente,
-    atualizarCliente,
-    excluirCliente,
-    isCriando,
-    isAtualizando,
-    isExcluindo
-  } = useClientes();
-
-  const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCliente, setEditingCliente] = useState<any>(null);
-  
-  const [formData, setFormData] = useState({
+  const [clienteEditando, setClienteEditando] = useState<ClienteSimplificado | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [novoCliente, setNovoCliente] = useState({
     nome: "",
     email: "",
     telefone: "",
     empresa: "",
-    cnpj: ""
+    cnpj: "",
+    endereco_rua: "",
+    endereco_numero: "",
+    endereco_bairro: "",
+    endereco_cidade: "",
+    endereco_estado: "",
+    endereco_cep: "",
+    inscricao_estadual: ""
   });
 
-  // Filter clients based on search term
-  const filteredClientes = clientes.filter(cliente =>
-    cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (cliente.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (cliente.empresa || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (cliente.cnpj || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const queryClient = useQueryClient();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.nome) {
-      return;
-    }
+  const { data: clientes = [], isLoading } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: clienteService.listarTodos
+  });
 
-    const clienteData = {
-      nome: formData.nome,
-      email: formData.email || null,
-      telefone: formData.telefone || null,
-      empresa: formData.empresa || null,
-      cnpj: formData.cnpj || null,
-    };
-
-    if (editingCliente) {
-      atualizarCliente({ id: editingCliente.id, cliente: clienteData });
-    } else {
-      criarCliente(clienteData);
-    }
-
-    resetForm();
-    setIsDialogOpen(false);
-  };
+  const criarClienteMutation = useMutation({
+    mutationFn: clienteService.criar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      toast.success("Cliente criado com sucesso!");
+      resetForm();
+    },
+    onError: (error) => {
+      console.error("Erro ao criar cliente:", error);
+      toast.error("Erro ao criar cliente");
+    },
+  });
 
   const resetForm = () => {
-    setFormData({
+    setNovoCliente({
       nome: "",
       email: "",
       telefone: "",
       empresa: "",
-      cnpj: ""
+      cnpj: "",
+      endereco_rua: "",
+      endereco_numero: "",
+      endereco_bairro: "",
+      endereco_cidade: "",
+      endereco_estado: "",
+      endereco_cep: "",
+      inscricao_estadual: ""
     });
-    setEditingCliente(null);
+    setClienteEditando(null);
+    setIsDialogOpen(false);
   };
 
-  const handleEdit = (cliente: any) => {
-    setEditingCliente(cliente);
-    setFormData({
-      nome: cliente.nome || "",
-      email: cliente.email || "",
-      telefone: cliente.telefone || "",
-      empresa: cliente.empresa || "",
-      cnpj: cliente.cnpj || ""
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este cliente?')) {
-      excluirCliente(id);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!novoCliente.nome.trim()) {
+      toast.error("Nome é obrigatório");
+      return;
     }
+
+    criarClienteMutation.mutate(novoCliente);
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Clientes</h1>
-        </div>
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <div className="text-lg font-medium text-muted-foreground">
-              Carregando clientes...
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const clientesFiltrados = clientes.filter(cliente =>
+    cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cliente.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (cliente.empresa && cliente.empresa.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <div className="space-y-6">
@@ -118,14 +92,15 @@ const Clientes = () => {
         <h1 className="text-3xl font-bold">Clientes</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="mr-2 h-4 w-4" /> Novo Cliente
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Cliente
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>
-                {editingCliente ? "Editar Cliente" : "Novo Cliente"}
+                {clienteEditando ? "Editar Cliente" : "Novo Cliente"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -134,61 +109,120 @@ const Clientes = () => {
                   <Label htmlFor="nome">Nome *</Label>
                   <Input
                     id="nome"
-                    value={formData.nome}
-                    onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                    placeholder="Nome completo"
+                    value={novoCliente.nome}
+                    onChange={(e) => setNovoCliente({...novoCliente, nome: e.target.value})}
                     required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="email@exemplo.com"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone</Label>
-                  <Input
-                    id="telefone"
-                    value={formData.telefone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
-                    placeholder="(11) 99999-9999"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="empresa">Empresa</Label>
                   <Input
                     id="empresa"
-                    value={formData.empresa}
-                    onChange={(e) => setFormData(prev => ({ ...prev, empresa: e.target.value }))}
-                    placeholder="Nome da empresa"
+                    value={novoCliente.empresa}
+                    onChange={(e) => setNovoCliente({...novoCliente, empresa: e.target.value})}
                   />
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="cnpj">CNPJ</Label>
-                <Input
-                  id="cnpj"
-                  value={formData.cnpj}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cnpj: e.target.value }))}
-                  placeholder="00.000.000/0000-00"
-                />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={novoCliente.email}
+                    onChange={(e) => setNovoCliente({...novoCliente, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="telefone">Telefone</Label>
+                  <Input
+                    id="telefone"
+                    value={novoCliente.telefone}
+                    onChange={(e) => setNovoCliente({...novoCliente, telefone: e.target.value})}
+                  />
+                </div>
               </div>
-              
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cnpj">CNPJ/CPF</Label>
+                  <Input
+                    id="cnpj"
+                    value={novoCliente.cnpj}
+                    onChange={(e) => setNovoCliente({...novoCliente, cnpj: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="inscricao_estadual">Inscrição Estadual</Label>
+                  <Input
+                    id="inscricao_estadual"
+                    value={novoCliente.inscricao_estadual}
+                    onChange={(e) => setNovoCliente({...novoCliente, inscricao_estadual: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Endereço</Label>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2">
+                    <Input
+                      placeholder="Rua"
+                      value={novoCliente.endereco_rua}
+                      onChange={(e) => setNovoCliente({...novoCliente, endereco_rua: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      placeholder="Número"
+                      value={novoCliente.endereco_numero}
+                      onChange={(e) => setNovoCliente({...novoCliente, endereco_numero: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Input
+                      placeholder="Bairro"
+                      value={novoCliente.endereco_bairro}
+                      onChange={(e) => setNovoCliente({...novoCliente, endereco_bairro: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      placeholder="Cidade"
+                      value={novoCliente.endereco_cidade}
+                      onChange={(e) => setNovoCliente({...novoCliente, endereco_cidade: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      placeholder="Estado"
+                      value={novoCliente.endereco_estado}
+                      onChange={(e) => setNovoCliente({...novoCliente, endereco_estado: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Input
+                    placeholder="CEP"
+                    value={novoCliente.endereco_cep}
+                    onChange={(e) => setNovoCliente({...novoCliente, endereco_cep: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetForm}
+                >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isCriando || isAtualizando}>
-                  {editingCliente ? "Atualizar" : "Criar Cliente"}
+                <Button type="submit" disabled={criarClienteMutation.isPending}>
+                  {criarClienteMutation.isPending ? "Salvando..." : "Salvar"}
                 </Button>
               </div>
             </form>
@@ -198,88 +232,65 @@ const Clientes = () => {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <div className="flex justify-between items-center">
+            <CardTitle>Lista de Clientes</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Buscar clientes por nome, email, empresa ou CNPJ..."
+                placeholder="Buscar clientes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
+                className="pl-10"
               />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
-            {filteredClientes.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {searchTerm ? "Nenhum cliente encontrado com os critérios de busca." : "Nenhum cliente cadastrado."}
-              </div>
-            ) : (
-              filteredClientes.map((cliente) => (
-                <Card key={cliente.id} className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{cliente.nome}</h3>
-                        {cliente.empresa && (
-                          <Badge variant="secondary">
-                            <Building className="mr-1 h-3 w-3" />
-                            {cliente.empresa}
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        {cliente.email && (
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {cliente.email}
+          {isLoading ? (
+            <div className="text-center py-4">Carregando clientes...</div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clientesFiltrados.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        Nenhum cliente encontrado.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    clientesFiltrados.map((cliente) => (
+                      <TableRow key={cliente.id}>
+                        <TableCell className="font-medium">{cliente.nome}</TableCell>
+                        <TableCell>{cliente.empresa || "-"}</TableCell>
+                        <TableCell>{cliente.email}</TableCell>
+                        <TableCell>{cliente.telefone}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-red-500">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                        )}
-                        {cliente.telefone && (
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {cliente.telefone}
-                          </div>
-                        )}
-                        {cliente.cnpj && (
-                          <div className="flex items-center gap-1">
-                            <FileText className="h-3 w-3" />
-                            {cliente.cnpj}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="text-xs text-muted-foreground">
-                        Cadastrado em: {new Date(cliente.created_at || '').toLocaleDateString('pt-BR')}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(cliente)}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => handleDelete(cliente.id)}
-                        disabled={isExcluindo}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

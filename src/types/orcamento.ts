@@ -1,11 +1,12 @@
+
 // Tipos utilizados no módulo de orçamentos
 export interface ClienteSimplificado {
   id: number | string;
   nome: string;
   email: string;
   telefone: string;
-  empresa: string;
-  cnpj: string;
+  empresa?: string;
+  cnpj?: string;
   endereco_rua?: string;
   endereco_numero?: string;
   endereco_bairro?: string;
@@ -47,6 +48,56 @@ export interface Proposta {
   prazoEntrega: string;
   prazoObra: string;
   validade: string;
+}
+
+// Adicionando interfaces que estavam faltando para produtos
+export interface ComposicaoInsumo {
+  id: number;
+  insumoId: number;
+  nome: string;
+  quantidade: number;
+  valorUnitario: number;
+  valorTotal: number;
+}
+
+export interface ComposicaoMaoDeObra {
+  fabricacao: number;
+  instalacao: number;
+}
+
+export interface ComposicaoProduto {
+  insumos: ComposicaoInsumo[];
+  maoDeObra: ComposicaoMaoDeObra;
+  despesaAdministrativa: number;
+  margemVenda: number;
+}
+
+export interface ProdutoAcabado {
+  id: number;
+  codigo: string;
+  nome: string;
+  descricao: string;
+  categoria: string;
+  unidadeMedida: string;
+  valorBase: number;
+  quantidadeEstoque: number;
+  dataCadastro: string;
+  composicao?: ComposicaoProduto;
+}
+
+// Interfaces para formulários
+export interface NovoItemInput {
+  codigo: string;
+  descricao: string;
+  unidade: string;
+  quantidade: number;
+  valorUnitario: number;
+}
+
+export interface NovoCustoInput {
+  descricao: string;
+  valor: number;
+  diluido: boolean;
 }
 
 export interface ComposicaoItem {
