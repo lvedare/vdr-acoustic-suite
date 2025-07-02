@@ -17,7 +17,7 @@ export interface ClienteSimplificado {
 }
 
 export interface ItemProposta {
-  id: number;
+  id: string | number;
   codigo: string;
   descricao: string;
   unidade: string;
@@ -28,14 +28,14 @@ export interface ItemProposta {
 }
 
 export interface CustoProposta {
-  id: number;
+  id: string | number;
   descricao: string;
   valor: number;
   diluido: boolean;
 }
 
 export interface Proposta {
-  id: number;
+  id: string | number;
   numero: string;
   data: string;
   cliente: ClienteSimplificado;

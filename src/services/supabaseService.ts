@@ -35,7 +35,7 @@ export const clienteService = {
     const { data, error } = await supabase
       .from('clientes')
       .select('*')
-      .eq('id', id)
+      .eq('id', String(id))
       .maybeSingle();
 
     if (error) {
@@ -62,7 +62,7 @@ export const clienteService = {
     };
   },
 
-  async criar(cliente: Omit<ClienteSimplificado, 'id'>): Promise<ClienteSimplificado> {
+  async criar(cliente: Omit<ClienteSimplificado, 'id' | 'created_at' | 'updated_at'>): Promise<ClienteSimplificado> {
     const { data, error } = await supabase
       .from('clientes')
       .insert({
@@ -121,7 +121,7 @@ export const clienteService = {
         endereco_cep: cliente.endereco_cep || null,
         inscricao_estadual: cliente.inscricao_estadual || null
       })
-      .eq('id', id)
+      .eq('id', String(id))
       .select()
       .single();
 
@@ -151,7 +151,7 @@ export const clienteService = {
     const { error } = await supabase
       .from('clientes')
       .delete()
-      .eq('id', id);
+      .eq('id', String(id));
 
     if (error) {
       console.error('Erro ao excluir cliente:', error);
@@ -248,7 +248,7 @@ export const propostaService = {
     }
   },
 
-  async buscarPorId(id: number): Promise<Proposta | null> {
+  async buscarPorId(id: number | string): Promise<Proposta | null> {
     try {
       const { data: proposta, error: propostaError } = await supabase
         .from('propostas')
@@ -256,7 +256,7 @@ export const propostaService = {
           *,
           cliente:clientes(*)
         `)
-        .eq('id', id)
+        .eq('id', String(id))
         .maybeSingle();
 
       if (propostaError) {
@@ -329,7 +329,7 @@ export const propostaService = {
         .insert({
           numero: proposta.numero,
           data: proposta.data,
-          cliente_id: proposta.cliente.id,
+          cliente_id: String(proposta.cliente.id),
           status: proposta.status,
           observacoes: proposta.observacoes,
           valor_total: proposta.valorTotal,
@@ -396,14 +396,14 @@ export const propostaService = {
     }
   },
 
-  async atualizar(id: number, proposta: Partial<Proposta>): Promise<Proposta> {
+  async atualizar(id: number | string, proposta: Partial<Proposta>): Promise<Proposta> {
     try {
       const { data: propostaAtualizada, error: propostaError } = await supabase
         .from('propostas')
         .update({
           numero: proposta.numero,
           data: proposta.data,
-          cliente_id: proposta.cliente?.id,
+          cliente_id: String(proposta.cliente?.id),
           status: proposta.status,
           observacoes: proposta.observacoes,
           valor_total: proposta.valorTotal,
@@ -412,7 +412,7 @@ export const propostaService = {
           prazo_obra: proposta.prazoObra,
           validade: proposta.validade
         })
-        .eq('id', id)
+        .eq('id', String(id))
         .select()
         .single();
 
@@ -425,14 +425,14 @@ export const propostaService = {
         await supabase
           .from('proposta_itens')
           .delete()
-          .eq('proposta_id', id);
+          .eq('proposta_id', String(id));
 
         if (proposta.itens.length > 0) {
           const { error: itensError } = await supabase
             .from('proposta_itens')
             .insert(
               proposta.itens.map(item => ({
-                proposta_id: id,
+                proposta_id: String(id),
                 codigo: item.codigo,
                 descricao: item.descricao,
                 unidade: item.unidade,
@@ -454,14 +454,14 @@ export const propostaService = {
         await supabase
           .from('proposta_custos')
           .delete()
-          .eq('proposta_id', id);
+          .eq('proposta_id', String(id));
 
         if (proposta.custos.length > 0) {
           const { error: custosError } = await supabase
             .from('proposta_custos')
             .insert(
               proposta.custos.map(custo => ({
-                proposta_id: id,
+                proposta_id: String(id),
                 descricao: custo.descricao,
                 valor: custo.valor,
                 diluido: custo.diluido
@@ -482,17 +482,17 @@ export const propostaService = {
     }
   },
 
-  async excluir(id: number): Promise<void> {
+  async excluir(id: number | string): Promise<void> {
     try {
       await Promise.all([
-        supabase.from('proposta_itens').delete().eq('proposta_id', id),
-        supabase.from('proposta_custos').delete().eq('proposta_id', id)
+        supabase.from('proposta_itens').delete().eq('proposta_id', String(id)),
+        supabase.from('proposta_custos').delete().eq('proposta_id', String(id))
       ]);
 
       const { error } = await supabase
         .from('propostas')
         .delete()
-        .eq('id', id);
+        .eq('id', String(id));
 
       if (error) {
         console.error('Erro ao excluir proposta:', error);
@@ -504,12 +504,12 @@ export const propostaService = {
     }
   },
 
-  async atualizarStatus(id: number, status: Proposta['status']): Promise<void> {
+  async atualizarStatus(id: number | string, status: Proposta['status']): Promise<void> {
     try {
       const { error } = await supabase
         .from('propostas')
         .update({ status })
-        .eq('id', id);
+        .eq('id', String(id));
 
       if (error) {
         console.error('Erro ao atualizar status da proposta:', error);

@@ -20,7 +20,8 @@ interface CustoInternoProps {
 const CustoInterno = ({ proposta, setProposta }: CustoInternoProps) => {
   const [novoCusto, setNovoCusto] = useState<NovoCustoInput>({
     descricao: "",
-    valor: 0
+    valor: 0,
+    diluido: false
   });
   
   const [custosDiluidos, setCustosDiluidos] = useState(false);
@@ -47,14 +48,15 @@ const CustoInterno = ({ proposta, setProposta }: CustoInternoProps) => {
     
     setNovoCusto({
       descricao: "",
-      valor: 0
+      valor: 0,
+      diluido: false
     });
     
     toast.success("Custo adicionado com sucesso!");
   };
 
   // Handler para remover um custo
-  const handleRemoverCusto = (id: number) => {
+  const handleRemoverCusto = (id: string | number) => {
     setProposta(prev => ({
       ...prev,
       custos: prev.custos.filter(custo => custo.id !== id)
