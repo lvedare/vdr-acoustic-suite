@@ -567,7 +567,7 @@ export const atendimentoService = {
           canal: atendimento.canal,
           status: atendimento.status,
           mensagem: atendimento.mensagem,
-          cliente_id: atendimento.clienteId || null
+          cliente_id: atendimento.clienteId ? String(atendimento.clienteId) : null
         })
         .select()
         .single();
@@ -595,7 +595,7 @@ export const atendimentoService = {
     }
   },
 
-  async atualizar(id: number, atendimento: Partial<AtendimentoData>): Promise<void> {
+  async atualizar(id: string | number, atendimento: Partial<AtendimentoData>): Promise<void> {
     try {
       const { error } = await supabase
         .from('atendimentos')
@@ -609,7 +609,7 @@ export const atendimentoService = {
           status: atendimento.status,
           mensagem: atendimento.mensagem
         })
-        .eq('id', id);
+        .eq('id', String(id));
 
       if (error) {
         console.error('Erro ao atualizar atendimento:', error);
@@ -621,12 +621,12 @@ export const atendimentoService = {
     }
   },
 
-  async excluir(id: number): Promise<void> {
+  async excluir(id: string | number): Promise<void> {
     try {
       const { error } = await supabase
         .from('atendimentos')
         .delete()
-        .eq('id', id);
+        .eq('id', String(id));
 
       if (error) {
         console.error('Erro ao excluir atendimento:', error);

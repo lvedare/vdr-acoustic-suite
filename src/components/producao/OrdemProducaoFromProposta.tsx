@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,8 +37,9 @@ export function OrdemProducaoFromProposta() {
     }
   };
 
-  const toggleExpanded = (propostaId: number) => {
-    setExpandedPropostaId(expandedPropostaId === propostaId ? null : propostaId);
+  const toggleExpanded = (propostaId: string | number) => {
+    const numericId = Number(propostaId);
+    setExpandedPropostaId(expandedPropostaId === numericId ? null : numericId);
   };
 
   const formatDate = (dateString: string): string => {
@@ -111,7 +111,7 @@ export function OrdemProducaoFromProposta() {
                       onClick={() => toggleExpanded(proposta.id)}
                     >
                       <Eye className="h-4 w-4 mr-2" />
-                      {expandedPropostaId === proposta.id ? 'Ocultar' : 'Ver Itens'}
+                      {expandedPropostaId === Number(proposta.id) ? 'Ocultar' : 'Ver Itens'}
                     </Button>
                     <Button
                       onClick={() => handleGerarOrdemProducao(proposta)}
@@ -123,7 +123,7 @@ export function OrdemProducaoFromProposta() {
                   </div>
                 </div>
                 
-                {expandedPropostaId === proposta.id && (
+                {expandedPropostaId === Number(proposta.id) && (
                   <div className="border-t bg-muted/50">
                     <div className="p-4">
                       <h4 className="font-medium mb-3">Itens da proposta que serão produzidos:</h4>

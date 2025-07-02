@@ -163,7 +163,7 @@ const NovoOrcamento = () => {
     try {
       if (isEdit) {
         // Atualizar proposta existente
-        await atualizarProposta({ id: proposta.id, proposta });
+        await atualizarProposta({ id: Number(proposta.id), proposta });
       } else {
         // Criar nova proposta (incluindo revisões)
         await criarProposta(proposta);

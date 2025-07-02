@@ -58,7 +58,7 @@ export function RascunhoTab({ propostas, onDelete, formatDate }: RascunhoTabProp
                           variant="outline" 
                           size="icon"
                           onClick={() => navigate(`/novo-orcamento`, { 
-                            state: { propostaId: proposta.id, isEdit: true } 
+                            state: { propostaId: Number(proposta.id), isEdit: true } 
                           })}
                           title="Continuar editando"
                         >
@@ -67,7 +67,7 @@ export function RascunhoTab({ propostas, onDelete, formatDate }: RascunhoTabProp
                         <Button 
                           variant="destructive" 
                           size="icon"
-                          onClick={() => onDelete(proposta.id)}
+                          onClick={() => onDelete(Number(proposta.id))}
                           title="Excluir rascunho"
                         >
                           <Trash2 className="h-4 w-4" />

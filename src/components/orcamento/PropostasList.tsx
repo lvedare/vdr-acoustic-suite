@@ -119,7 +119,7 @@ const PropostasList = ({
                       variant="outline" 
                       size="icon" 
                       onClick={() => navigate(`/novo-orcamento`, { 
-                        state: { propostaId: proposta.id, isEdit: true } 
+                        state: { propostaId: Number(proposta.id), isEdit: true } 
                       })}
                     >
                       <Edit className="h-4 w-4" />
@@ -142,7 +142,7 @@ const PropostasList = ({
                         </Button>
                       </DialogTrigger>
                       <StatusChangeDialog 
-                        propostaId={proposta.id}
+                        propostaId={Number(proposta.id)}
                         propostaNumero={proposta.numero}
                         currentStatus={proposta.status}
                         onChangeStatus={onChangeStatus}
@@ -158,7 +158,7 @@ const PropostasList = ({
                       </DialogTrigger>
                       <DeleteConfirmDialog 
                         propostaNumero={proposta.numero}
-                        onConfirm={() => onDelete(proposta.id)}
+                        onConfirm={() => onDelete(Number(proposta.id))}
                       />
                     </Dialog>
                   </div>

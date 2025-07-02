@@ -1,4 +1,3 @@
-
 // Tipos utilizados no módulo de orçamentos
 export interface ClienteSimplificado {
   id: number | string;
@@ -111,7 +110,7 @@ export interface ComposicaoItem {
 }
 
 export interface AtendimentoData {
-  id: number;
+  id: string | number;
   cliente: string;
   contato: string;
   assunto: string;
@@ -120,7 +119,7 @@ export interface AtendimentoData {
   canal: string;
   status: string;
   mensagem: string;
-  clienteId: number;
+  clienteId: string | number;
 }
 
 // Constantes

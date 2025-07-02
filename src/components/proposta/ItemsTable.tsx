@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,7 @@ export const ItemsTable = ({
                         variant="ghost"
                         size="icon"
                         className="text-destructive hover:text-destructive/90"
-                        onClick={() => onRemoveItem(item.id)}
+                        onClick={() => onRemoveItem(Number(item.id))}
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
