@@ -79,7 +79,30 @@ const NovoAtendimentoDialog: React.FC<NovoAtendimentoDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Validação dos campos obrigatórios
+    if (!formData.cliente_nome || !formData.contato || !formData.assunto) {
+      console.error('Campos obrigatórios não preenchidos');
+      return;
+    }
+    
+    // Converter dados para formato esperado pelo service
+    const atendimentoData = {
+      cliente_nome: formData.cliente_nome,
+      cliente_id: formData.cliente_id || null,
+      contato: formData.contato,
+      assunto: formData.assunto,
+      mensagem: formData.mensagem,
+      canal: formData.canal,
+      status: formData.status,
+      data: formData.data,
+      hora: formData.hora,
+      endereco_entrega: formData.endereco_entrega,
+      endereco_obra: formData.endereco_obra,
+      usar_endereco_cliente: formData.usar_endereco_cliente
+    };
+    
+    onSubmit(atendimentoData);
     setFormData({
       cliente_nome: "",
       cliente_id: "",

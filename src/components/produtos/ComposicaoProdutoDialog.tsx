@@ -134,6 +134,10 @@ export function ComposicaoProdutoDialog({
       }
 
       toast.success('Composição salva com sucesso!');
+      
+      // Recarregar dados do produto
+      window.location.reload();
+      
       onSalvar();
       onOpenChange(false);
     } catch (error) {

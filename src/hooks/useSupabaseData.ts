@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { clienteService } from '@/services/supabaseService';
+import { supabaseService } from '@/services/supabaseService';
 import { produtoAcabadoService } from '@/services/produtoAcabadoService';
 import { ClienteSimplificado, ProdutoAcabado } from '@/types/orcamento';
 
@@ -8,7 +8,7 @@ export const useClientes = () => {
   return useQuery({
     queryKey: ['clientes'],
     queryFn: async (): Promise<ClienteSimplificado[]> => {
-      const data = await clienteService.listarTodos();
+      const data = await supabaseService.listarClientes();
       return data.map(cliente => ({
         id: parseInt(cliente.id.toString().replace(/-/g, '').substring(0, 8), 16),
         nome: cliente.nome,

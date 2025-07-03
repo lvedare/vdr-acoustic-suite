@@ -12,6 +12,8 @@ import { OrdemProducaoFromProposta } from "@/components/producao/OrdemProducaoFr
 import { ProducaoDialog } from "@/components/producao/ProducaoDialog";
 import { useOrdensProducao } from "@/hooks/useSupabaseModules";
 import { ConfirmDeleteDialog } from "@/components/common/ConfirmDeleteDialog";
+import { ProducaoSummaryCards } from "@/components/producao/ProducaoSummaryCards";
+import { ProducaoFilterBar } from "@/components/producao/ProducaoFilterBar";
 
 interface OrdemExemplo {
   id: string;
@@ -33,6 +35,8 @@ const Producao = () => {
   const [ordemToDelete, setOrdemToDelete] = useState<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedOrdem, setSelectedOrdem] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
 
   // Dados de exemplo para ordens de produção
   const ordensExemplo: OrdemExemplo[] = [
@@ -105,6 +109,18 @@ const Producao = () => {
 
   // Combinar ordens do Supabase com ordens de exemplo
   const todasOrdens = [...ordensExemplo, ...ordensProducao];
+
+  // Filtrar ordens
+  const ordensFiltradas = todasOrdens.filter(ordem => {
+    const matchesSearch = 
+      ordem.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getProdutoName(ordem).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getClienteName(ordem).toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "todos" || ordem.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   const handleDeleteClick = (ordem: any) => {
     setOrdemToDelete(ordem);
@@ -193,6 +209,8 @@ const Producao = () => {
         <h1 className="text-3xl font-bold">Produção</h1>
       </div>
 
+      <ProducaoSummaryCards ordens={todasOrdens} />
+
       <Tabs defaultValue="propostas" className="space-y-4">
         <TabsList>
           <TabsTrigger value="propostas">
@@ -215,6 +233,12 @@ const Producao = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <ProducaoFilterBar
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+              />
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -230,15 +254,15 @@ const Producao = () => {
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
-                    {todasOrdens.length === 0 ? (
+                   <TableBody>
+                     {ordensFiltradas.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={9} className="text-center py-8">
                           Nenhuma ordem de produção encontrada.
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      todasOrdens.map((ordem) => (
+                     ) : (
+                       ordensFiltradas.map((ordem) => (
                         <TableRow key={ordem.id}>
                           <TableCell className="font-medium">{ordem.numero}</TableCell>
                           <TableCell>{getProdutoName(ordem)}</TableCell>

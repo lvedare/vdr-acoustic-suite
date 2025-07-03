@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
-import { ConfirmDeleteDialog } from "@/components/common/ConfirmDeleteDialog";
+import { SafeDeleteDialog } from "@/components/common/SafeDeleteDialog";
 
 interface Cliente {
   id: string;
@@ -35,6 +35,7 @@ const Clientes = () => {
   const [clienteAtual, setClienteAtual] = useState<Cliente | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [novoCliente, setNovoCliente] = useState<Partial<Cliente>>({});
+  const [relatedItems, setRelatedItems] = useState<any[]>([]);
   
   const queryClient = useQueryClient();
 
@@ -147,9 +148,25 @@ const Clientes = () => {
     setIsDialogOpen(true);
   };
 
-  const handleExcluirCliente = (cliente: Cliente) => {
+  const handleExcluirCliente = async (cliente: Cliente) => {
     setClienteAtual(cliente);
-    setIsDeleteDialogOpen(true);
+    
+    // Verificar registros relacionados
+    try {
+      // Aqui você pode adicionar verificações para propostas, atendimentos, etc.
+      // Por enquanto, vamos simular
+      const related = [
+        { type: 'Propostas', count: 0, items: [] },
+        { type: 'Atendimentos', count: 0, items: [] },
+        { type: 'Obras', count: 0, items: [] }
+      ];
+      
+      setRelatedItems(related);
+      setIsDeleteDialogOpen(true);
+    } catch (error) {
+      console.error('Erro ao verificar registros relacionados:', error);
+      setIsDeleteDialogOpen(true);
+    }
   };
 
   const handleSalvar = () => {
@@ -382,13 +399,14 @@ const Clientes = () => {
         </DialogContent>
       </Dialog>
 
-      <ConfirmDeleteDialog
+      <SafeDeleteDialog
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         title="Excluir Cliente"
         itemName={clienteAtual?.nome || ''}
         isLoading={excluirClienteMutation.isPending}
+        relatedItems={relatedItems}
       />
     </div>
   );

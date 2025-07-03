@@ -16,7 +16,7 @@ import PropostasMetrics from "@/components/orcamento/PropostasMetrics";
 import { RascunhoTab } from "@/components/orcamento/RascunhoTab";
 
 // Hooks e serviços
-import { usePropostas, useMigrationToSupabase } from "@/hooks/usePropostas";
+import { usePropostas } from "@/hooks/usePropostas";
 import { converterAtendimentoParaProposta } from "@/utils/propostaUtils";
 
 const Orcamentos = () => {
@@ -36,7 +36,8 @@ const Orcamentos = () => {
     isAtualizandoStatus
   } = usePropostas();
 
-  const { migrarDados, isMigrating } = useMigrationToSupabase();
+  const migrarDados = () => console.log('Migration placeholder');
+  const isMigrating = false;
 
   // Filtrar propostas com base no termo de pesquisa
   const filteredPropostas = propostas.filter(proposta => {

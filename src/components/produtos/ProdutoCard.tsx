@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { formatCurrency, ProdutoAcabado } from "@/types/orcamento";
+import { EstoqueMovimentacaoButton } from "@/components/estoque/EstoqueMovimentacaoButton";
 
 interface ProdutoCardProps {
   produto: ProdutoAcabado;
@@ -51,24 +52,31 @@ export function ProdutoCard({ produto, onVerDetalhes, onCriarItemOrcamento }: Pr
           </div>
         </div>
         
-        <div className="flex gap-2 mt-4">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="flex-1"
-            onClick={() => onVerDetalhes(produto)}
-          >
-            Detalhes
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="flex-1"
-            onClick={() => onCriarItemOrcamento(produto)}
-          >
-            <FileText className="h-4 w-4 mr-1" />
-            Orçar
-          </Button>
+        <div className="space-y-2 mt-4">
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex-1"
+              onClick={() => onVerDetalhes(produto)}
+            >
+              Detalhes
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              className="flex-1"
+              onClick={() => onCriarItemOrcamento(produto)}
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Orçar
+            </Button>
+          </div>
+          <EstoqueMovimentacaoButton 
+            produtoId={produto.id.toString()}
+            produtoNome={produto.nome}
+            tipo="produto"
+          />
         </div>
       </CardContent>
     </Card>
