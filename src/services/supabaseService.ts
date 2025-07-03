@@ -29,11 +29,11 @@ export const supabaseService = {
     return data;
   },
 
-  atualizarCliente: async (id: number, cliente: any) => {
+  atualizarCliente: async (id: string | number, cliente: any) => {
     const { data, error } = await supabase
       .from('clientes')
       .update(cliente)
-      .eq('id', id)
+      .eq('id', String(id))
       .select()
       .single();
 
@@ -45,11 +45,11 @@ export const supabaseService = {
     return data;
   },
 
-  excluirCliente: async (id: number) => {
+  excluirCliente: async (id: string | number) => {
     const { error } = await supabase
       .from('clientes')
       .delete()
-      .eq('id', id);
+      .eq('id', String(id));
 
     if (error) {
       console.error('Erro ao excluir cliente:', error);
@@ -62,7 +62,9 @@ export const supabaseService = {
       .from('propostas')
       .select(`
         *,
-        cliente:clientes(*)
+        cliente:clientes(*),
+        proposta_itens(*),
+        proposta_custos(*)
       `);
 
     if (error) {
@@ -76,13 +78,27 @@ export const supabaseService = {
       data: proposta.data,
       cliente: proposta.cliente,
       status: proposta.status,
-      itens: proposta.itens,
-      custos: proposta.custos,
+      itens: proposta.proposta_itens?.map((item: any) => ({
+        id: item.id,
+        codigo: item.codigo,
+        descricao: item.descricao,
+        quantidade: item.quantidade,
+        unidade: item.unidade,
+        valorUnitario: item.valor_unitario,
+        valorTotal: item.valor_total,
+        valorOriginal: item.valor_original
+      })) || [],
+      custos: proposta.proposta_custos?.map((custo: any) => ({
+        id: custo.id,
+        descricao: custo.descricao,
+        valor: custo.valor,
+        diluido: custo.diluido
+      })) || [],
       observacoes: proposta.observacoes,
-      valorTotal: proposta.valorTotal,
-      formaPagamento: proposta.formaPagamento,
-      prazoEntrega: proposta.prazoEntrega,
-      prazoObra: proposta.prazoObra,
+      valorTotal: proposta.valor_total,
+      formaPagamento: proposta.forma_pagamento,
+      prazoEntrega: proposta.prazo_entrega,
+      prazoObra: proposta.prazo_obra,
       validade: proposta.validade
     })) || [];
   },
@@ -106,7 +122,7 @@ export const supabaseService = {
     const { data, error } = await supabase
       .from('propostas')
       .update(proposta)
-      .eq('id', id)
+      .eq('id', String(id))
       .select()
       .single();
 
@@ -122,7 +138,7 @@ export const supabaseService = {
     const { error } = await supabase
       .from('propostas')
       .delete()
-      .eq('id', id);
+      .eq('id', String(id));
 
     if (error) {
       console.error('Erro ao excluir proposta:', error);
@@ -228,4 +244,13 @@ export const supabaseService = {
       }
     }
   },
+};
+
+// Export clienteService for backward compatibility
+export const clienteService = {
+  listar: supabaseService.listarClientes,
+  listarTodos: supabaseService.listarClientes,
+  criar: supabaseService.criarCliente,
+  atualizar: supabaseService.atualizarCliente,
+  excluir: supabaseService.excluirCliente,
 };

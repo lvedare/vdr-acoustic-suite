@@ -53,9 +53,24 @@ const Clientes = () => {
 
   const criarClienteMutation = useMutation({
     mutationFn: async (cliente: Partial<Cliente>) => {
+      const clienteData = {
+        nome: cliente.nome!,
+        email: cliente.email || null,
+        telefone: cliente.telefone || null,
+        empresa: cliente.empresa || null,
+        cnpj: cliente.cnpj || null,
+        inscricao_estadual: cliente.inscricao_estadual || null,
+        endereco_rua: cliente.endereco_rua || null,
+        endereco_numero: cliente.endereco_numero || null,
+        endereco_bairro: cliente.endereco_bairro || null,
+        endereco_cidade: cliente.endereco_cidade || null,
+        endereco_estado: cliente.endereco_estado || null,
+        endereco_cep: cliente.endereco_cep || null
+      };
+
       const { data, error } = await supabase
         .from('clientes')
-        .insert(cliente)
+        .insert(clienteData)
         .select()
         .single();
       
