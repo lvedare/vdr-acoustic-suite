@@ -1,25 +1,28 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { atendimentoService, ligacaoService, Ligacao } from '@/services/atendimentoService';
 import { toast } from 'sonner';
-import { atendimentoService, ligacaoService, Atendimento, Ligacao } from '@/services/atendimentoService';
 
 export const useAtendimentos = () => {
   const queryClient = useQueryClient();
 
-  const {
-    data: atendimentos = [],
-    isLoading,
-    error
-  } = useQuery({
+  const { data: atendimentos = [], isLoading, refetch } = useQuery({
     queryKey: ['atendimentos'],
     queryFn: atendimentoService.listarTodos,
   });
 
-  const criarAtendimentoMutation = useMutation({
+  const criarAtendimento = useMutation({
     mutationFn: atendimentoService.criar,
-    onSuccess: () => {
+    onSuccess: (novoAtendimento) => {
+      // Forçar recarregamento da lista
       queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
+      queryClient.refetchQueries({ queryKey: ['atendimentos'] });
+      
+      // Adicionar o novo atendimento diretamente à lista para feedback imediato
+      queryClient.setQueryData(['atendimentos'], (old: any[] = []) => [novoAtendimento, ...old]);
+      
       toast.success('Atendimento criado com sucesso!');
+      console.log('Novo atendimento criado:', novoAtendimento);
     },
     onError: (error) => {
       console.error('Erro ao criar atendimento:', error);
@@ -27,8 +30,8 @@ export const useAtendimentos = () => {
     },
   });
 
-  const atualizarAtendimentoMutation = useMutation({
-    mutationFn: ({ id, atendimento }: { id: string; atendimento: Partial<Atendimento> }) =>
+  const atualizarAtendimento = useMutation({
+    mutationFn: ({ id, atendimento }: { id: string; atendimento: any }) =>
       atendimentoService.atualizar(id, atendimento),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
@@ -40,7 +43,7 @@ export const useAtendimentos = () => {
     },
   });
 
-  const excluirAtendimentoMutation = useMutation({
+  const excluirAtendimento = useMutation({
     mutationFn: atendimentoService.excluir,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
@@ -52,9 +55,10 @@ export const useAtendimentos = () => {
     },
   });
 
-  const criarLigacaoMutation = useMutation({
+  const criarLigacao = useMutation({
     mutationFn: ligacaoService.criar,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ligacoes'] });
       toast.success('Ligação registrada com sucesso!');
     },
     onError: (error) => {
@@ -66,14 +70,13 @@ export const useAtendimentos = () => {
   return {
     atendimentos,
     isLoading,
-    error,
-    criarAtendimento: criarAtendimentoMutation.mutate,
-    atualizarAtendimento: atualizarAtendimentoMutation.mutate,
-    excluirAtendimento: excluirAtendimentoMutation.mutate,
-    criarLigacao: criarLigacaoMutation.mutate,
-    isCriando: criarAtendimentoMutation.isPending,
-    isAtualizando: atualizarAtendimentoMutation.isPending,
-    isExcluindo: excluirAtendimentoMutation.isPending,
-    isCriandoLigacao: criarLigacaoMutation.isPending,
+    refetch,
+    criarAtendimento: criarAtendimento.mutate,
+    atualizarAtendimento: atualizarAtendimento.mutate,
+    excluirAtendimento: excluirAtendimento.mutate,
+    criarLigacao: criarLigacao.mutate,
+    isCriando: criarAtendimento.isPending,
+    isAtualizando: atualizarAtendimento.isPending,
+    isExcluindo: excluirAtendimento.isPending,
   };
 };

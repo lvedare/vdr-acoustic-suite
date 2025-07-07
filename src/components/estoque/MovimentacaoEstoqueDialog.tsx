@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useMovimentacaoEstoque } from '@/hooks/useMovimentacaoEstoque';
-import { useProdutosAcabados } from '@/hooks/useSupabaseData';
+import { useProdutosAcabados } from '@/hooks/useProdutosAcabados';
+import { useInsumos } from '@/contexts/InsumosContext';
 import { Package, Plus, Minus } from 'lucide-react';
 
 interface MovimentacaoEstoqueDialogProps {
@@ -29,21 +30,47 @@ export const MovimentacaoEstoqueDialog = ({
   const [quantidade, setQuantidade] = useState<number>(1);
   const [motivo, setMotivo] = useState('');
   const [observacoes, setObservacoes] = useState('');
-  const [produtoSelecionado, setProdutoSelecionado] = useState(itemId || '');
+  const [itemSelecionado, setItemSelecionado] = useState(itemId || '');
 
   const { atualizarEstoqueProduto, atualizarEstoqueInsumo } = useMovimentacaoEstoque();
-  const { data: produtos = [] } = useProdutosAcabados();
+  const { produtos } = useProdutosAcabados();
+  const { insumos } = useInsumos();
+
+  // Encontrar o item selecionado para mostrar a unidade
+  const itemAtual = tipo === 'produto' 
+    ? produtos.find(p => p.id === itemSelecionado)
+    : insumos.find(i => i.id.toString() === itemSelecionado);
+
+  const unidadeMedida = itemAtual 
+    ? (tipo === 'produto' ? itemAtual.unidade_medida : itemAtual.unidadeMedida)
+    : '';
 
   const handleSalvar = async () => {
-    if (!motivo || quantidade <= 0) {
+    if (!motivo || quantidade <= 0 || !itemSelecionado) {
+      console.error('Dados incompletos para movimentação');
       return;
     }
 
     try {
+      console.log('Registrando movimentação:', {
+        tipo,
+        itemId: itemSelecionado,
+        quantidade,
+        tipoMovimentacao,
+        motivo
+      });
+
       if (tipo === 'produto') {
-        await atualizarEstoqueProduto(produtoSelecionado, quantidade, tipoMovimentacao, motivo);
+        await atualizarEstoqueProduto(itemSelecionado, quantidade, tipoMovimentacao, motivo);
       } else {
-        await atualizarEstoqueInsumo(produtoSelecionado, quantidade, tipoMovimentacao, motivo);
+        // Para insumos, converter o ID numérico para string se necessário
+        const insumoUUID = insumos.find(i => i.id.toString() === itemSelecionado)?.id;
+        if (insumoUUID) {
+          await atualizarEstoqueInsumo(insumoUUID.toString(), quantidade, tipoMovimentacao, motivo);
+        } else {
+          console.error('Insumo não encontrado');
+          return;
+        }
       }
 
       // Reset form
@@ -79,19 +106,26 @@ export const MovimentacaoEstoqueDialog = ({
         <div className="space-y-4 py-4">
           {!itemId && (
             <div className="space-y-2">
-              <Label htmlFor="produto">
+              <Label htmlFor="item">
                 {tipo === 'produto' ? 'Produto' : 'Insumo'}
               </Label>
-              <Select value={produtoSelecionado} onValueChange={setProdutoSelecionado}>
+              <Select value={itemSelecionado} onValueChange={setItemSelecionado}>
                 <SelectTrigger>
                   <SelectValue placeholder={`Selecione o ${tipo}`} />
                 </SelectTrigger>
                 <SelectContent>
-                  {produtos.map((produto) => (
-                    <SelectItem key={produto.id} value={produto.id.toString()}>
-                      {produto.codigo} - {produto.nome}
-                    </SelectItem>
-                  ))}
+                  {tipo === 'produto' 
+                    ? produtos.map((produto) => (
+                        <SelectItem key={produto.id} value={produto.id.toString()}>
+                          {produto.codigo} - {produto.nome} ({produto.unidade_medida})
+                        </SelectItem>
+                      ))
+                    : insumos.map((insumo) => (
+                        <SelectItem key={insumo.id} value={insumo.id.toString()}>
+                          {insumo.codigo} - {insumo.nome} ({insumo.unidadeMedida})
+                        </SelectItem>
+                      ))
+                  }
                 </SelectContent>
               </Select>
             </div>
@@ -100,6 +134,9 @@ export const MovimentacaoEstoqueDialog = ({
           {itemNome && (
             <div className="p-3 bg-muted rounded-md">
               <p className="font-medium">{itemNome}</p>
+              {unidadeMedida && (
+                <p className="text-sm text-muted-foreground">Unidade: {unidadeMedida}</p>
+              )}
             </div>
           )}
 
@@ -128,11 +165,14 @@ export const MovimentacaoEstoqueDialog = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="quantidade">Quantidade</Label>
+              <Label htmlFor="quantidade">
+                Quantidade {unidadeMedida && `(${unidadeMedida})`}
+              </Label>
               <Input
                 id="quantidade"
                 type="number"
                 min="1"
+                step="0.01"
                 value={quantidade}
                 onChange={(e) => setQuantidade(Number(e.target.value))}
               />
@@ -172,7 +212,7 @@ export const MovimentacaoEstoqueDialog = ({
           </Button>
           <Button 
             onClick={handleSalvar}
-            disabled={!motivo || quantidade <= 0 || (!itemId && !produtoSelecionado)}
+            disabled={!motivo || quantidade <= 0 || (!itemId && !itemSelecionado)}
           >
             Registrar Movimentação
           </Button>

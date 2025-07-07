@@ -1,294 +1,274 @@
 
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { CalendarIcon, Package, Trash2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { useProdutosAcabados } from "@/hooks/useProdutosAcabados";
+import { useOrdemProducao } from "@/hooks/useOrdemProducao";
+import { SafeDeleteDialog } from "@/components/common/SafeDeleteDialog";
 
 interface ProducaoDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  ordem: any;
+  ordem?: any;
+  onSave?: (ordem: any) => void;
+  mode?: "create" | "edit" | "view";
 }
 
-export function ProducaoDialog({ isOpen, onOpenChange, ordem }: ProducaoDialogProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    numero: "",
-    produto: "",
-    quantidade: "",
-    unidade: "pç",
-    dataPrevisao: "",
-    responsavel: "",
-    status: "planejamento",
-    progresso: 0,
-    observacoes: ""
-  });
+export const ProducaoDialog = ({ 
+  isOpen, 
+  onOpenChange, 
+  ordem, 
+  onSave,
+  mode = "create" 
+}: ProducaoDialogProps) => {
+  const { produtos } = useProdutosAcabados();
+  const { excluirOrdem, verificarRelacionamentos, isExcluindo } = useOrdemProducao();
+  
+  const [numero, setNumero] = useState("");
+  const [produtoId, setProdutoId] = useState("");
+  const [quantidade, setQuantidade] = useState(1);
+  const [status, setStatus] = useState("pendente");
+  const [dataPedido, setDataPedido] = useState<Date>(new Date());
+  const [dataPrevisao, setDataPrevisao] = useState<Date | undefined>();
+  const [observacoes, setObservacoes] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (ordem) {
-      setFormData({
-        numero: ordem.numero || "",
-        produto: ordem.produto || (ordem.produtos_acabados ? ordem.produtos_acabados.nome : ""),
-        quantidade: ordem.quantidade?.toString() || "",
-        unidade: ordem.unidade || (ordem.produtos_acabados ? ordem.produtos_acabados.unidade_medida : "pç"),
-        dataPrevisao: ordem.dataPrevisao || ordem.data_previsao || "",
-        responsavel: ordem.responsavel || "",
-        status: ordem.status || "planejamento",
-        progresso: ordem.progresso || 0,
-        observacoes: ordem.observacoes || ""
-      });
+    if (ordem && mode !== "create") {
+      setNumero(ordem.numero || "");
+      setProdutoId(ordem.produto_id || "");
+      setQuantidade(ordem.quantidade || 1);
+      setStatus(ordem.status || "pendente");
+      setDataPedido(ordem.data_pedido ? new Date(ordem.data_pedido) : new Date());
+      setDataPrevisao(ordem.data_previsao ? new Date(ordem.data_previsao) : undefined);
+      setObservacoes(ordem.observacoes || "");
+    } else {
+      // Reset form for create mode
+      setNumero("");
+      setProdutoId("");
+      setQuantidade(1);
+      setStatus("pendente");
+      setDataPedido(new Date());
+      setDataPrevisao(undefined);
+      setObservacoes("");
     }
-  }, [ordem]);
+  }, [ordem, mode]);
 
   const handleSave = () => {
-    toast.success("Ordem de produção atualizada com sucesso!");
-    setIsEditing(false);
+    const ordemData = {
+      numero,
+      produto_id: produtoId,
+      quantidade,
+      status,
+      data_pedido: dataPedido.toISOString().split('T')[0],
+      data_previsao: dataPrevisao?.toISOString().split('T')[0],
+      observacoes
+    };
+
+    if (onSave) {
+      onSave(ordemData);
+    }
+    onOpenChange(false);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "planejamento":
-        return "bg-blue-100 text-blue-800";
-      case "em_andamento":
-        return "bg-amber-100 text-amber-800";
-      case "aguardando":
-        return "bg-purple-100 text-purple-800";
-      case "concluido":
-        return "bg-emerald-100 text-emerald-800";
-      case "atrasado":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const handleDelete = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (ordem) {
+      excluirOrdem(ordem.id);
+      setIsDeleteDialogOpen(false);
+      onOpenChange(false);
     }
   };
 
-  const formatarData = (data: string) => {
-    if (!data) return "-";
-    const [ano, mes, dia] = data.split("-");
-    return `${dia}/${mes}/${ano}`;
-  };
-
-  if (!ordem) return null;
+  const isReadOnly = mode === "view";
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? "Editar Ordem de Produção" : "Detalhes da Ordem de Produção"}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6">
-          {!isEditing ? (
-            // Modo visualização
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Número da OP</Label>
-                  <p className="text-lg font-semibold">{formData.numero}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Status</Label>
-                  <div className="mt-1">
-                    <Badge variant="secondary" className={getStatusColor(formData.status)}>
-                      {formData.status.toUpperCase()}
-                    </Badge>
-                  </div>
-                </div>
+    <>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              {mode === "create" ? "Nova Ordem de Produção" : 
+               mode === "edit" ? "Editar Ordem de Produção" : 
+               "Visualizar Ordem de Produção"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="numero">Número</Label>
+                <Input
+                  id="numero"
+                  value={numero}
+                  onChange={(e) => setNumero(e.target.value)}
+                  placeholder="OP-001"
+                  disabled={isReadOnly}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={status} onValueChange={setStatus} disabled={isReadOnly}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pendente">Pendente</SelectItem>
+                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                    <SelectItem value="concluido">Concluído</SelectItem>
+                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Produto</Label>
+              <Select value={produtoId} onValueChange={setProdutoId} disabled={isReadOnly}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um produto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {produtos.map((produto) => (
+                    <SelectItem key={produto.id} value={produto.id.toString()}>
+                      {produto.codigo} - {produto.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quantidade">Quantidade</Label>
+              <Input
+                id="quantidade"
+                type="number"
+                min="1"
+                value={quantidade}
+                onChange={(e) => setQuantidade(Number(e.target.value))}
+                disabled={isReadOnly}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Data do Pedido</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dataPedido && "text-muted-foreground"
+                      )}
+                      disabled={isReadOnly}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dataPedido ? format(dataPedido, "PPP", { locale: ptBR }) : "Selecionar data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={dataPedido}
+                      onSelect={(date) => date && setDataPedido(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Produto</Label>
-                <p className="text-lg">{formData.produto}</p>
+              <div className="space-y-2">
+                <Label>Data de Previsão</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dataPrevisao && "text-muted-foreground"
+                      )}
+                      disabled={isReadOnly}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dataPrevisao ? format(dataPrevisao, "PPP", { locale: ptBR }) : "Selecionar data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={dataPrevisao}
+                      onSelect={setDataPrevisao}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Quantidade</Label>
-                  <p className="text-lg">{formData.quantidade} {formData.unidade}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Responsável</Label>
-                  <p className="text-lg">{formData.responsavel || "Não atribuído"}</p>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea
+                id="observacoes"
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+                placeholder="Observações sobre a ordem de produção..."
+                disabled={isReadOnly}
+              />
+            </div>
+          </div>
 
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Progresso</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Progress value={formData.progresso} className="h-3 flex-1" />
-                  <span className="text-sm font-medium">{formData.progresso}%</span>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Data de Previsão</Label>
-                <p className="text-lg">{formatarData(formData.dataPrevisao)}</p>
-              </div>
-
-              {formData.observacoes && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Observações</Label>
-                  <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-md">{formData.observacoes}</p>
-                </div>
+          <DialogFooter className="flex justify-between">
+            <div>
+              {mode === "edit" && ordem && (
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDelete}
+                  disabled={isExcluindo}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Excluir
+                </Button>
               )}
             </div>
-          ) : (
-            // Modo edição
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="numero">Número da OP</Label>
-                  <Input
-                    id="numero"
-                    value={formData.numero}
-                    onChange={(e) => setFormData(prev => ({ ...prev, numero: e.target.value }))}
-                    disabled
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="planejamento">Planejamento</SelectItem>
-                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                      <SelectItem value="aguardando">Aguardando</SelectItem>
-                      <SelectItem value="concluido">Concluído</SelectItem>
-                      <SelectItem value="atrasado">Atrasado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="produto">Produto</Label>
-                <Input
-                  id="produto"
-                  value={formData.produto}
-                  onChange={(e) => setFormData(prev => ({ ...prev, produto: e.target.value }))}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="quantidade">Quantidade</Label>
-                  <Input
-                    id="quantidade"
-                    type="number"
-                    value={formData.quantidade}
-                    onChange={(e) => setFormData(prev => ({ ...prev, quantidade: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="unidade">Unidade</Label>
-                  <Select value={formData.unidade} onValueChange={(value) => setFormData(prev => ({ ...prev, unidade: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pç">Peças</SelectItem>
-                      <SelectItem value="m²">m²</SelectItem>
-                      <SelectItem value="m">Metros</SelectItem>
-                      <SelectItem value="kg">Kg</SelectItem>
-                      <SelectItem value="L">Litros</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="responsavel">Responsável</Label>
-                  <Input
-                    id="responsavel"
-                    value={formData.responsavel}
-                    onChange={(e) => setFormData(prev => ({ ...prev, responsavel: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="progresso">Progresso (%)</Label>
-                  <Input
-                    id="progresso"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.progresso}
-                    onChange={(e) => setFormData(prev => ({ ...prev, progresso: parseInt(e.target.value) || 0 }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="dataPrevisao">Data de Previsão</Label>
-                <Input
-                  id="dataPrevisao"
-                  type="date"
-                  value={formData.dataPrevisao}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dataPrevisao: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="observacoes">Observações</Label>
-                <Textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
-                  rows={3}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            {!isEditing ? (
-              <>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Fechar
-                </Button>
-                <Button onClick={() => setIsEditing(true)}>
-                  Editar
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => {
-                  setIsEditing(false);
-                  // Reset form data to original values
-                  if (ordem) {
-                    setFormData({
-                      numero: ordem.numero || "",
-                      produto: ordem.produto || (ordem.produtos_acabados ? ordem.produtos_acabados.nome : ""),
-                      quantidade: ordem.quantidade?.toString() || "",
-                      unidade: ordem.unidade || (ordem.produtos_acabados ? ordem.produtos_acabados.unidade_medida : "pç"),
-                      dataPrevisao: ordem.dataPrevisao || ordem.data_previsao || "",
-                      responsavel: ordem.responsavel || "",
-                      status: ordem.status || "planejamento",
-                      progresso: ordem.progresso || 0,
-                      observacoes: ordem.observacoes || ""
-                    });
-                  }
-                }}>
-                  Cancelar
-                </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                {isReadOnly ? "Fechar" : "Cancelar"}
+              </Button>
+              {!isReadOnly && (
                 <Button onClick={handleSave}>
-                  Salvar
+                  {mode === "create" ? "Criar" : "Salvar"}
                 </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+              )}
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <SafeDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Ordem de Produção"
+        itemName={ordem?.numero || ''}
+        isLoading={isExcluindo}
+        onCheckRelations={() => verificarRelacionamentos(ordem?.id || '')}
+      />
+    </>
   );
-}
+};

@@ -1,197 +1,154 @@
 
 import React, { useState } from "react";
-import { FileText, MapPin, Calendar, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { StatusConfig, formatarData as formatarDataFn } from "@/types/obra";
-import { ConfirmDeleteDialog } from "@/components/common/ConfirmDeleteDialog";
-import { ItemActions } from "@/components/common/ItemActions";
-import { usePropostas } from "@/hooks/usePropostas";
-import { useObras } from "@/hooks/useSupabaseModules";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CalendarDays, MapPin, Edit, Trash2, Users } from "lucide-react";
+import { useObras } from "@/hooks/useObras";
+import { SafeDeleteDialog } from "@/components/common/SafeDeleteDialog";
 
-interface Obra {
-  id: number;
-  nome: string;
-  endereco: string;
-  cliente: string;
-  status: string;
-  dataInicio: string;
-  dataPrevisao: string;
-  dataConclusao?: string;
-}
+const ObrasList = () => {
+  const { obras, excluirObra, verificarRelacionamentos, isExcluindo } = useObras();
+  const [obraSelecionada, setObraSelecionada] = useState<any>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-interface ObrasListProps {
-  obras: Obra[];
-  statusMap: Record<string, StatusConfig>;
-  formatarData?: (data: string) => string;
-  onEdit?: (obra: Obra) => void;
-  onView?: (obra: Obra) => void;
-  onDelete?: (id: number) => void;
-  isDeleting?: boolean;
-}
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "planejamento":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case "em_andamento":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "concluido":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "cancelado":
+        return "bg-red-100 text-red-800 border-red-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
 
-export function ObrasList({ 
-  obras, 
-  statusMap, 
-  formatarData, 
-  onEdit, 
-  onView, 
-  onDelete,
-  isDeleting = false 
-}: ObrasListProps) {
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [obraToDelete, setObraToDelete] = useState<Obra | null>(null);
-  const [selectedPropostaId, setSelectedPropostaId] = useState<string>("");
-  
-  const { propostasAprovadas, converterParaObra } = usePropostas();
-  const { criarObra, isCriando } = useObras();
-  
-  // Use the imported formatter as a fallback if none is provided
-  const formatDate = formatarData || formatarDataFn;
+  const formatDate = (date: string | null) => {
+    if (!date) return "Não definida";
+    return new Date(date).toLocaleDateString('pt-BR');
+  };
 
-  const handleDeleteClick = (obra: Obra) => {
-    setObraToDelete(obra);
-    setDeleteDialogOpen(true);
+  const handleDeleteClick = (obra: any) => {
+    setObraSelecionada(obra);
+    setIsDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = () => {
-    if (obraToDelete && onDelete) {
-      onDelete(obraToDelete.id);
-      setDeleteDialogOpen(false);
-      setObraToDelete(null);
+    if (obraSelecionada) {
+      excluirObra(obraSelecionada.id);
+      setIsDeleteDialogOpen(false);
+      setObraSelecionada(null);
     }
   };
 
-  const handleCriarObraFromProposta = () => {
-    if (!selectedPropostaId) {
-      toast.error('Selecione uma proposta aprovada');
-      return;
-    }
-
-    const proposta = propostasAprovadas.find(p => p.id.toString() === selectedPropostaId);
-    if (!proposta) {
-      toast.error('Proposta não encontrada');
-      return;
-    }
-
-    const novaObra = converterParaObra(proposta);
-    if (novaObra) {
-      const clienteData = {
-        ...novaObra,
-        cliente_id: proposta.cliente.id.toString()
-      };
-      
-      console.log('Criando obra com dados:', clienteData);
-      criarObra(clienteData);
-      setSelectedPropostaId("");
-    }
-  };
+  if (obras.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-16">
+          <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Nenhuma obra cadastrada</h3>
+          <p className="text-muted-foreground text-center">
+            Comece criando sua primeira obra para gerenciar seus projetos.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Seção para criar obra a partir de proposta aprovada */}
-      <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-        <div className="flex-1">
-          <label className="text-sm font-medium">Criar obra a partir de proposta aprovada:</label>
-          <Select value={selectedPropostaId} onValueChange={setSelectedPropostaId}>
-            <SelectTrigger className="w-full mt-1">
-              <SelectValue placeholder="Selecione uma proposta aprovada" />
-            </SelectTrigger>
-            <SelectContent>
-              {propostasAprovadas.map((proposta) => (
-                <SelectItem key={proposta.id} value={proposta.id.toString()}>
-                  {proposta.numero} - {proposta.cliente.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button 
-          onClick={handleCriarObraFromProposta}
-          disabled={!selectedPropostaId || isCriando}
-          className="mt-6"
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          {isCriando ? "Criando..." : "Criar Obra"}
-        </Button>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Endereço</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Data Início</TableHead>
-              <TableHead>Previsão</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[120px]">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {obras.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
-                  Nenhuma obra encontrada com os filtros atuais.
-                </TableCell>
-              </TableRow>
-            ) : (
-              obras.map((obra) => (
-                <TableRow key={obra.id}>
-                  <TableCell className="font-medium">{obra.nome}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {obra.endereco}
-                    </div>
-                  </TableCell>
-                  <TableCell>{obra.cliente}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {formatDate(obra.dataInicio)}
-                    </div>
-                  </TableCell>
-                  <TableCell>{formatDate(obra.dataPrevisao)}</TableCell>
-                  <TableCell>
-                    <Badge variant={statusMap[obra.status].variant}>
-                      {statusMap[obra.status].label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <ItemActions
-                      onView={() => onView && onView(obra)}
-                      onEdit={() => onEdit && onEdit(obra)}
-                      onDelete={() => handleDeleteClick(obra)}
-                      isDeleting={isDeleting}
-                    />
-                  </TableCell>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Obras Cadastradas ({obras.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Endereço</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Data Início</TableHead>
+                  <TableHead>Data Previsão</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {obras.map((obra) => (
+                  <TableRow key={obra.id}>
+                    <TableCell className="font-medium">{obra.nome}</TableCell>
+                    <TableCell className="max-w-xs truncate">{obra.endereco}</TableCell>
+                    <TableCell>
+                      {obra.cliente ? (
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          {obra.cliente.nome}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Sem cliente</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(obra.status)}>
+                        {obra.status.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                        {formatDate(obra.data_inicio)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                        {formatDate(obra.data_previsao)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteClick(obra)}
+                          disabled={isExcluindo}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
-      <ConfirmDeleteDialog
-        isOpen={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+      <SafeDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         title="Excluir Obra"
-        itemName={obraToDelete?.nome}
-        isLoading={isDeleting}
+        itemName={obraSelecionada?.nome || ''}
+        isLoading={isExcluindo}
+        onCheckRelations={() => verificarRelacionamentos(obraSelecionada?.id || '')}
       />
-    </div>
+    </>
   );
-}
+};
+
+export default ObrasList;
