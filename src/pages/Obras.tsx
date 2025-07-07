@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useObras } from "@/hooks/useObras";
 
 const Obras = () => {
-  const { obras } = useObras();
+  const { obras, criarObra, atualizarObra } = useObras();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFiltro, setStatusFiltro] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -38,6 +38,28 @@ const Obras = () => {
     setObraDetalhada(obra);
   };
 
+  // Função para salvar obra (criar ou atualizar)
+  const handleSaveObra = (obra: any) => {
+    if (selectedObra) {
+      // Atualizar obra existente
+      atualizarObra({ id: selectedObra.id, obra });
+    } else {
+      // Criar nova obra
+      criarObra({
+        nome: obra.nome,
+        endereco: obra.endereco,
+        cliente_id: null, // Por enquanto sem cliente específico
+        status: obra.status,
+        data_inicio: obra.dataInicio,
+        data_previsao: obra.dataPrevisao,
+        data_conclusao: obra.dataConclusao,
+        observacoes: null
+      });
+    }
+    setIsDialogOpen(false);
+    setSelectedObra(null);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -59,7 +81,7 @@ const Obras = () => {
       />
 
       {!obraDetalhada ? (
-        /* Lista de Obras - agora sem props */
+        /* Lista de Obras */
         <ObrasList />
       ) : (
         /* Detalhes da Obra */
@@ -121,7 +143,13 @@ const Obras = () => {
                   </div>
                   
                   <div className="pt-4">
-                    <Button variant="outline" onClick={() => setSelectedObra(obraDetalhada)}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setSelectedObra(obraDetalhada);
+                        setIsDialogOpen(true);
+                      }}
+                    >
                       Editar Obra
                     </Button>
                   </div>
@@ -215,6 +243,7 @@ const Obras = () => {
       <ObrasDialog 
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
+        onSave={handleSaveObra}
         obra={selectedObra}
       />
     </div>
