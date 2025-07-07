@@ -1,8 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Loader2 } from 'lucide-react';
+
+interface RelatedItem {
+  type: string;
+  count: number;
+  items: string[];
+}
 
 interface SafeDeleteDialogProps {
   isOpen: boolean;
@@ -11,11 +18,8 @@ interface SafeDeleteDialogProps {
   title: string;
   itemName: string;
   isLoading?: boolean;
-  relatedItems?: {
-    type: string;
-    count: number;
-    items: string[];
-  }[];
+  relatedItems?: RelatedItem[];
+  onCheckRelations?: () => Promise<RelatedItem[]>;
 }
 
 export const SafeDeleteDialog = ({
@@ -25,9 +29,23 @@ export const SafeDeleteDialog = ({
   title,
   itemName,
   isLoading = false,
-  relatedItems = []
+  relatedItems = [],
+  onCheckRelations
 }: SafeDeleteDialogProps) => {
-  const hasRelatedItems = relatedItems.some(item => item.count > 0);
+  const [checkingRelations, setCheckingRelations] = useState(false);
+  const [currentRelatedItems, setCurrentRelatedItems] = useState<RelatedItem[]>(relatedItems);
+
+  useEffect(() => {
+    if (isOpen && onCheckRelations) {
+      setCheckingRelations(true);
+      onCheckRelations()
+        .then(setCurrentRelatedItems)
+        .catch(console.error)
+        .finally(() => setCheckingRelations(false));
+    }
+  }, [isOpen, onCheckRelations]);
+
+  const hasRelatedItems = currentRelatedItems.some(item => item.count > 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -38,13 +56,18 @@ export const SafeDeleteDialog = ({
             {title}
           </DialogTitle>
           <DialogDescription>
-            {hasRelatedItems ? (
+            {checkingRelations ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Verificando relacionamentos...
+              </div>
+            ) : hasRelatedItems ? (
               <div className="space-y-3">
                 <p>
                   O item <strong>{itemName}</strong> possui registros relacionados:
                 </p>
                 <div className="space-y-2">
-                  {relatedItems.map((item, index) => (
+                  {currentRelatedItems.map((item, index) => (
                     item.count > 0 && (
                       <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
                         <span className="text-sm">{item.type}</span>
@@ -73,10 +96,10 @@ export const SafeDeleteDialog = ({
           <Button 
             variant="destructive" 
             onClick={onConfirm}
-            disabled={isLoading || hasRelatedItems}
+            disabled={isLoading || hasRelatedItems || checkingRelations}
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {hasRelatedItems ? 'Não é possível excluir' : 'Excluir'}
+            {hasRelatedItems ? 'Não é possível excluir' : checkingRelations ? 'Verificando...' : 'Excluir'}
           </Button>
         </DialogFooter>
       </DialogContent>

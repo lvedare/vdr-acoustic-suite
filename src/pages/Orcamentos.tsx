@@ -1,98 +1,45 @@
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { MessageSquare, Database, Loader2 } from "lucide-react";
-
-// Custom components
-import PropostasSearch from "@/components/orcamento/PropostasSearch";
-import PropostasList from "@/components/orcamento/PropostasList";
-import PropostasFiltradas from "@/components/orcamento/PropostasFiltradas";
-import { AtendimentosTab } from "@/components/orcamento/AtendimentosTab";
-import PropostasExportButton from "@/components/orcamento/PropostasExportButton";
-import PropostasMetrics from "@/components/orcamento/PropostasMetrics";
-import { RascunhoTab } from "@/components/orcamento/RascunhoTab";
-
-// Hooks e serviços
+import React from "react";
+import { PropostasExportButton } from "@/components/orcamento/PropostasExportButton";
+import { PropostasFiltradas } from "@/components/orcamento/PropostasFiltradas";
+import { PropostasMetrics } from "@/components/orcamento/PropostasMetrics";
+import { PropostasSearch } from "@/components/orcamento/PropostasSearch";
+import { DeleteConfirmDialog } from "@/components/orcamento/DeleteConfirmDialog";
+import { StatusChangeDialog } from "@/components/orcamento/StatusChangeDialog";
+import { PropostaDetailsDialog } from "@/components/orcamento/PropostaDetailsDialog";
 import { usePropostas } from "@/hooks/usePropostas";
-import { converterAtendimentoParaProposta } from "@/utils/propostaUtils";
 
 const Orcamentos = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useNavigate();
-
-  // Usar hooks do Supabase
   const {
     propostas,
-    clientes,
+    propostasFiltradas,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    propostaSelecionada,
+    setPropostaSelecionada,
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
+    isStatusDialogOpen,
+    setIsStatusDialogOpen,
+    isDetailDialogOpen,
+    setIsDetailDialogOpen,
+    handleDeleteProposta,
+    handleStatusChange,
+    handleVerDetalhes,
+    handlePreExcluirProposta,
     isLoading,
-    criarProposta,
-    atualizarProposta,
-    excluirProposta,
-    atualizarStatus,
-    isExcluindo,
-    isAtualizandoStatus
+    error
   } = usePropostas();
 
-  const migrarDados = () => console.log('Migration placeholder');
-  const isMigrating = false;
-
-  // Filtrar propostas com base no termo de pesquisa
-  const filteredPropostas = propostas.filter(proposta => {
+  if (error) {
     return (
-      proposta.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      proposta.cliente.nome.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
-
-  // Função para formatar datas
-  const formatDate = (dateString: string): string => {
-    const [year, month, day] = dateString.split('-');
-    return `${day}/${month}/${year}`;
-  };
-
-  // Função para lidar com a exclusão de proposta - CORRIGIDA
-  const handleDelete = async (id: number) => {
-    try {
-      await excluirProposta(id);
-    } catch (error) {
-      console.error('Erro ao excluir proposta:', error);
-    }
-  };
-
-  // Função para mudar o status
-  const handleChangeStatus = (id: number, newStatus: "rascunho" | "enviada" | "aprovada" | "rejeitada" | "expirada") => {
-    atualizarStatus({ id, status: newStatus });
-  };
-
-  // Função para converter um atendimento em orçamento - CORRIGIDA
-  const handleCriarPropostaFromAtendimento = (atendimento: any) => {
-    navigate("/novo-orcamento", {
-      state: { 
-        atendimento: atendimento,
-        clientePreSelecionado: true
-      }
-    });
-  };
-
-  // Função para criar revisão de proposta
-  const handleCriarRevisao = (proposta: any) => {
-    navigate(`/novo-orcamento`, { 
-      state: { 
-        propostaOriginal: proposta,
-        isRevisao: true,
-        propostaOriginalId: proposta.id
-      } 
-    });
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Carregando propostas...</span>
+      <div className="p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Erro ao carregar orçamentos</h1>
+          <p className="text-gray-600">{error.message || 'Erro desconhecido'}</p>
+        </div>
       </div>
     );
   }
@@ -100,96 +47,47 @@ const Orcamentos = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Orçamentos</h1>
-        <div className="flex gap-2">
-          <Button 
-            onClick={migrarDados} 
-            disabled={isMigrating}
-            variant="outline"
-            size="sm"
-          >
-            {isMigrating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Database className="mr-2 h-4 w-4" />
-            )}
-            Migrar localStorage
-          </Button>
-          <PropostasExportButton propostas={filteredPropostas} />
-        </div>
+        <h1 className="text-3xl font-bold">Gerenciamento de Orçamentos</h1>
+        <PropostasExportButton propostas={propostasFiltradas} />
       </div>
 
-      <PropostasMetrics propostas={filteredPropostas} />
+      <PropostasMetrics propostas={propostas} />
 
-      <Card>
-        <CardHeader>
-          <PropostasSearch 
-            searchTerm={searchTerm} 
-            onSearchChange={(value) => setSearchTerm(value)} 
-          />
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="atendimentos">
-            <TabsList className="mb-4">
-              <TabsTrigger value="atendimentos">
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Atendimentos
-              </TabsTrigger>
-              <TabsTrigger value="rascunhos">Rascunhos</TabsTrigger>
-              <TabsTrigger value="todas">Todas</TabsTrigger>
-              <TabsTrigger value="enviadas">Enviadas</TabsTrigger>
-              <TabsTrigger value="aprovadas">Aprovadas</TabsTrigger>
-              <TabsTrigger value="rejeitadas">Rejeitadas</TabsTrigger>
-            </TabsList>
+      <div className="grid gap-6">
+        <PropostasSearch 
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+        />
+        
+        <PropostasFiltradas
+          propostas={propostasFiltradas}
+          onVerDetalhes={handleVerDetalhes}
+          onPreExcluir={handlePreExcluirProposta}
+          isLoading={isLoading}
+        />
+      </div>
 
-            <TabsContent value="atendimentos">
-              <AtendimentosTab />
-            </TabsContent>
+      <DeleteConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleDeleteProposta}
+        propostaSelecionada={propostaSelecionada}
+      />
 
-            <TabsContent value="rascunhos">
-              <RascunhoTab
-                propostas={filteredPropostas}
-                onDelete={handleDelete}
-                formatDate={formatDate}
-              />
-            </TabsContent>
-            
-            <TabsContent value="todas">
-              <PropostasList 
-                propostas={filteredPropostas}
-                onDelete={handleDelete}
-                onChangeStatus={handleChangeStatus}
-                onCriarRevisao={handleCriarRevisao}
-                formatDate={formatDate}
-              />
-            </TabsContent>
-            
-            <TabsContent value="enviadas">
-              <PropostasFiltradas 
-                propostas={filteredPropostas}
-                status="enviada"
-                formatDate={formatDate}
-              />
-            </TabsContent>
-            
-            <TabsContent value="aprovadas">
-              <PropostasFiltradas 
-                propostas={filteredPropostas}
-                status="aprovada"
-                formatDate={formatDate}
-              />
-            </TabsContent>
-            
-            <TabsContent value="rejeitadas">
-              <PropostasFiltradas 
-                propostas={filteredPropostas}
-                status="rejeitada"
-                formatDate={formatDate}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+      <StatusChangeDialog
+        isOpen={isStatusDialogOpen}
+        onOpenChange={setIsStatusDialogOpen}
+        onConfirm={handleStatusChange}
+        propostaSelecionada={propostaSelecionada}
+      />
+
+      <PropostaDetailsDialog
+        isOpen={isDetailDialogOpen}
+        onOpenChange={setIsDetailDialogOpen}
+        proposta={propostaSelecionada}
+      />
     </div>
   );
 };

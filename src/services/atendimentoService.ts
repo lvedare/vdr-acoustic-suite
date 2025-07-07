@@ -5,37 +5,18 @@ export interface Atendimento {
   id?: string;
   cliente_id?: string;
   cliente_nome: string;
-  contato: string;
   assunto: string;
-  mensagem?: string;
+  contato: string;
+  canal: string;
   data: string;
   hora: string;
-  canal: string;
   status: string;
+  mensagem?: string;
+  endereco_entrega?: string;
+  endereco_obra?: string;
+  usar_endereco_cliente?: boolean;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface HistoricoAtendimento {
-  id?: string;
-  atendimento_id: string;
-  acao: string;
-  descricao?: string;
-  usuario?: string;
-  data_acao?: string;
-}
-
-export interface Ligacao {
-  id?: string;
-  cliente_id?: string;
-  cliente_nome: string;
-  telefone: string;
-  duracao?: string;
-  resumo?: string;
-  observacoes?: string;
-  data_ligacao?: string;
-  usuario?: string;
-  created_at?: string;
 }
 
 export const atendimentoService = {
@@ -50,29 +31,28 @@ export const atendimentoService = {
       throw error;
     }
 
-    return data || [];
-  },
-
-  async buscarPorId(id: string): Promise<Atendimento | null> {
-    const { data, error } = await supabase
-      .from('atendimentos')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Erro ao buscar atendimento:', error);
-      if (error.code === 'PGRST116') return null;
-      throw error;
-    }
-
     return data;
   },
 
   async criar(atendimento: Omit<Atendimento, 'id' | 'created_at' | 'updated_at'>): Promise<Atendimento> {
+    console.log('Criando atendimento com dados:', atendimento);
+    
     const { data, error } = await supabase
       .from('atendimentos')
-      .insert(atendimento)
+      .insert({
+        cliente_id: atendimento.cliente_id,
+        cliente_nome: atendimento.cliente_nome,
+        assunto: atendimento.assunto,
+        contato: atendimento.contato,
+        canal: atendimento.canal || 'WhatsApp',
+        data: atendimento.data,
+        hora: atendimento.hora,
+        status: atendimento.status || 'Novo',
+        mensagem: atendimento.mensagem,
+        endereco_entrega: atendimento.endereco_entrega,
+        endereco_obra: atendimento.endereco_obra,
+        usar_endereco_cliente: atendimento.usar_endereco_cliente ?? true
+      })
       .select()
       .single();
 
@@ -81,6 +61,7 @@ export const atendimentoService = {
       throw error;
     }
 
+    console.log('Atendimento criado com sucesso:', data);
     return data;
   },
 
@@ -112,64 +93,20 @@ export const atendimentoService = {
     }
   },
 
-  async adicionarHistorico(historico: Omit<HistoricoAtendimento, 'id' | 'data_acao'>): Promise<HistoricoAtendimento> {
-    const { data, error } = await supabase
-      .from('historico_atendimentos')
-      .insert(historico)
-      .select()
-      .single();
+  async verificarRelacionamentos(id: string) {
+    // Verificar se há propostas relacionadas
+    const { data: propostas, error: errorPropostas } = await supabase
+      .from('propostas')
+      .select('id')
+      .eq('atendimento_id', id);
 
-    if (error) {
-      console.error('Erro ao adicionar histórico:', error);
-      throw error;
+    if (errorPropostas) {
+      console.error('Erro ao verificar propostas:', errorPropostas);
+      return { propostas: [] };
     }
 
-    return data;
-  },
-
-  async buscarHistorico(atendimentoId: string): Promise<HistoricoAtendimento[]> {
-    const { data, error } = await supabase
-      .from('historico_atendimentos')
-      .select('*')
-      .eq('atendimento_id', atendimentoId)
-      .order('data_acao', { ascending: false });
-
-    if (error) {
-      console.error('Erro ao buscar histórico:', error);
-      throw error;
-    }
-
-    return data || [];
-  }
-};
-
-export const ligacaoService = {
-  async listarTodas(): Promise<Ligacao[]> {
-    const { data, error } = await supabase
-      .from('ligacoes')
-      .select('*')
-      .order('data_ligacao', { ascending: false });
-
-    if (error) {
-      console.error('Erro ao buscar ligações:', error);
-      throw error;
-    }
-
-    return data || [];
-  },
-
-  async criar(ligacao: Omit<Ligacao, 'id' | 'created_at'>): Promise<Ligacao> {
-    const { data, error } = await supabase
-      .from('ligacoes')
-      .insert(ligacao)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Erro ao criar ligação:', error);
-      throw error;
-    }
-
-    return data;
+    return {
+      propostas: propostas || []
+    };
   }
 };

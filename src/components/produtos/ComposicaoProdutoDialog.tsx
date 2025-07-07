@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -18,6 +18,8 @@ import { useInsumos } from "@/contexts/InsumosContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { composicaoProdutoService } from "@/services/composicaoProdutoService";
 import { toast } from "sonner";
+import { useComposicaoProduto } from "@/hooks/useComposicaoProduto";
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ComposicaoProdutoDialogProps {
   isOpen: boolean;
@@ -39,10 +41,61 @@ export function ComposicaoProdutoDialog({
   calcularValorTotal
 }: ComposicaoProdutoDialogProps) {
   const { insumos } = useInsumos();
+  const queryClient = useQueryClient();
   const [insumoSelecionado, setInsumoSelecionado] = useState<number | null>(null);
   const [quantidadeInsumo, setQuantidadeInsumo] = useState<number>(1);
   const [showAddForm, setShowAddForm] = useState(false);
   const [salvando, setSalvando] = useState(false);
+
+  // Buscar composições existentes do produto
+  const { data: composicoesExistentes, isLoading: loadingComposicoes } = useComposicaoProduto(
+    produtoAtual?.id?.toString() || null
+  );
+
+  // Carregar composições existentes quando o diálogo abrir
+  useEffect(() => {
+    if (isOpen && produtoAtual && composicoesExistentes && composicoesExistentes.length > 0) {
+      console.log('Carregando composições existentes:', composicoesExistentes);
+      
+      const insumosCarregados = composicoesExistentes.map((comp: any) => {
+        const insumoInfo = comp.insumo || insumos.find(i => i.id.toString() === comp.insumo_id);
+        return {
+          id: parseInt(comp.id),
+          insumoId: parseInt(comp.insumo_id),
+          nome: insumoInfo?.nome || 'Insumo não encontrado',
+          quantidade: comp.quantidade,
+          valorUnitario: insumoInfo?.valorCusto || 0,
+          valorTotal: comp.quantidade * (insumoInfo?.valorCusto || 0)
+        };
+      });
+
+      const composicaoCarregada = {
+        produtoId: produtoAtual.id,
+        insumos: insumosCarregados,
+        maoDeObra: {
+          fabricacao: 0,
+          instalacao: 0
+        },
+        despesaAdministrativa: 10,
+        margemVenda: 30
+      };
+
+      setComposicaoAtual(composicaoCarregada);
+    } else if (isOpen && produtoAtual && (!composicoesExistentes || composicoesExistentes.length === 0)) {
+      // Se não há composições existentes, criar uma vazia
+      const composicaoVazia = {
+        produtoId: produtoAtual.id,
+        insumos: [],
+        maoDeObra: {
+          fabricacao: 0,
+          instalacao: 0
+        },
+        despesaAdministrativa: 10,
+        margemVenda: 30
+      };
+      setComposicaoAtual(composicaoVazia);
+    }
+  }, [isOpen, produtoAtual, composicoesExistentes, insumos, setComposicaoAtual]);
 
   if (!produtoAtual || !composicaoAtual) return null;
 
@@ -135,8 +188,9 @@ export function ComposicaoProdutoDialog({
 
       toast.success('Composição salva com sucesso!');
       
-      // Recarregar dados do produto
-      window.location.reload();
+      // Invalidar cache para recarregar dados
+      queryClient.invalidateQueries({ queryKey: ['composicao-produto'] });
+      queryClient.invalidateQueries({ queryKey: ['produtos-acabados'] });
       
       onSalvar();
       onOpenChange(false);
@@ -158,6 +212,21 @@ export function ComposicaoProdutoDialog({
   
   const subtotal = custoBase + valorDespesaAdm;
   const valorFinal = calcularValorTotal(composicaoAtual);
+
+  if (loadingComposicoes) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Carregando composição...</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

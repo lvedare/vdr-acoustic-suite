@@ -3,106 +3,110 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Pencil, Trash2 } from "lucide-react";
+import { Edit, Trash2, FileText, Wrench } from "lucide-react";
 import { formatCurrency, ProdutoAcabado } from "@/types/orcamento";
+import { EstoqueMovimentacaoButton } from "@/components/estoque/EstoqueMovimentacaoButton";
 
 interface ProdutoTableProps {
   produtos: ProdutoAcabado[];
   onEditarProduto: (produto: ProdutoAcabado) => void;
-  onExcluirProduto: (produto: ProdutoAcabado) => void;
-  onVerDetalhes: (produto: ProdutoAcabado) => void;
+  onPreExcluirProduto: (produto: ProdutoAcabado) => void;
+  onVerDetalhesProduto: (produto: ProdutoAcabado) => void;
   onCriarItemOrcamento: (produto: ProdutoAcabado) => void;
+  onEditarComposicao: (produto: ProdutoAcabado) => void;
 }
 
 export function ProdutoTable({ 
   produtos, 
   onEditarProduto, 
-  onExcluirProduto, 
-  onVerDetalhes, 
-  onCriarItemOrcamento 
+  onPreExcluirProduto, 
+  onVerDetalhesProduto,
+  onCriarItemOrcamento,
+  onEditarComposicao
 }: ProdutoTableProps) {
   return (
-    <div className="rounded-md border">
+    <div className="border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Código</TableHead>
+            <TableHead className="w-[120px]">Código</TableHead>
             <TableHead>Nome</TableHead>
-            <TableHead className="hidden md:table-cell">Categoria</TableHead>
-            <TableHead className="text-right">Valor Base</TableHead>
-            <TableHead className="text-right">Em Estoque</TableHead>
+            <TableHead>Categoria</TableHead>
+            <TableHead>Valor Base</TableHead>
+            <TableHead>Estoque</TableHead>
+            <TableHead>Unidade</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {produtos.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">
-                Nenhum produto encontrado.
+              <TableCell colSpan={7} className="text-center py-10">
+                <p className="text-muted-foreground">Nenhum produto encontrado</p>
               </TableCell>
             </TableRow>
           ) : (
             produtos.map((produto) => (
               <TableRow key={produto.id}>
-                <TableCell className="font-medium">{produto.codigo}</TableCell>
                 <TableCell>
-                  <div>
-                    {produto.nome}
-                    <div className="text-xs text-muted-foreground hidden sm:block">
-                      {produto.descricao.length > 60
-                        ? `${produto.descricao.substring(0, 60)}...`
-                        : produto.descricao}
-                    </div>
-                  </div>
+                  <Badge variant="outline">{produto.codigo}</Badge>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <Badge variant="secondary" className="font-normal">
-                    {produto.categoria}
-                  </Badge>
+                <TableCell className="font-medium">{produto.nome}</TableCell>
+                <TableCell>{produto.categoria}</TableCell>
+                <TableCell>{formatCurrency(produto.valorBase)}</TableCell>
+                <TableCell>
+                  <span className={produto.quantidadeEstoque < 10 ? 'text-red-500 font-medium' : ''}>
+                    {produto.quantidadeEstoque}
+                  </span>
                 </TableCell>
-                <TableCell className="text-right">{formatCurrency(produto.valorBase)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <span className={produto.quantidadeEstoque < 10 ? "text-red-500" : ""}>
-                      {produto.quantidadeEstoque}
-                    </span>
-                    <span className="text-muted-foreground">{produto.unidadeMedida}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
+                <TableCell>{produto.unidadeMedida}</TableCell>
+                <TableCell>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
                       size="sm"
-                      onClick={() => onVerDetalhes(produto)}
-                      className="hidden md:flex"
+                      onClick={() => onVerDetalhesProduto(produto)}
+                      title="Ver detalhes"
                     >
                       Detalhes
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => onEditarProduto(produto)}
-                    >
-                      <Pencil className="h-4 w-4 md:mr-1" />
-                      <span className="hidden md:inline">Editar</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="text-red-500 hover:text-red-600"
-                      onClick={() => onExcluirProduto(produto)}
-                    >
-                      <Trash2 className="h-4 w-4 md:mr-1" />
-                      <span className="hidden md:inline">Excluir</span>
-                    </Button>
                     <Button
-                      variant="default"
+                      variant="ghost"
                       size="sm"
                       onClick={() => onCriarItemOrcamento(produto)}
+                      title="Criar item de orçamento"
                     >
-                      <FileText className="h-4 w-4 md:mr-1" />
-                      <span className="hidden md:inline">Orçar</span>
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEditarComposicao(produto)}
+                      title="Editar composição"
+                    >
+                      <Wrench className="h-4 w-4" />
+                    </Button>
+                    <EstoqueMovimentacaoButton 
+                      produtoId={produto.id.toString()}
+                      produtoNome={produto.nome}
+                      tipo="produto"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEditarProduto(produto)}
+                      title="Editar produto"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => onPreExcluirProduto(produto)}
+                      title="Excluir produto"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
