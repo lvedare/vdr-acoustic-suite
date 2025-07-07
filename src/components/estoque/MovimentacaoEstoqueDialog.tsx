@@ -41,8 +41,11 @@ export const MovimentacaoEstoqueDialog = ({
     ? produtos.find(p => p.id === itemSelecionado)
     : insumos.find(i => i.id.toString() === itemSelecionado);
 
+  // Corrigir a busca da unidade de medida para cada tipo
   const unidadeMedida = itemAtual 
-    ? (tipo === 'produto' ? itemAtual.unidade_medida : itemAtual.unidadeMedida)
+    ? (tipo === 'produto' 
+        ? (itemAtual as any).unidade_medida 
+        : (itemAtual as any).unidadeMedida || (itemAtual as any).unidade_medida)
     : '';
 
   const handleSalvar = async () => {
@@ -122,7 +125,7 @@ export const MovimentacaoEstoqueDialog = ({
                       ))
                     : insumos.map((insumo) => (
                         <SelectItem key={insumo.id} value={insumo.id.toString()}>
-                          {insumo.codigo} - {insumo.nome} ({insumo.unidadeMedida})
+                          {insumo.codigo} - {insumo.nome} ({(insumo as any).unidadeMedida || (insumo as any).unidade_medida})
                         </SelectItem>
                       ))
                   }

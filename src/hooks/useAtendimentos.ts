@@ -78,5 +78,6 @@ export const useAtendimentos = () => {
     isCriando: criarAtendimento.isPending,
     isAtualizando: atualizarAtendimento.isPending,
     isExcluindo: excluirAtendimento.isPending,
+    isCriandoLigacao: criarLigacao.isPending,
   };
 };

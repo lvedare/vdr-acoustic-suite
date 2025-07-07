@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { ObrasResumoCard } from "@/components/obras/ObrasResumoCard";
 import { ObrasFilterBar } from "@/components/obras/ObrasFilterBar";
-import { ObrasList } from "@/components/obras/ObrasList";
+import ObrasList from "@/components/obras/ObrasList";
 import { ObrasDialog } from "@/components/obras/ObrasDialog";
 import { ObraCaixaCard } from "@/components/obras/ObraCaixaCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
