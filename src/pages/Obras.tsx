@@ -49,6 +49,7 @@ const Obras = () => {
         nome: obra.nome,
         endereco: obra.endereco,
         cliente_id: null, // Por enquanto sem cliente específico
+        projeto_id: null, // Por enquanto sem projeto específico
         status: obra.status,
         data_inicio: obra.dataInicio,
         data_previsao: obra.dataPrevisao,
