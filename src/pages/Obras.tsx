@@ -8,69 +8,16 @@ import { ObraCaixaCard } from "@/components/obras/ObraCaixaCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Building, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/sonner";
-import { ObraStatus, Obra, obraStatusMap, formatarData } from "@/types/obra";
-
-// Mock de dados para obras
-const mockObras: Obra[] = [
-  {
-    id: 1,
-    nome: "Reforma Residencial Silva",
-    endereco: "Rua das Flores, 123 - São Paulo",
-    cliente: "João Silva",
-    status: "em_andamento",
-    dataInicio: "2025-04-15",
-    dataPrevisao: "2025-06-15"
-  },
-  {
-    id: 2,
-    nome: "Construção Loja Center Mall",
-    endereco: "Av. Principal, 500 - Shopping Center",
-    cliente: "Center Mall Ltda.",
-    status: "planejamento",
-    dataInicio: "2025-06-01",
-    dataPrevisao: "2025-08-30"
-  },
-  {
-    id: 3,
-    nome: "Reforma Apartamento 302",
-    endereco: "Rua das Palmeiras, 302 - Edifício Central",
-    cliente: "Maria Santos",
-    status: "concluido",
-    dataInicio: "2025-02-10",
-    dataPrevisao: "2025-03-25",
-    dataConclusao: "2025-03-20"
-  },
-  {
-    id: 4,
-    nome: "Ampliação Residência Costa",
-    endereco: "Alameda dos Ipês, 45",
-    cliente: "Pedro Costa",
-    status: "em_andamento",
-    dataInicio: "2025-03-05",
-    dataPrevisao: "2025-05-30"
-  }
-];
+import { useObras } from "@/hooks/useObras";
 
 const Obras = () => {
-  const [obras, setObras] = useState<Obra[]>(mockObras);
+  const { obras } = useObras();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFiltro, setStatusFiltro] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedObra, setSelectedObra] = useState<Obra | null>(null);
-  const [obraDetalhada, setObraDetalhada] = useState<Obra | null>(null);
+  const [selectedObra, setSelectedObra] = useState<any | null>(null);
+  const [obraDetalhada, setObraDetalhada] = useState<any | null>(null);
   
-  // Filtra as obras com base nos filtros aplicados
-  const obrasFiltradas = obras.filter((obra) => {
-    const matchesSearchTerm = obra.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              obra.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              obra.endereco.toLowerCase().includes(searchTerm.toLowerCase());
-                              
-    const matchesStatus = statusFiltro ? obra.status === statusFiltro : true;
-    
-    return matchesSearchTerm && matchesStatus;
-  });
-
   // Contador para status
   const statusCount = {
     total: obras.length,
@@ -86,32 +33,8 @@ const Obras = () => {
     setIsDialogOpen(true);
   };
 
-  // Função para editar obra existente
-  const handleEditObra = (obra: Obra) => {
-    setSelectedObra(obra);
-    setIsDialogOpen(true);
-  };
-
-  // Função para salvar obra (nova ou editada)
-  const handleSaveObra = (obra: Obra) => {
-    if (selectedObra) {
-      // Editando obra existente
-      setObras(obras.map(o => o.id === obra.id ? obra : o));
-      toast.success("Obra atualizada com sucesso!");
-    } else {
-      // Adicionando nova obra
-      const novaObra = {
-        ...obra,
-        id: Math.max(...obras.map(o => o.id), 0) + 1
-      };
-      setObras([...obras, novaObra]);
-      toast.success("Obra adicionada com sucesso!");
-    }
-    setIsDialogOpen(false);
-  };
-
   // Função para ver detalhes da obra
-  const handleViewObra = (obra: Obra) => {
+  const handleViewObra = (obra: any) => {
     setObraDetalhada(obra);
   };
 
@@ -136,14 +59,8 @@ const Obras = () => {
       />
 
       {!obraDetalhada ? (
-        /* Lista de Obras */
-        <ObrasList 
-          obras={obrasFiltradas}
-          statusMap={obraStatusMap}
-          formatarData={formatarData}
-          onEdit={handleEditObra} 
-          onView={handleViewObra}
-        />
+        /* Lista de Obras - agora sem props */
+        <ObrasList />
       ) : (
         /* Detalhes da Obra */
         <div className="space-y-4">
@@ -174,7 +91,7 @@ const Obras = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Cliente</p>
-                      <p className="font-medium">{obraDetalhada.cliente}</p>
+                      <p className="font-medium">{obraDetalhada.cliente?.nome || 'Sem cliente'}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Status</p>
@@ -184,27 +101,27 @@ const Obras = () => {
                           obraDetalhada.status === 'concluido' ? 'bg-green-100 text-green-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                        {obraStatusMap[obraDetalhada.status].label}
+                        {obraDetalhada.status.replace('_', ' ')}
                       </div>
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Data de Início</p>
-                      <p className="font-medium">{new Date(obraDetalhada.dataInicio).toLocaleDateString('pt-BR')}</p>
+                      <p className="font-medium">{obraDetalhada.data_inicio ? new Date(obraDetalhada.data_inicio).toLocaleDateString('pt-BR') : 'Não definida'}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Previsão de Término</p>
-                      <p className="font-medium">{new Date(obraDetalhada.dataPrevisao).toLocaleDateString('pt-BR')}</p>
+                      <p className="font-medium">{obraDetalhada.data_previsao ? new Date(obraDetalhada.data_previsao).toLocaleDateString('pt-BR') : 'Não definida'}</p>
                     </div>
-                    {obraDetalhada.dataConclusao && (
+                    {obraDetalhada.data_conclusao && (
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Data de Conclusão</p>
-                        <p className="font-medium">{new Date(obraDetalhada.dataConclusao).toLocaleDateString('pt-BR')}</p>
+                        <p className="font-medium">{new Date(obraDetalhada.data_conclusao).toLocaleDateString('pt-BR')}</p>
                       </div>
                     )}
                   </div>
                   
                   <div className="pt-4">
-                    <Button variant="outline" onClick={() => handleEditObra(obraDetalhada)}>
+                    <Button variant="outline" onClick={() => setSelectedObra(obraDetalhada)}>
                       Editar Obra
                     </Button>
                   </div>
@@ -298,7 +215,6 @@ const Obras = () => {
       <ObrasDialog 
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        onSave={handleSaveObra}
         obra={selectedObra}
       />
     </div>
