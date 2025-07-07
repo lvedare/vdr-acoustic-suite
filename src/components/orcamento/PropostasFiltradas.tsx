@@ -3,17 +3,29 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileDown, Eye } from "lucide-react";
+import { FileDown, Eye, Trash2, RefreshCw } from "lucide-react";
 import { Proposta, formatCurrency } from "@/types/orcamento";
 import { toast } from "sonner";
 
 interface PropostasFiltradasProps {
   propostas: Proposta[];
-  status: "enviada" | "aprovada" | "rejeitada";
+  status?: "enviada" | "aprovada" | "rejeitada";
   formatDate: (date: string) => string;
+  onVerDetalhes?: (proposta: Proposta) => void;
+  onPreExcluir?: (proposta: Proposta) => void;
+  onChangeStatus?: (proposta: Proposta) => void;
+  isLoading?: boolean;
 }
 
-const PropostasFiltradas = ({ propostas, status, formatDate }: PropostasFiltradasProps) => {
+const PropostasFiltradas = ({ 
+  propostas, 
+  status, 
+  formatDate,
+  onVerDetalhes,
+  onPreExcluir,
+  onChangeStatus,
+  isLoading = false
+}: PropostasFiltradasProps) => {
   // Handle download PDF
   const handleDownloadPDF = (proposta: Proposta) => {
     toast.success(`PDF da proposta ${proposta.numero} sendo gerado...`, {
@@ -41,7 +53,18 @@ const PropostasFiltradas = ({ propostas, status, formatDate }: PropostasFiltrada
     }
   };
 
-  const filteredPropostas = propostas.filter(p => p.status === status);
+  const filteredPropostas = status ? propostas.filter(p => p.status === status) : propostas;
+
+  if (isLoading) {
+    return (
+      <div className="rounded-md border">
+        <div className="p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-sm text-muted-foreground">Carregando propostas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-md border">
@@ -60,14 +83,14 @@ const PropostasFiltradas = ({ propostas, status, formatDate }: PropostasFiltrada
           {filteredPropostas.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                Nenhuma proposta {status} encontrada
+                {status ? `Nenhuma proposta ${status} encontrada` : 'Nenhuma proposta encontrada'}
               </TableCell>
             </TableRow>
           ) : (
             filteredPropostas.map((proposta) => (
               <TableRow key={proposta.id}>
                 <TableCell className="font-medium">{proposta.numero}</TableCell>
-                <TableCell>{proposta.cliente.nome}</TableCell>
+                <TableCell>{proposta.cliente?.nome}</TableCell>
                 <TableCell>{formatDate(proposta.data)}</TableCell>
                 <TableCell>
                   <Badge 
@@ -85,9 +108,21 @@ const PropostasFiltradas = ({ propostas, status, formatDate }: PropostasFiltrada
                     <Button variant="outline" size="icon" onClick={() => handleDownloadPDF(proposta)}>
                       <FileDown className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon">
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    {onVerDetalhes && (
+                      <Button variant="outline" size="icon" onClick={() => onVerDetalhes(proposta)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {onChangeStatus && (
+                      <Button variant="outline" size="icon" onClick={() => onChangeStatus(proposta)}>
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {onPreExcluir && (
+                      <Button variant="outline" size="icon" onClick={() => onPreExcluir(proposta)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Dialog } from "@/components/ui/dialog";
 import PropostasExportButton from "@/components/orcamento/PropostasExportButton";
 import PropostasFiltradas from "@/components/orcamento/PropostasFiltradas";
 import PropostasMetrics from "@/components/orcamento/PropostasMetrics";
@@ -38,11 +39,34 @@ const Orcamentos = () => {
       <div className="p-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Erro ao carregar orçamentos</h1>
-          <p className="text-gray-600">{error.message || 'Erro desconhecido'}</p>
+          <p className="text-gray-600">{typeof error === 'string' ? error : 'Erro desconhecido'}</p>
         </div>
       </div>
     );
   }
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('pt-BR');
+  };
+
+  const handleDownloadPDF = (proposta: any) => {
+    console.log('Download PDF:', proposta);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "aprovada":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "enviada":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "rejeitada":
+        return "bg-red-100 text-red-800 border-red-300";
+      case "expirada":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -57,37 +81,41 @@ const Orcamentos = () => {
         <PropostasSearch 
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
         />
         
         <PropostasFiltradas
           propostas={propostasFiltradas}
-          onVerDetalhes={handleVerDetalhes}
-          onPreExcluir={handlePreExcluirProposta}
-          isLoading={isLoading}
+          status="enviada"
+          formatDate={formatDate}
         />
       </div>
 
-      <DeleteConfirmDialog
-        isOpen={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={handleDeleteProposta}
-        propostaSelecionada={propostaSelecionada}
-      />
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DeleteConfirmDialog
+          propostaNumero={propostaSelecionada?.numero || ''}
+          onConfirm={handleDeleteProposta}
+        />
+      </Dialog>
 
-      <StatusChangeDialog
-        isOpen={isStatusDialogOpen}
-        onOpenChange={setIsStatusDialogOpen}
-        onConfirm={handleStatusChange}
-        propostaSelecionada={propostaSelecionada}
-      />
+      <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
+        <StatusChangeDialog
+          propostaId={propostaSelecionada?.id as number || 0}
+          propostaNumero={propostaSelecionada?.numero || ''}
+          currentStatus={propostaSelecionada?.status || ''}
+          onChangeStatus={(id, status) => handleStatusChange(status)}
+          getStatusColor={getStatusColor}
+        />
+      </Dialog>
 
-      <PropostaDetailsDialog
-        isOpen={isDetailDialogOpen}
-        onOpenChange={setIsDetailDialogOpen}
-        proposta={propostaSelecionada}
-      />
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        {propostaSelecionada && (
+          <PropostaDetailsDialog
+            proposta={propostaSelecionada}
+            formatDate={formatDate}
+            onDownloadPDF={handleDownloadPDF}
+          />
+        )}
+      </Dialog>
     </div>
   );
 };

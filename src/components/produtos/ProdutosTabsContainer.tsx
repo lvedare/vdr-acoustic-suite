@@ -11,7 +11,8 @@ export const ProdutosTabsContainer: React.FC = () => {
     handleEditarProduto,
     handlePreExcluirProduto,
     handleVerDetalhesProduto,
-    handleCriarItemOrcamento
+    handleCriarItemOrcamento,
+    handleEditarComposicao
   } = useProdutos();
 
   return (
@@ -29,6 +30,7 @@ export const ProdutosTabsContainer: React.FC = () => {
           onExcluirProduto={handlePreExcluirProduto}
           onVerDetalhes={handleVerDetalhesProduto}
           onCriarItemOrcamento={handleCriarItemOrcamento}
+          onEditarComposicao={handleEditarComposicao}
         />
       </TabsContent>
       
