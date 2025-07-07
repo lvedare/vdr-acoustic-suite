@@ -18,6 +18,7 @@ interface ProdutosListaTabProps {
   onExcluirProduto: (produto: ProdutoAcabado) => void;
   onVerDetalhes: (produto: ProdutoAcabado) => void;
   onCriarItemOrcamento: (produto: ProdutoAcabado) => void;
+  onEditarComposicao: (produto: ProdutoAcabado) => void;
 }
 
 export const ProdutosListaTab: React.FC<ProdutosListaTabProps> = ({
@@ -25,7 +26,8 @@ export const ProdutosListaTab: React.FC<ProdutosListaTabProps> = ({
   onEditarProduto,
   onExcluirProduto,
   onVerDetalhes,
-  onCriarItemOrcamento
+  onCriarItemOrcamento,
+  onEditarComposicao
 }) => {
   const { 
     searchTerm,
@@ -56,9 +58,10 @@ export const ProdutosListaTab: React.FC<ProdutosListaTabProps> = ({
         <ProdutoTable
           produtos={produtosFiltrados}
           onEditarProduto={onEditarProduto}
-          onExcluirProduto={onExcluirProduto}
-          onVerDetalhes={onVerDetalhes}
+          onPreExcluirProduto={onExcluirProduto}
+          onVerDetalhesProduto={onVerDetalhes}
           onCriarItemOrcamento={onCriarItemOrcamento}
+          onEditarComposicao={onEditarComposicao}
         />
       </CardContent>
     </Card>

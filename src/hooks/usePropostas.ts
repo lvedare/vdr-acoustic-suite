@@ -14,11 +14,38 @@ export const usePropostas = () => {
   const [isAtualizandoStatus, setIsAtualizandoStatus] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Filters and search
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todos');
+
+  // Dialog states
+  const [propostaSelecionada, setPropostaSelecionada] = useState<Proposta | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+
   // Computed properties
   const propostasAprovadas = useMemo(() => 
     propostas.filter(p => p.status === 'aprovada'), 
     [propostas]
   );
+
+  const propostasFiltradas = useMemo(() => {
+    let filtered = propostas;
+
+    if (searchTerm) {
+      filtered = filtered.filter(proposta =>
+        proposta.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        proposta.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (statusFilter !== 'todos') {
+      filtered = filtered.filter(proposta => proposta.status === statusFilter);
+    }
+
+    return filtered;
+  }, [propostas, searchTerm, statusFilter]);
 
   const carregarPropostas = async () => {
     try {
@@ -34,7 +61,7 @@ export const usePropostas = () => {
       console.error('Erro ao carregar propostas:', error);
       setError('Erro ao carregar propostas');
       toast.error('Erro ao carregar propostas');
-      setPropostas([]); // Definir array vazio como fallback
+      setPropostas([]);
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +83,7 @@ export const usePropostas = () => {
       const novaProposta = await supabaseService.criarProposta(proposta);
       console.log('Proposta criada:', novaProposta);
       
-      await carregarPropostas(); // Recarregar lista
+      await carregarPropostas();
       toast.success('Proposta criada com sucesso!');
       return novaProposta;
     } catch (error) {
@@ -75,7 +102,7 @@ export const usePropostas = () => {
       const propostaAtualizada = await supabaseService.atualizarProposta(id, proposta);
       console.log('Proposta atualizada:', propostaAtualizada);
       
-      await carregarPropostas(); // Recarregar lista
+      await carregarPropostas();
       toast.success('Proposta atualizada com sucesso!');
       return propostaAtualizada;
     } catch (error) {
@@ -104,7 +131,7 @@ export const usePropostas = () => {
       console.log('Excluindo proposta:', id);
       await supabaseService.excluirProposta(id);
       
-      await carregarPropostas(); // Recarregar lista
+      await carregarPropostas();
       toast.success('Proposta excluída com sucesso!');
     } catch (error) {
       console.error('Erro ao excluir proposta:', error);
@@ -112,6 +139,33 @@ export const usePropostas = () => {
       throw error;
     } finally {
       setIsExcluindo(false);
+    }
+  };
+
+  // Dialog handlers
+  const handleVerDetalhes = (proposta: Proposta) => {
+    setPropostaSelecionada(proposta);
+    setIsDetailDialogOpen(true);
+  };
+
+  const handlePreExcluirProposta = (proposta: Proposta) => {
+    setPropostaSelecionada(proposta);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteProposta = async () => {
+    if (propostaSelecionada) {
+      await excluirProposta(propostaSelecionada.id);
+      setIsDeleteDialogOpen(false);
+      setPropostaSelecionada(null);
+    }
+  };
+
+  const handleStatusChange = async (novoStatus: string) => {
+    if (propostaSelecionada) {
+      await atualizarStatus({ id: propostaSelecionada.id as number, status: novoStatus });
+      setIsStatusDialogOpen(false);
+      setPropostaSelecionada(null);
     }
   };
 
@@ -139,6 +193,7 @@ export const usePropostas = () => {
   return {
     propostas,
     propostasAprovadas,
+    propostasFiltradas,
     clientes,
     isLoading,
     isCriando,
@@ -146,6 +201,22 @@ export const usePropostas = () => {
     isExcluindo,
     isAtualizandoStatus,
     error,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    propostaSelecionada,
+    setPropostaSelecionada,
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
+    isStatusDialogOpen,
+    setIsStatusDialogOpen,
+    isDetailDialogOpen,
+    setIsDetailDialogOpen,
+    handleDeleteProposta,
+    handleStatusChange,
+    handleVerDetalhes,
+    handlePreExcluirProposta,
     carregarPropostas,
     criarProposta,
     atualizarProposta,

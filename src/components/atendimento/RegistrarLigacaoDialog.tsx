@@ -31,10 +31,12 @@ const RegistrarLigacaoDialog = ({ isOpen, onOpenChange }: RegistrarLigacaoDialog
       return;
     }
 
-    criarLigacao({
+    const ligacaoData = {
       ...formData,
       data_ligacao: new Date().toISOString()
-    });
+    };
+
+    criarLigacao(ligacaoData);
 
     setFormData({
       cliente_nome: "",

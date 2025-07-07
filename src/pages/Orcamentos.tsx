@@ -1,12 +1,12 @@
 
 import React from "react";
-import { PropostasExportButton } from "@/components/orcamento/PropostasExportButton";
-import { PropostasFiltradas } from "@/components/orcamento/PropostasFiltradas";
-import { PropostasMetrics } from "@/components/orcamento/PropostasMetrics";
-import { PropostasSearch } from "@/components/orcamento/PropostasSearch";
-import { DeleteConfirmDialog } from "@/components/orcamento/DeleteConfirmDialog";
-import { StatusChangeDialog } from "@/components/orcamento/StatusChangeDialog";
-import { PropostaDetailsDialog } from "@/components/orcamento/PropostaDetailsDialog";
+import PropostasExportButton from "@/components/orcamento/PropostasExportButton";
+import PropostasFiltradas from "@/components/orcamento/PropostasFiltradas";
+import PropostasMetrics from "@/components/orcamento/PropostasMetrics";
+import PropostasSearch from "@/components/orcamento/PropostasSearch";
+import DeleteConfirmDialog from "@/components/orcamento/DeleteConfirmDialog";
+import StatusChangeDialog from "@/components/orcamento/StatusChangeDialog";
+import PropostaDetailsDialog from "@/components/orcamento/PropostaDetailsDialog";
 import { usePropostas } from "@/hooks/usePropostas";
 
 const Orcamentos = () => {
