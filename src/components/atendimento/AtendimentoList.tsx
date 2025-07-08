@@ -36,6 +36,7 @@ export const AtendimentoList: React.FC<AtendimentoListProps> = ({
         <TableHeader>
           <TableRow>
             <TableHead>Cliente</TableHead>
+            <TableHead>Empresa</TableHead>
             <TableHead>Assunto</TableHead>
             <TableHead>Canal</TableHead>
             <TableHead>Status</TableHead>
@@ -47,7 +48,7 @@ export const AtendimentoList: React.FC<AtendimentoListProps> = ({
         <TableBody>
           {atendimentos.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-10">
+              <TableCell colSpan={8} className="text-center py-10">
                 <p className="text-muted-foreground">Nenhum atendimento encontrado</p>
               </TableCell>
             </TableRow>
@@ -55,6 +56,7 @@ export const AtendimentoList: React.FC<AtendimentoListProps> = ({
             atendimentos.map((atendimento) => (
               <TableRow key={atendimento.id}>
                 <TableCell className="font-medium">{atendimento.cliente_nome}</TableCell>
+                <TableCell className="text-muted-foreground">{atendimento.empresa || '-'}</TableCell>
                 <TableCell>{atendimento.assunto}</TableCell>
                 <TableCell>{atendimento.canal}</TableCell>
                 <TableCell>{getStatusBadge(atendimento.status)}</TableCell>

@@ -1,10 +1,10 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Atendimento {
   id?: string;
   cliente_id?: string;
   cliente_nome: string;
+  empresa?: string;
   assunto: string;
   contato: string;
   canal: string;
@@ -36,7 +36,12 @@ export const atendimentoService = {
   async listarTodos(): Promise<Atendimento[]> {
     const { data, error } = await supabase
       .from('atendimentos')
-      .select('*')
+      .select(`
+        *,
+        cliente:clientes(
+          empresa
+        )
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -44,7 +49,11 @@ export const atendimentoService = {
       throw error;
     }
 
-    return data;
+    // Mapear dados para incluir empresa do cliente
+    return data.map(atendimento => ({
+      ...atendimento,
+      empresa: atendimento.cliente?.empresa || null
+    }));
   },
 
   async criar(atendimento: Omit<Atendimento, 'id' | 'created_at' | 'updated_at'>): Promise<Atendimento> {
