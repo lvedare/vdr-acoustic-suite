@@ -48,12 +48,32 @@ export const MovimentacaoEstoqueDialog = ({
 
   console.log('MovimentacaoEstoqueDialog - itemAtual encontrado:', itemAtual);
 
-  // Obter unidade de medida com propriedades corretas para cada tipo
-  const unidadeMedida = itemAtual 
-    ? tipo === 'produto' 
-      ? itemAtual.unidade_medida 
-      : (itemAtual as any).unidadeMedida || (itemAtual as any).unidade_medida
-    : '';
+  // Obter unidade de medida - handling both property naming conventions
+  const getUnidadeMedida = (item: any) => {
+    if (!item) return '';
+    
+    if (tipo === 'produto') {
+      return item.unidade_medida || '';
+    } else {
+      // For insumos, try both property names
+      return item.unidade_medida || item.unidadeMedida || '';
+    }
+  };
+
+  // Obter quantidade de estoque - handling both property naming conventions
+  const getQuantidadeEstoque = (item: any) => {
+    if (!item) return 0;
+    
+    if (tipo === 'produto') {
+      return item.quantidade_estoque || 0;
+    } else {
+      // For insumos, try both property names
+      return item.quantidade_estoque || item.quantidadeEstoque || 0;
+    }
+  };
+
+  const unidadeMedida = getUnidadeMedida(itemAtual);
+  const quantidadeAtual = getQuantidadeEstoque(itemAtual);
 
   const handleSalvar = async () => {
     if (!motivo || quantidade <= 0 || !itemSelecionado) {
@@ -134,7 +154,7 @@ export const MovimentacaoEstoqueDialog = ({
                       ))
                     : insumos.map((insumo) => (
                         <SelectItem key={insumo.id} value={String(insumo.id)}>
-                          {insumo.codigo} - {insumo.nome} ({(insumo as any).unidadeMedida || (insumo as any).unidade_medida})
+                          {insumo.codigo} - {insumo.nome} ({getUnidadeMedida(insumo)})
                         </SelectItem>
                       ))
                   }
@@ -151,11 +171,7 @@ export const MovimentacaoEstoqueDialog = ({
               )}
               {itemAtual && (
                 <p className="text-sm text-muted-foreground">
-                  Estoque atual: {
-                    tipo === 'produto' 
-                      ? itemAtual.quantidade_estoque 
-                      : (itemAtual as any).quantidadeEstoque || (itemAtual as any).quantidade_estoque || 0
-                  } {unidadeMedida}
+                  Estoque atual: {quantidadeAtual} {unidadeMedida}
                 </p>
               )}
             </div>
