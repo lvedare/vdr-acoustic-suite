@@ -11,18 +11,15 @@ export const useAtendimentos = () => {
     queryFn: atendimentoService.listarTodos,
   });
 
+  console.log('useAtendimentos - dados carregados:', atendimentos);
+
   const criarAtendimento = useMutation({
     mutationFn: atendimentoService.criar,
     onSuccess: (novoAtendimento) => {
-      // Forçar recarregamento da lista
+      console.log('Atendimento criado com sucesso:', novoAtendimento);
+      // Invalidar e recarregar os dados
       queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
-      queryClient.refetchQueries({ queryKey: ['atendimentos'] });
-      
-      // Adicionar o novo atendimento diretamente à lista para feedback imediato
-      queryClient.setQueryData(['atendimentos'], (old: any[] = []) => [novoAtendimento, ...old]);
-      
       toast.success('Atendimento criado com sucesso!');
-      console.log('Novo atendimento criado:', novoAtendimento);
     },
     onError: (error) => {
       console.error('Erro ao criar atendimento:', error);
@@ -34,6 +31,7 @@ export const useAtendimentos = () => {
     mutationFn: ({ id, atendimento }: { id: string; atendimento: any }) =>
       atendimentoService.atualizar(id, atendimento),
     onSuccess: () => {
+      console.log('Atendimento atualizado com sucesso');
       queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
       toast.success('Atendimento atualizado com sucesso!');
     },
@@ -46,6 +44,7 @@ export const useAtendimentos = () => {
   const excluirAtendimento = useMutation({
     mutationFn: atendimentoService.excluir,
     onSuccess: () => {
+      console.log('Atendimento excluído com sucesso');
       queryClient.invalidateQueries({ queryKey: ['atendimentos'] });
       toast.success('Atendimento excluído com sucesso!');
     },
@@ -58,6 +57,7 @@ export const useAtendimentos = () => {
   const criarLigacao = useMutation({
     mutationFn: ligacaoService.criar,
     onSuccess: () => {
+      console.log('Ligação registrada com sucesso');
       queryClient.invalidateQueries({ queryKey: ['ligacoes'] });
       toast.success('Ligação registrada com sucesso!');
     },

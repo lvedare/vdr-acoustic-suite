@@ -4,7 +4,6 @@ import { useAtendimentos } from "@/hooks/useAtendimentos";
 import { AtendimentoList } from "./AtendimentoList";
 import { AtendimentoKanbanView } from "./AtendimentoKanbanView";
 import AtendimentoDetail from "./AtendimentoDetail";
-import NovoAtendimentoDialog from "./NovoAtendimentoDialog";
 import { EnviarParaOrcamentoDialog } from "./EnviarParaOrcamentoDialog";
 import { ConfirmDeleteDialog } from "@/components/common/ConfirmDeleteDialog";
 import { toast } from "sonner";
@@ -22,13 +21,14 @@ export const AtendimentoContent: React.FC<AtendimentoContentProps> = ({
   statusFilter,
   canalFilter
 }) => {
-  const { atendimentos, isLoading, criarAtendimento, excluirAtendimento } = useAtendimentos();
+  const { atendimentos, isLoading, excluirAtendimento } = useAtendimentos();
   const [selectedAtendimento, setSelectedAtendimento] = useState<any>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [isNovoAtendimentoOpen, setIsNovoAtendimentoOpen] = useState(false);
   const [isEnviarOrcamentoOpen, setIsEnviarOrcamentoOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [atendimentoToDelete, setAtendimentoToDelete] = useState<any>(null);
+
+  console.log('AtendimentoContent - atendimentos carregados:', atendimentos);
 
   // Filtrar atendimentos
   const atendimentosFiltrados = atendimentos.filter(atendimento => {
@@ -37,18 +37,22 @@ export const AtendimentoContent: React.FC<AtendimentoContentProps> = ({
       atendimento.assunto?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       atendimento.contato?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = !statusFilter || atendimento.status === statusFilter;
-    const matchesCanal = !canalFilter || atendimento.canal === canalFilter;
+    const matchesStatus = !statusFilter || statusFilter === 'all' || atendimento.status === statusFilter;
+    const matchesCanal = !canalFilter || canalFilter === 'all' || atendimento.canal === canalFilter;
     
     return matchesSearch && matchesStatus && matchesCanal;
   });
 
+  console.log('AtendimentoContent - atendimentos filtrados:', atendimentosFiltrados);
+
   const handleVerDetalhes = (atendimento: any) => {
+    console.log('Ver detalhes do atendimento:', atendimento);
     setSelectedAtendimento(atendimento);
     setIsDetailDialogOpen(true);
   };
 
   const handleExcluir = (atendimento: any) => {
+    console.log('Preparando exclusão do atendimento:', atendimento);
     setAtendimentoToDelete(atendimento);
     setIsDeleteDialogOpen(true);
   };
@@ -56,8 +60,8 @@ export const AtendimentoContent: React.FC<AtendimentoContentProps> = ({
   const handleConfirmDelete = async () => {
     if (atendimentoToDelete?.id) {
       try {
+        console.log('Excluindo atendimento:', atendimentoToDelete.id);
         await excluirAtendimento(atendimentoToDelete.id);
-        toast.success("Atendimento excluído com sucesso!");
         setIsDeleteDialogOpen(false);
         setAtendimentoToDelete(null);
       } catch (error) {
@@ -68,23 +72,12 @@ export const AtendimentoContent: React.FC<AtendimentoContentProps> = ({
   };
 
   const handleEnviarParaOrcamento = (atendimento: any) => {
+    console.log('Enviar para orçamento:', atendimento);
     setSelectedAtendimento(atendimento);
     setIsEnviarOrcamentoOpen(true);
   };
 
-  const handleNovoAtendimento = async (novoAtendimento: any) => {
-    try {
-      await criarAtendimento(novoAtendimento);
-      toast.success("Atendimento criado com sucesso!");
-      setIsNovoAtendimentoOpen(false);
-    } catch (error) {
-      console.error("Erro ao criar atendimento:", error);
-      toast.error("Erro ao criar atendimento");
-    }
-  };
-
   const handleViewHistory = () => {
-    // Implementar visualização do histórico
     console.log("Ver histórico do atendimento");
   };
 
@@ -114,14 +107,17 @@ export const AtendimentoContent: React.FC<AtendimentoContentProps> = ({
         />
       )}
 
-      {/* Use a Dialog wrapper for AtendimentoDetail */}
-      {selectedAtendimento && (
+      {/* Dialog para detalhes do atendimento */}
+      {selectedAtendimento && isDetailDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="p-4 border-b flex justify-between items-center">
               <h2 className="text-lg font-semibold">Detalhes do Atendimento</h2>
               <button 
-                onClick={() => setSelectedAtendimento(null)}
+                onClick={() => {
+                  setSelectedAtendimento(null);
+                  setIsDetailDialogOpen(false);
+                }}
                 className="text-gray-500 hover:text-gray-700"
               >
                 ×
@@ -135,12 +131,6 @@ export const AtendimentoContent: React.FC<AtendimentoContentProps> = ({
           </div>
         </div>
       )}
-
-      <NovoAtendimentoDialog
-        isOpen={isNovoAtendimentoOpen}
-        onOpenChange={setIsNovoAtendimentoOpen}
-        onSubmit={handleNovoAtendimento}
-      />
 
       <EnviarParaOrcamentoDialog
         isOpen={isEnviarOrcamentoOpen}

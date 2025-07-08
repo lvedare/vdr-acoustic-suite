@@ -36,21 +36,27 @@ export const MovimentacaoEstoqueDialog = ({
   const { produtos } = useProdutosAcabados();
   const { insumos } = useInsumos();
 
-  // Encontrar o item selecionado para mostrar a unidade
+  console.log('MovimentacaoEstoqueDialog - produtos carregados:', produtos);
+  console.log('MovimentacaoEstoqueDialog - insumos carregados:', insumos);
+  console.log('MovimentacaoEstoqueDialog - itemSelecionado:', itemSelecionado);
+
+  // Encontrar o item selecionado para mostrar informações
   const itemAtual = tipo === 'produto' 
     ? produtos.find(p => p.id === itemSelecionado)
-    : insumos.find(i => i.id.toString() === itemSelecionado);
+    : insumos.find(i => i.id === itemSelecionado);
 
-  // Corrigir a busca da unidade de medida para cada tipo
-  const unidadeMedida = itemAtual 
-    ? (tipo === 'produto' 
-        ? (itemAtual as any).unidade_medida 
-        : (itemAtual as any).unidadeMedida || (itemAtual as any).unidade_medida)
-    : '';
+  console.log('MovimentacaoEstoqueDialog - itemAtual encontrado:', itemAtual);
+
+  // Obter unidade de medida
+  const unidadeMedida = itemAtual ? itemAtual.unidade_medida : '';
 
   const handleSalvar = async () => {
     if (!motivo || quantidade <= 0 || !itemSelecionado) {
-      console.error('Dados incompletos para movimentação');
+      console.error('Dados incompletos para movimentação:', {
+        motivo,
+        quantidade,
+        itemSelecionado
+      });
       return;
     }
 
@@ -60,20 +66,18 @@ export const MovimentacaoEstoqueDialog = ({
         itemId: itemSelecionado,
         quantidade,
         tipoMovimentacao,
-        motivo
+        motivo,
+        itemAtual
       });
 
       if (tipo === 'produto') {
+        // Para produtos, usar o ID UUID diretamente do Supabase
+        console.log('Atualizando estoque do produto:', itemSelecionado);
         await atualizarEstoqueProduto(itemSelecionado, quantidade, tipoMovimentacao, motivo);
       } else {
-        // Para insumos, converter o ID numérico para string se necessário
-        const insumoUUID = insumos.find(i => i.id.toString() === itemSelecionado)?.id;
-        if (insumoUUID) {
-          await atualizarEstoqueInsumo(insumoUUID.toString(), quantidade, tipoMovimentacao, motivo);
-        } else {
-          console.error('Insumo não encontrado');
-          return;
-        }
+        // Para insumos, usar o ID UUID diretamente do Supabase
+        console.log('Atualizando estoque do insumo:', itemSelecionado);
+        await atualizarEstoqueInsumo(itemSelecionado, quantidade, tipoMovimentacao, motivo);
       }
 
       // Reset form
@@ -119,13 +123,13 @@ export const MovimentacaoEstoqueDialog = ({
                 <SelectContent>
                   {tipo === 'produto' 
                     ? produtos.map((produto) => (
-                        <SelectItem key={produto.id} value={produto.id.toString()}>
+                        <SelectItem key={produto.id} value={produto.id}>
                           {produto.codigo} - {produto.nome} ({produto.unidade_medida})
                         </SelectItem>
                       ))
                     : insumos.map((insumo) => (
-                        <SelectItem key={insumo.id} value={insumo.id.toString()}>
-                          {insumo.codigo} - {insumo.nome} ({(insumo as any).unidadeMedida || (insumo as any).unidade_medida})
+                        <SelectItem key={insumo.id} value={insumo.id}>
+                          {insumo.codigo} - {insumo.nome} ({insumo.unidade_medida})
                         </SelectItem>
                       ))
                   }
@@ -134,11 +138,16 @@ export const MovimentacaoEstoqueDialog = ({
             </div>
           )}
 
-          {itemNome && (
+          {(itemNome || itemAtual) && (
             <div className="p-3 bg-muted rounded-md">
-              <p className="font-medium">{itemNome}</p>
+              <p className="font-medium">{itemNome || itemAtual?.nome}</p>
               {unidadeMedida && (
                 <p className="text-sm text-muted-foreground">Unidade: {unidadeMedida}</p>
+              )}
+              {itemAtual && (
+                <p className="text-sm text-muted-foreground">
+                  Estoque atual: {itemAtual.quantidade_estoque} {unidadeMedida}
+                </p>
               )}
             </div>
           )}

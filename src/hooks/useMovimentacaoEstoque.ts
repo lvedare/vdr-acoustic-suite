@@ -28,7 +28,15 @@ export const useMovimentacaoEstoque = () => {
   });
 
   const atualizarEstoqueProduto = async (produtoId: string, quantidade: number, tipo: 'entrada' | 'saida', motivo: string) => {
-    console.log('Atualizando estoque produto:', { produtoId, quantidade, tipo, motivo });
+    console.log('Atualizando estoque produto - parâmetros:', { produtoId, quantidade, tipo, motivo });
+    
+    // Validar se o produtoId é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(produtoId)) {
+      console.error('ID do produto não é um UUID válido:', produtoId);
+      toast.error('Erro: ID do produto inválido');
+      throw new Error('ID do produto inválido');
+    }
     
     try {
       const movimentacao = {
@@ -42,9 +50,11 @@ export const useMovimentacaoEstoque = () => {
         data_movimentacao: new Date().toISOString()
       };
 
+      console.log('Criando movimentação para produto:', movimentacao);
       await criarMovimentacao.mutateAsync(movimentacao);
 
       // Atualizar estoque do produto
+      console.log(`${tipo === 'entrada' ? 'Adicionando' : 'Removendo'} ${quantidade} do estoque do produto ${produtoId}`);
       if (tipo === 'entrada') {
         await produtoAcabadoService.adicionarEstoque(produtoId, quantidade);
       } else {
@@ -57,7 +67,15 @@ export const useMovimentacaoEstoque = () => {
   };
 
   const atualizarEstoqueInsumo = async (insumoId: string, quantidade: number, tipo: 'entrada' | 'saida', motivo: string) => {
-    console.log('Atualizando estoque insumo:', { insumoId, quantidade, tipo, motivo });
+    console.log('Atualizando estoque insumo - parâmetros:', { insumoId, quantidade, tipo, motivo });
+    
+    // Validar se o insumoId é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(insumoId)) {
+      console.error('ID do insumo não é um UUID válido:', insumoId);
+      toast.error('Erro: ID do insumo inválido');
+      throw new Error('ID do insumo inválido');
+    }
     
     try {
       const movimentacao = {
@@ -71,9 +89,11 @@ export const useMovimentacaoEstoque = () => {
         data_movimentacao: new Date().toISOString()
       };
 
+      console.log('Criando movimentação para insumo:', movimentacao);
       await criarMovimentacao.mutateAsync(movimentacao);
 
       // Atualizar estoque do insumo
+      console.log(`${tipo === 'entrada' ? 'Adicionando' : 'Removendo'} ${quantidade} do estoque do insumo ${insumoId}`);
       if (tipo === 'entrada') {
         await insumoService.adicionarEstoque(insumoId, quantidade);
       } else {

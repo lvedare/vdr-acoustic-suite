@@ -7,7 +7,6 @@ import { Plus, Search, List, Kanban } from "lucide-react";
 import { AtendimentoContent } from "@/components/atendimento/AtendimentoContent";
 import NovoAtendimentoDialog from "@/components/atendimento/NovoAtendimentoDialog";
 import { useAtendimentos } from "@/hooks/useAtendimentos";
-import { toast } from "sonner";
 
 const Atendimento = () => {
   const [view, setView] = useState<'lista' | 'kanban'>('lista');
@@ -20,12 +19,11 @@ const Atendimento = () => {
 
   const handleNovoAtendimento = async (novoAtendimento: any) => {
     try {
+      console.log('Criando novo atendimento:', novoAtendimento);
       await criarAtendimento(novoAtendimento);
-      toast.success("Atendimento criado com sucesso!");
       setIsNovoAtendimentoOpen(false);
     } catch (error) {
       console.error("Erro ao criar atendimento:", error);
-      toast.error("Erro ao criar atendimento");
     }
   };
 
