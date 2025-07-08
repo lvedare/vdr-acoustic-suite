@@ -41,14 +41,19 @@ export const MovimentacaoEstoqueDialog = ({
   console.log('MovimentacaoEstoqueDialog - itemSelecionado:', itemSelecionado);
 
   // Encontrar o item selecionado para mostrar informações
+  // Usar string comparison para todos os IDs
   const itemAtual = tipo === 'produto' 
-    ? produtos.find(p => p.id === itemSelecionado)
-    : insumos.find(i => i.id === itemSelecionado);
+    ? produtos.find(p => String(p.id) === String(itemSelecionado))
+    : insumos.find(i => String(i.id) === String(itemSelecionado));
 
   console.log('MovimentacaoEstoqueDialog - itemAtual encontrado:', itemAtual);
 
-  // Obter unidade de medida
-  const unidadeMedida = itemAtual ? itemAtual.unidade_medida : '';
+  // Obter unidade de medida com propriedades corretas para cada tipo
+  const unidadeMedida = itemAtual 
+    ? tipo === 'produto' 
+      ? itemAtual.unidade_medida 
+      : (itemAtual as any).unidadeMedida || (itemAtual as any).unidade_medida
+    : '';
 
   const handleSalvar = async () => {
     if (!motivo || quantidade <= 0 || !itemSelecionado) {
@@ -73,11 +78,11 @@ export const MovimentacaoEstoqueDialog = ({
       if (tipo === 'produto') {
         // Para produtos, usar o ID UUID diretamente do Supabase
         console.log('Atualizando estoque do produto:', itemSelecionado);
-        await atualizarEstoqueProduto(itemSelecionado, quantidade, tipoMovimentacao, motivo);
+        await atualizarEstoqueProduto(String(itemSelecionado), quantidade, tipoMovimentacao, motivo);
       } else {
-        // Para insumos, usar o ID UUID diretamente do Supabase
+        // Para insumos, usar o ID UUID diretamente do Supabase  
         console.log('Atualizando estoque do insumo:', itemSelecionado);
-        await atualizarEstoqueInsumo(itemSelecionado, quantidade, tipoMovimentacao, motivo);
+        await atualizarEstoqueInsumo(String(itemSelecionado), quantidade, tipoMovimentacao, motivo);
       }
 
       // Reset form
@@ -123,13 +128,13 @@ export const MovimentacaoEstoqueDialog = ({
                 <SelectContent>
                   {tipo === 'produto' 
                     ? produtos.map((produto) => (
-                        <SelectItem key={produto.id} value={produto.id}>
+                        <SelectItem key={produto.id} value={String(produto.id)}>
                           {produto.codigo} - {produto.nome} ({produto.unidade_medida})
                         </SelectItem>
                       ))
                     : insumos.map((insumo) => (
-                        <SelectItem key={insumo.id} value={insumo.id}>
-                          {insumo.codigo} - {insumo.nome} ({insumo.unidade_medida})
+                        <SelectItem key={insumo.id} value={String(insumo.id)}>
+                          {insumo.codigo} - {insumo.nome} ({(insumo as any).unidadeMedida || (insumo as any).unidade_medida})
                         </SelectItem>
                       ))
                   }
@@ -146,7 +151,11 @@ export const MovimentacaoEstoqueDialog = ({
               )}
               {itemAtual && (
                 <p className="text-sm text-muted-foreground">
-                  Estoque atual: {itemAtual.quantidade_estoque} {unidadeMedida}
+                  Estoque atual: {
+                    tipo === 'produto' 
+                      ? itemAtual.quantidade_estoque 
+                      : (itemAtual as any).quantidadeEstoque || (itemAtual as any).quantidade_estoque || 0
+                  } {unidadeMedida}
                 </p>
               )}
             </div>
