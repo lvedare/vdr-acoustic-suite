@@ -78,6 +78,8 @@ export const supabaseService = {
       data: proposta.data,
       cliente: proposta.cliente,
       status: proposta.status,
+      origem: proposta.origem || 'manual',
+      atendimento_id: proposta.atendimento_id,
       itens: proposta.proposta_itens?.map((item: any) => ({
         id: item.id,
         codigo: item.codigo,

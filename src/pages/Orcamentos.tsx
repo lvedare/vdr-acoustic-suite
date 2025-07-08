@@ -1,6 +1,7 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PropostasExportButton from "@/components/orcamento/PropostasExportButton";
 import PropostasFiltradas from "@/components/orcamento/PropostasFiltradas";
 import PropostasMetrics from "@/components/orcamento/PropostasMetrics";
@@ -8,9 +9,12 @@ import PropostasSearch from "@/components/orcamento/PropostasSearch";
 import DeleteConfirmDialog from "@/components/orcamento/DeleteConfirmDialog";
 import StatusChangeDialog from "@/components/orcamento/StatusChangeDialog";
 import PropostaDetailsDialog from "@/components/orcamento/PropostaDetailsDialog";
+import { AtendimentosTab } from "@/components/orcamento/AtendimentosTab";
 import { usePropostas } from "@/hooks/usePropostas";
 
 const Orcamentos = () => {
+  const [activeTab, setActiveTab] = useState("propostas");
+  
   const {
     propostas,
     propostasFiltradas,
@@ -68,6 +72,10 @@ const Orcamentos = () => {
     }
   };
 
+  // Filtrar propostas por origem
+  const propostasOriginais = propostasFiltradas.filter(p => p.origem !== 'atendimento');
+  const propostasDeAtendimento = propostasFiltradas.filter(p => p.origem === 'atendimento');
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -77,18 +85,34 @@ const Orcamentos = () => {
 
       <PropostasMetrics propostas={propostas} />
 
-      <div className="grid gap-6">
-        <PropostasSearch 
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-        />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="propostas">Propostas ({propostasOriginais.length})</TabsTrigger>
+          <TabsTrigger value="atendimentos">Atendimentos ({propostasDeAtendimento.length})</TabsTrigger>
+        </TabsList>
         
-        <PropostasFiltradas
-          propostas={propostasFiltradas}
-          status="enviada"
-          formatDate={formatDate}
-        />
-      </div>
+        <TabsContent value="propostas" className="space-y-6">
+          <div className="grid gap-6">
+            <PropostasSearch 
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+            />
+            
+            <PropostasFiltradas
+              propostas={propostasOriginais}
+              status="enviada"
+              formatDate={formatDate}
+            />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="atendimentos" className="space-y-6">
+          <AtendimentosTab 
+            propostas={propostasDeAtendimento}
+            formatDate={formatDate}
+          />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DeleteConfirmDialog

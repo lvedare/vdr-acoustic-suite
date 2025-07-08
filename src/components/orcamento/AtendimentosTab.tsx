@@ -5,101 +5,148 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, Plus, Search } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { Eye, Edit, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-export const AtendimentosTab = () => {
-  const [atendimentosParaOrcamento, setAtendimentosParaOrcamento] = useState<any[]>([]);
+interface AtendimentosTabProps {
+  propostas: any[];
+  formatDate: (date: string) => string;
+}
+
+export const AtendimentosTab: React.FC<AtendimentosTabProps> = ({ propostas, formatDate }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [atendimentosDetalhes, setAtendimentosDetalhes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Carregar atendimentos enviados do CRM
+  // Carregar detalhes dos atendimentos
   useEffect(() => {
-    const loadAtendimentos = () => {
-      const atendimentos = JSON.parse(localStorage.getItem('atendimentos_para_orcamento') || '[]');
-      setAtendimentosParaOrcamento(atendimentos);
+    const carregarAtendimentos = async () => {
+      if (propostas.length === 0) {
+        setAtendimentosDetalhes([]);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const atendimentosIds = propostas
+          .filter(p => p.atendimento_id)
+          .map(p => p.atendimento_id);
+
+        if (atendimentosIds.length === 0) {
+          setAtendimentosDetalhes([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: atendimentos, error } = await supabase
+          .from('atendimentos')
+          .select(`
+            *,
+            cliente:clientes(empresa)
+          `)
+          .in('id', atendimentosIds);
+
+        if (error) {
+          console.error('Erro ao carregar atendimentos:', error);
+          setAtendimentosDetalhes([]);
+        } else {
+          // Combinar dados das propostas com dados dos atendimentos
+          const dadosCompletos = propostas.map(proposta => {
+            const atendimento = atendimentos?.find(a => a.id === proposta.atendimento_id);
+            return {
+              ...proposta,
+              atendimento: atendimento ? {
+                ...atendimento,
+                empresa: atendimento.cliente?.empresa || null
+              } : null
+            };
+          });
+          setAtendimentosDetalhes(dadosCompletos);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar atendimentos:', error);
+        setAtendimentosDetalhes([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    loadAtendimentos();
-    
-    // Escutar mudanças no localStorage
-    const handleStorageChange = () => {
-      loadAtendimentos();
-    };
+    carregarAtendimentos();
+  }, [propostas]);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  // Filtrar propostas de atendimentos
+  const atendimentosFiltrados = atendimentosDetalhes.filter(item => {
+    const atendimento = item.atendimento;
+    if (!atendimento) return false;
 
-  // Filtrar atendimentos
-  const atendimentosFiltrados = atendimentosParaOrcamento.filter(atendimento => {
     const matchesSearch = !searchTerm || 
       atendimento.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      atendimento.assunto?.toLowerCase().includes(searchTerm.toLowerCase());
+      atendimento.assunto?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.numero?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = !statusFilter || atendimento.status === statusFilter;
+    const matchesStatus = !statusFilter || item.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  const handleCriarOrcamento = (atendimento: any) => {
-    // Criar novo orçamento baseado no atendimento
-    const novoOrcamento = {
-      id: Date.now(),
-      numero: `ORC-${Date.now()}`,
-      cliente_nome: atendimento.cliente_nome,
-      cliente_id: atendimento.cliente_id,
-      data: new Date().toISOString().split('T')[0],
-      status: 'rascunho',
-      valor_total: 0,
-      atendimento_origem: atendimento,
-      observacoes: atendimento.observacoes_orcamento || ''
-    };
+  const handleEditarOrcamento = (proposta: any) => {
+    navigate(`/novo-orcamento`, { 
+      state: { propostaId: Number(proposta.id), isEdit: true } 
+    });
+  };
 
-    // Salvar no localStorage
-    const orcamentos = JSON.parse(localStorage.getItem('orcamentos_do_atendimento') || '[]');
-    orcamentos.push(novoOrcamento);
-    localStorage.setItem('orcamentos_do_atendimento', JSON.stringify(orcamentos));
-
-    toast.success("Orçamento criado com sucesso!");
-    
-    // Remover da lista de atendimentos pendentes
-    const atendimentosAtualizados = atendimentosParaOrcamento.filter(a => a.id !== atendimento.id);
-    setAtendimentosParaOrcamento(atendimentosAtualizados);
-    localStorage.setItem('atendimentos_para_orcamento', JSON.stringify(atendimentosAtualizados));
+  const handleVisualizarOrcamento = (proposta: any) => {
+    navigate(`/visualizar-orcamento/${proposta.id}`);
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'Novo': { variant: 'default' as const, color: 'bg-blue-500' },
-      'Em Andamento': { variant: 'secondary' as const, color: 'bg-yellow-500' },
-      'Resolvido': { variant: 'outline' as const, color: 'bg-green-500' },
-      'Fechado': { variant: 'outline' as const, color: 'bg-gray-500' }
+      'rascunho': { variant: 'secondary' as const, label: 'Rascunho' },
+      'enviada': { variant: 'default' as const, label: 'Enviada' },
+      'aprovada': { variant: 'outline' as const, label: 'Aprovada' },
+      'rejeitada': { variant: 'destructive' as const, label: 'Rejeitada' },
+      'expirada': { variant: 'secondary' as const, label: 'Expirada' }
     };
     
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['Novo'];
-    return <Badge variant={config.variant}>{status}</Badge>;
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['rascunho'];
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <p className="text-muted-foreground">Carregando atendimentos...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-4">Atendimentos Recebidos do CRM</h3>
+        <h3 className="text-lg font-medium mb-4">Propostas Originadas de Atendimentos</h3>
         <p className="text-sm text-muted-foreground mb-6">
-          Atendimentos enviados do módulo de CRM que estão aguardando criação de orçamento.
+          Propostas criadas a partir de atendimentos enviados do módulo de CRM.
         </p>
       </div>
 
       {/* Filtros */}
       <div className="flex gap-4 items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Buscar por cliente ou assunto..."
+            placeholder="Buscar por cliente, assunto ou número da proposta..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -108,67 +155,84 @@ export const AtendimentosTab = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">Todos os status</SelectItem>
-            <SelectItem value="Novo">Novo</SelectItem>
-            <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-            <SelectItem value="Resolvido">Resolvido</SelectItem>
-            <SelectItem value="Fechado">Fechado</SelectItem>
+            <SelectItem value="rascunho">Rascunho</SelectItem>
+            <SelectItem value="enviada">Enviada</SelectItem>
+            <SelectItem value="aprovada">Aprovada</SelectItem>
+            <SelectItem value="rejeitada">Rejeitada</SelectItem>
+            <SelectItem value="expirada">Expirada</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Lista de Atendimentos */}
+      {/* Lista de Propostas de Atendimentos */}
       <div className="grid gap-4">
         {atendimentosFiltrados.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <p className="text-muted-foreground">
-                {atendimentosParaOrcamento.length === 0 
-                  ? "Nenhum atendimento foi enviado do CRM ainda."
-                  : "Nenhum atendimento encontrado com os filtros aplicados."
+                {atendimentosDetalhes.length === 0 
+                  ? "Nenhuma proposta de atendimento foi criada ainda."
+                  : "Nenhuma proposta encontrada com os filtros aplicados."
                 }
               </p>
               <p className="text-sm text-muted-foreground mt-2">
-                Os atendimentos enviados do módulo de CRM aparecerão aqui.
+                As propostas criadas a partir de atendimentos aparecerão aqui.
               </p>
             </CardContent>
           </Card>
         ) : (
-          atendimentosFiltrados.map((atendimento) => (
-            <Card key={atendimento.id} className="hover:shadow-md transition-shadow">
+          atendimentosFiltrados.map((item) => (
+            <Card key={item.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">{atendimento.cliente_nome}</CardTitle>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <span>{item.numero}</span>
+                      <Badge variant="outline" className="text-xs">
+                        Atendimento
+                      </Badge>
+                    </CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {atendimento.assunto}
+                      Cliente: {item.atendimento?.cliente_nome}
+                      {item.atendimento?.empresa && (
+                        <span className="ml-2">({item.atendimento.empresa})</span>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {getStatusBadge(atendimento.status)}
+                    {getStatusBadge(item.status)}
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
+                    <p className="text-sm font-medium text-muted-foreground">Assunto Original</p>
+                    <p className="text-sm">{item.atendimento?.assunto || 'N/A'}</p>
+                  </div>
+                  <div>
                     <p className="text-sm font-medium text-muted-foreground">Canal</p>
-                    <p className="text-sm">{atendimento.canal}</p>
+                    <p className="text-sm">{item.atendimento?.canal || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Valor da Proposta</p>
+                    <p className="text-sm font-medium">{formatCurrency(item.valor_total || 0)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Data da Proposta</p>
+                    <p className="text-sm">{formatDate(item.data)}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Contato</p>
-                    <p className="text-sm">{atendimento.contato}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Data do Atendimento</p>
-                    <p className="text-sm">{formatDate(atendimento.data)}</p>
+                    <p className="text-sm">{item.atendimento?.contato || 'N/A'}</p>
                   </div>
                 </div>
 
-                {atendimento.observacoes_orcamento && (
+                {item.observacoes && (
                   <div className="mb-4">
-                    <p className="text-sm font-medium text-muted-foreground">Observações para Orçamento</p>
+                    <p className="text-sm font-medium text-muted-foreground">Observações</p>
                     <p className="text-sm bg-gray-50 p-2 rounded mt-1">
-                      {atendimento.observacoes_orcamento}
+                      {item.observacoes}
                     </p>
                   </div>
                 )}
@@ -177,17 +241,18 @@ export const AtendimentosTab = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {/* Ver detalhes do atendimento */}}
+                    onClick={() => handleVisualizarOrcamento(item)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    Ver Detalhes
+                    Visualizar
                   </Button>
                   <Button
+                    variant="outline"
                     size="sm"
-                    onClick={() => handleCriarOrcamento(atendimento)}
+                    onClick={() => handleEditarOrcamento(item)}
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Criar Orçamento
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar Proposta
                   </Button>
                 </div>
               </CardContent>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { Proposta } from '@/types/orcamento';
 import { supabaseService } from '@/services/supabaseService';
@@ -56,7 +55,13 @@ export const usePropostas = () => {
       const data = await supabaseService.listarPropostas();
       console.log('Propostas carregadas:', data);
       
-      setPropostas(data);
+      // Certificar que todas as propostas tenham o campo origem
+      const propostasComOrigem = data.map(proposta => ({
+        ...proposta,
+        origem: proposta.origem || 'manual'
+      }));
+      
+      setPropostas(propostasComOrigem);
     } catch (error) {
       console.error('Erro ao carregar propostas:', error);
       setError('Erro ao carregar propostas');

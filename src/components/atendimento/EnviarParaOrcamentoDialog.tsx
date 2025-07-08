@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EnviarParaOrcamentoDialogProps {
   isOpen: boolean;
@@ -40,45 +41,40 @@ export const EnviarParaOrcamentoDialog: React.FC<EnviarParaOrcamentoDialogProps>
     try {
       console.log('Enviando atendimento para orçamento:', atendimento);
       
-      // Preparar dados do atendimento para orçamento
-      const atendimentoParaOrcamento = {
-        id: atendimento.id,
-        cliente_nome: atendimento.cliente_nome,
-        empresa: atendimento.empresa,
-        cliente_id: atendimento.cliente_id,
-        assunto: atendimento.assunto,
-        contato: atendimento.contato,
-        canal: atendimento.canal,
-        data: atendimento.data,
-        hora: atendimento.hora,
-        status: atendimento.status,
-        mensagem: atendimento.mensagem,
-        observacoes_orcamento: observacoes,
-        enviado_para_orcamento: true,
-        data_envio_orcamento: new Date().toISOString()
-      };
+      // Gerar número da proposta
+      const numeroPropostaSuffix = Math.random().toString(36).substr(2, 6).toUpperCase();
+      const numeroProposta = `PROP-${numeroPropostaSuffix}`;
+      
+      // Criar proposta no Supabase
+      const { data: novaProposta, error } = await supabase
+        .from('propostas')
+        .insert({
+          numero: numeroProposta,
+          data: new Date().toISOString().split('T')[0],
+          cliente_id: atendimento.cliente_id,
+          atendimento_id: atendimento.id,
+          origem: 'atendimento',
+          status: 'rascunho',
+          observacoes: observacoes || `Proposta gerada a partir do atendimento: ${atendimento.assunto}`,
+          valor_total: 0
+        })
+        .select()
+        .single();
 
-      // Salvar no localStorage para ser usado no módulo de orçamento
-      const chaveAtendimento = `atendimento_orcamento_${atendimento.id}`;
-      localStorage.setItem(chaveAtendimento, JSON.stringify(atendimentoParaOrcamento));
-      
-      // Adicionar à lista de atendimentos para orçamento
-      const atendimentosExistentes = JSON.parse(localStorage.getItem('atendimentos_para_orcamento') || '[]');
-      
-      // Verificar se já existe para evitar duplicatas
-      const jaExiste = atendimentosExistentes.some((item: any) => item.id === atendimento.id);
-      
-      if (!jaExiste) {
-        atendimentosExistentes.push(atendimentoParaOrcamento);
-        localStorage.setItem('atendimentos_para_orcamento', JSON.stringify(atendimentosExistentes));
-        console.log('Atendimento adicionado à lista de orçamentos:', atendimentosExistentes);
+      if (error) {
+        console.error('Erro ao criar proposta:', error);
+        throw error;
       }
 
-      // Disparar evento de mudança no localStorage para atualizar outras abas
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'atendimentos_para_orcamento',
-        newValue: JSON.stringify(atendimentosExistentes)
-      }));
+      console.log('Proposta criada com sucesso:', novaProposta);
+
+      // Remover dados antigos do localStorage (migração)
+      const chaveAtendimento = `atendimento_orcamento_${atendimento.id}`;
+      localStorage.removeItem(chaveAtendimento);
+      
+      const atendimentosExistentes = JSON.parse(localStorage.getItem('atendimentos_para_orcamento') || '[]');
+      const atendimentosAtualizados = atendimentosExistentes.filter((item: any) => item.id !== atendimento.id);
+      localStorage.setItem('atendimentos_para_orcamento', JSON.stringify(atendimentosAtualizados));
 
       toast.success("Atendimento enviado para orçamento com sucesso!");
       onOpenChange(false);
