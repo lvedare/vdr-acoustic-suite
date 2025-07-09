@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,7 +12,7 @@ import { AtendimentosTab } from "@/components/orcamento/AtendimentosTab";
 import { usePropostas } from "@/hooks/usePropostas";
 
 const Orcamentos = () => {
-  const [activeTab, setActiveTab] = useState("propostas");
+  const [activeTab, setActiveTab] = useState("atendimentos");
   
   const {
     propostas,
@@ -72,8 +71,8 @@ const Orcamentos = () => {
     }
   };
 
-  // Filtrar propostas por origem
-  const propostasOriginais = propostasFiltradas.filter(p => p.origem !== 'atendimento');
+  // Filtrar propostas por origem com verificação de segurança
+  const propostasOriginais = propostasFiltradas.filter(p => !p.origem || p.origem !== 'atendimento');
   const propostasDeAtendimento = propostasFiltradas.filter(p => p.origem === 'atendimento');
 
   return (
@@ -87,9 +86,16 @@ const Orcamentos = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="propostas">Propostas ({propostasOriginais.length})</TabsTrigger>
           <TabsTrigger value="atendimentos">Atendimentos ({propostasDeAtendimento.length})</TabsTrigger>
+          <TabsTrigger value="propostas">Propostas ({propostasOriginais.length})</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="atendimentos" className="space-y-6">
+          <AtendimentosTab 
+            propostas={propostasDeAtendimento}
+            formatDate={formatDate}
+          />
+        </TabsContent>
         
         <TabsContent value="propostas" className="space-y-6">
           <div className="grid gap-6">
@@ -104,13 +110,6 @@ const Orcamentos = () => {
               formatDate={formatDate}
             />
           </div>
-        </TabsContent>
-        
-        <TabsContent value="atendimentos" className="space-y-6">
-          <AtendimentosTab 
-            propostas={propostasDeAtendimento}
-            formatDate={formatDate}
-          />
         </TabsContent>
       </Tabs>
 

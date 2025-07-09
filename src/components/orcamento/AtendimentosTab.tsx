@@ -25,6 +25,8 @@ export const AtendimentosTab: React.FC<AtendimentosTabProps> = ({ propostas, for
   // Carregar detalhes dos atendimentos
   useEffect(() => {
     const carregarAtendimentos = async () => {
+      console.log('AtendimentosTab - propostas recebidas:', propostas);
+      
       if (propostas.length === 0) {
         setAtendimentosDetalhes([]);
         setIsLoading(false);
@@ -35,6 +37,8 @@ export const AtendimentosTab: React.FC<AtendimentosTabProps> = ({ propostas, for
         const atendimentosIds = propostas
           .filter(p => p.atendimento_id)
           .map(p => p.atendimento_id);
+
+        console.log('AtendimentosTab - IDs de atendimentos:', atendimentosIds);
 
         if (atendimentosIds.length === 0) {
           setAtendimentosDetalhes([]);
@@ -52,8 +56,11 @@ export const AtendimentosTab: React.FC<AtendimentosTabProps> = ({ propostas, for
 
         if (error) {
           console.error('Erro ao carregar atendimentos:', error);
+          toast.error('Erro ao carregar detalhes dos atendimentos');
           setAtendimentosDetalhes([]);
         } else {
+          console.log('AtendimentosTab - atendimentos carregados:', atendimentos);
+          
           // Combinar dados das propostas com dados dos atendimentos
           const dadosCompletos = propostas.map(proposta => {
             const atendimento = atendimentos?.find(a => a.id === proposta.atendimento_id);
@@ -65,10 +72,13 @@ export const AtendimentosTab: React.FC<AtendimentosTabProps> = ({ propostas, for
               } : null
             };
           });
+          
+          console.log('AtendimentosTab - dados completos:', dadosCompletos);
           setAtendimentosDetalhes(dadosCompletos);
         }
       } catch (error) {
         console.error('Erro ao carregar atendimentos:', error);
+        toast.error('Erro inesperado ao carregar atendimentos');
         setAtendimentosDetalhes([]);
       } finally {
         setIsLoading(false);
@@ -120,7 +130,7 @@ export const AtendimentosTab: React.FC<AtendimentosTabProps> = ({ propostas, for
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
-    }).format(value);
+    }).format(value || 0);
   };
 
   if (isLoading) {
@@ -154,7 +164,7 @@ export const AtendimentosTab: React.FC<AtendimentosTabProps> = ({ propostas, for
             <SelectValue placeholder="Filtrar por status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os status</SelectItem>
+            <SelectItem value="todos">Todos os status</SelectItem>
             <SelectItem value="rascunho">Rascunho</SelectItem>
             <SelectItem value="enviada">Enviada</SelectItem>
             <SelectItem value="aprovada">Aprovada</SelectItem>
@@ -193,7 +203,7 @@ export const AtendimentosTab: React.FC<AtendimentosTabProps> = ({ propostas, for
                       </Badge>
                     </CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Cliente: {item.atendimento?.cliente_nome}
+                      Cliente: {item.atendimento?.cliente_nome || 'N/A'}
                       {item.atendimento?.empresa && (
                         <span className="ml-2">({item.atendimento.empresa})</span>
                       )}
