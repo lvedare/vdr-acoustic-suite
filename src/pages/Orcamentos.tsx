@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PropostasExportButton from "@/components/orcamento/PropostasExportButton";
@@ -13,6 +14,7 @@ import { usePropostas } from "@/hooks/usePropostas";
 
 const Orcamentos = () => {
   const [activeTab, setActiveTab] = useState("atendimentos");
+  const [isInitialized, setIsInitialized] = useState(false);
   
   const {
     propostas,
@@ -36,6 +38,25 @@ const Orcamentos = () => {
     isLoading,
     error
   } = usePropostas();
+
+  // Inicializar componente após carregar dados
+  useEffect(() => {
+    if (!isLoading && !error) {
+      setIsInitialized(true);
+    }
+  }, [isLoading, error]);
+
+  // Mostrar loading enquanto inicializa
+  if (!isInitialized) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando módulo de orçamentos...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -72,17 +93,19 @@ const Orcamentos = () => {
   };
 
   // Filtrar propostas por origem com verificação de segurança
-  const propostasOriginais = propostasFiltradas.filter(p => !p.origem || p.origem !== 'atendimento');
-  const propostasDeAtendimento = propostasFiltradas.filter(p => p.origem === 'atendimento');
+  const propostasOriginais = Array.isArray(propostasFiltradas) ? 
+    propostasFiltradas.filter(p => !p.origem || p.origem !== 'atendimento') : [];
+  const propostasDeAtendimento = Array.isArray(propostasFiltradas) ? 
+    propostasFiltradas.filter(p => p.origem === 'atendimento') : [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Gerenciamento de Orçamentos</h1>
-        <PropostasExportButton propostas={propostasFiltradas} />
+        <PropostasExportButton propostas={propostasFiltradas || []} />
       </div>
 
-      <PropostasMetrics propostas={propostas} />
+      <PropostasMetrics propostas={propostas || []} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
