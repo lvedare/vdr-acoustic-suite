@@ -210,6 +210,24 @@ export const supabaseService = {
       })) || [];
     },
 
+    async listarPendentesOrcamento() {
+      const { data, error } = await supabase
+        .from('atendimentos')
+        .select(`
+          *,
+          cliente:clientes(*)
+        `)
+        .eq('status', 'Enviado para Orçamento')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao listar atendimentos pendentes de orçamento:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+
     async atualizar(id: string, atendimento: any) {
       const { data, error } = await supabase
         .from('atendimentos')

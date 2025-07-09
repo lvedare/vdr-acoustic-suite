@@ -41,42 +41,23 @@ export const EnviarParaOrcamentoDialog: React.FC<EnviarParaOrcamentoDialogProps>
     try {
       console.log('Enviando atendimento para orçamento:', atendimento);
       
-      // Gerar número da proposta
-      const numeroPropostaSuffix = Math.random().toString(36).substr(2, 6).toUpperCase();
-      const numeroProposta = `PROP-${numeroPropostaSuffix}`;
-      
-      // Criar proposta no Supabase
-      const { data: novaProposta, error } = await supabase
-        .from('propostas')
-        .insert({
-          numero: numeroProposta,
-          data: new Date().toISOString().split('T')[0],
-          cliente_id: atendimento.cliente_id,
-          atendimento_id: atendimento.id,
-          origem: 'atendimento',
-          status: 'rascunho',
-          observacoes: observacoes || `Proposta gerada a partir do atendimento: ${atendimento.assunto}`,
-          valor_total: 0
+      // Atualizar o status do atendimento para "Enviado para Orçamento"
+      const { error } = await supabase
+        .from('atendimentos')
+        .update({
+          status: 'Enviado para Orçamento',
+          mensagem: observacoes ? `${atendimento.mensagem || ''}\n\nObservações para orçamento: ${observacoes}` : atendimento.mensagem
         })
-        .select()
-        .single();
+        .eq('id', atendimento.id);
 
       if (error) {
-        console.error('Erro ao criar proposta:', error);
+        console.error('Erro ao atualizar atendimento:', error);
         throw error;
       }
 
-      console.log('Proposta criada com sucesso:', novaProposta);
+      console.log('Atendimento enviado para orçamento com sucesso');
 
-      // Remover dados antigos do localStorage (migração)
-      const chaveAtendimento = `atendimento_orcamento_${atendimento.id}`;
-      localStorage.removeItem(chaveAtendimento);
-      
-      const atendimentosExistentes = JSON.parse(localStorage.getItem('atendimentos_para_orcamento') || '[]');
-      const atendimentosAtualizados = atendimentosExistentes.filter((item: any) => item.id !== atendimento.id);
-      localStorage.setItem('atendimentos_para_orcamento', JSON.stringify(atendimentosAtualizados));
-
-      toast.success("Atendimento enviado para orçamento com sucesso!");
+      toast.success("Atendimento enviado para o módulo de orçamentos com sucesso!");
       onOpenChange(false);
       setObservacoes("");
       
@@ -105,6 +86,7 @@ export const EnviarParaOrcamentoDialog: React.FC<EnviarParaOrcamentoDialogProps>
           <DialogDescription>
             Você está enviando o atendimento de <strong>{atendimento.cliente_nome}</strong>
             {atendimento.empresa && <span> ({atendimento.empresa})</span>} para o módulo de orçamentos.
+            O orçamentista poderá criar uma proposta a partir deste atendimento.
           </DialogDescription>
         </DialogHeader>
         
@@ -121,10 +103,10 @@ export const EnviarParaOrcamentoDialog: React.FC<EnviarParaOrcamentoDialogProps>
           </div>
           
           <div>
-            <Label htmlFor="observacoes">Observações para o Orçamento</Label>
+            <Label htmlFor="observacoes">Observações para o Orçamentista</Label>
             <Textarea
               id="observacoes"
-              placeholder="Adicione observações ou requisitos específicos para este orçamento..."
+              placeholder="Adicione observações ou requisitos específicos que o orçamentista deve considerar..."
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               className="mt-1"
