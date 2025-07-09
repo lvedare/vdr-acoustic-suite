@@ -1,3 +1,4 @@
+
 // Tipos utilizados no módulo de orçamentos
 export interface ClienteSimplificado {
   id: number | string;
@@ -39,6 +40,8 @@ export interface Proposta {
   data: string;
   cliente: ClienteSimplificado;
   status: "rascunho" | "enviada" | "aprovada" | "rejeitada" | "expirada";
+  origem?: string; // Added origem property
+  atendimento_id?: string | number; // Added atendimento_id property
   itens: ItemProposta[];
   custos: CustoProposta[];
   observacoes: string;
