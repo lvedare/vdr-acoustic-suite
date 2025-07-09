@@ -25,16 +25,18 @@ export const usePropostas = () => {
 
   // Computed properties
   const propostasAprovadas = useMemo(() => 
-    propostas.filter(p => p.status === 'aprovada'), 
+    Array.isArray(propostas) ? propostas.filter(p => p.status === 'aprovada') : [], 
     [propostas]
   );
 
   const propostasFiltradas = useMemo(() => {
+    if (!Array.isArray(propostas)) return [];
+    
     let filtered = propostas;
 
     if (searchTerm) {
       filtered = filtered.filter(proposta =>
-        proposta.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        proposta.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         proposta.cliente?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -50,10 +52,16 @@ export const usePropostas = () => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log('Carregando propostas...');
+      console.log('Iniciando carregamento das propostas...');
       
       const data = await supabaseService.listarPropostas();
-      console.log('Propostas carregadas:', data);
+      console.log('Propostas recebidas do serviço:', data);
+      
+      if (!Array.isArray(data)) {
+        console.warn('Dados recebidos não são um array:', data);
+        setPropostas([]);
+        return;
+      }
       
       // Certificar que todas as propostas tenham o campo origem
       const propostasComOrigem = data.map(proposta => ({
@@ -61,11 +69,14 @@ export const usePropostas = () => {
         origem: proposta.origem || 'manual'
       }));
       
+      console.log('Propostas processadas:', propostasComOrigem);
       setPropostas(propostasComOrigem);
+      
     } catch (error) {
-      console.error('Erro ao carregar propostas:', error);
-      setError('Erro ao carregar propostas');
-      toast.error('Erro ao carregar propostas');
+      console.error('Erro detalhado ao carregar propostas:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido ao carregar propostas';
+      setError(errorMessage);
+      toast.error('Erro ao carregar propostas: ' + errorMessage);
       setPropostas([]);
     } finally {
       setIsLoading(false);
@@ -74,10 +85,13 @@ export const usePropostas = () => {
 
   const carregarClientes = async () => {
     try {
+      console.log('Carregando clientes...');
       const data = await supabaseService.listarClientes();
-      setClientes(data);
+      console.log('Clientes carregados:', data);
+      setClientes(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
+      setClientes([]);
     }
   };
 
@@ -147,7 +161,6 @@ export const usePropostas = () => {
     }
   };
 
-  // Dialog handlers
   const handleVerDetalhes = (proposta: Proposta) => {
     setPropostaSelecionada(proposta);
     setIsDetailDialogOpen(true);
@@ -190,9 +203,20 @@ export const usePropostas = () => {
     };
   };
 
+  // Carregar dados na inicialização
   useEffect(() => {
-    carregarPropostas();
-    carregarClientes();
+    console.log('usePropostas - useEffect executado');
+    const initializeData = async () => {
+      await Promise.all([
+        carregarPropostas(),
+        carregarClientes()
+      ]);
+    };
+    
+    initializeData().catch(error => {
+      console.error('Erro na inicialização:', error);
+      setError('Erro na inicialização dos dados');
+    });
   }, []);
 
   return {
