@@ -1,62 +1,76 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-
-export interface Fornecedor {
-  id: number;
-  nome: string;
-  cnpj: string;
-  telefone: string;
-  email: string;
-  endereco: string;
-  cidade: string;
-  uf: string;
-  categoria: string;
-}
+import { categoriasAcusticas } from '@/types/supabase-extended';
 
 interface FornecedorDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  fornecedor: Fornecedor | null;
-  onSalvar: (fornecedor: Fornecedor) => void;
+  fornecedor: any | null;
+  onSalvar: (fornecedor: any) => void;
 }
 
-const categorias = ['Madeira', 'Fixação', 'Adesivo', 'Pintura', 'Elétrico', 'Hidráulico', 'Ferragem', 'Outros'];
+const estados = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA",
+  "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+];
 
 export const FornecedorDialog = ({ isOpen, onOpenChange, fornecedor, onSalvar }: FornecedorDialogProps) => {
-  const [formData, setFormData] = useState<Omit<Fornecedor, 'id'>>({
-    nome: fornecedor?.nome || '',
-    cnpj: fornecedor?.cnpj || '',
-    telefone: fornecedor?.telefone || '',
-    email: fornecedor?.email || '',
-    endereco: fornecedor?.endereco || '',
-    cidade: fornecedor?.cidade || '',
-    uf: fornecedor?.uf || '',
-    categoria: fornecedor?.categoria || ''
+  const [formData, setFormData] = useState({
+    nome: '',
+    cnpj: '',
+    telefone: '',
+    email: '',
+    endereco: '',
+    cidade: '',
+    estado: '',
+    cep: '',
+    categoria: '',
+    ativo: true
   });
-  
-  const estados = [
-    "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA",
-    "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
-  ];
+
+  useEffect(() => {
+    if (fornecedor) {
+      setFormData({
+        nome: fornecedor.nome || '',
+        cnpj: fornecedor.cnpj || '',
+        telefone: fornecedor.telefone || '',
+        email: fornecedor.email || '',
+        endereco: fornecedor.endereco || '',
+        cidade: fornecedor.cidade || '',
+        estado: fornecedor.estado || '',
+        cep: fornecedor.cep || '',
+        categoria: fornecedor.categoria || '',
+        ativo: fornecedor.ativo !== false
+      });
+    } else {
+      setFormData({
+        nome: '',
+        cnpj: '',
+        telefone: '',
+        email: '',
+        endereco: '',
+        cidade: '',
+        estado: '',
+        cep: '',
+        categoria: '',
+        ativo: true
+      });
+    }
+  }, [fornecedor, isOpen]);
   
   const handleSalvar = () => {
-    if (!formData.nome || !formData.cnpj) {
-      toast.error("Nome e CNPJ são campos obrigatórios");
+    if (!formData.nome.trim()) {
+      toast.error("Nome é obrigatório");
       return;
     }
     
-    onSalvar({
-      id: fornecedor?.id || Date.now(),
-      ...formData
-    });
-    
-    onOpenChange(false);
+    onSalvar(formData);
   };
   
   return (
@@ -80,7 +94,7 @@ export const FornecedorDialog = ({ isOpen, onOpenChange, fornecedor, onSalvar }:
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cnpj">CNPJ *</Label>
+              <Label htmlFor="cnpj">CNPJ</Label>
               <Input
                 id="cnpj"
                 value={formData.cnpj}
@@ -119,7 +133,7 @@ export const FornecedorDialog = ({ isOpen, onOpenChange, fornecedor, onSalvar }:
           </div>
           
           <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2 col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="cidade">Cidade</Label>
               <Input
                 id="cidade"
@@ -128,36 +142,42 @@ export const FornecedorDialog = ({ isOpen, onOpenChange, fornecedor, onSalvar }:
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="uf">UF</Label>
+              <Label htmlFor="estado">UF</Label>
               <Select
-                value={formData.uf || "selecionar"}
-                onValueChange={(value) => setFormData({ ...formData, uf: value === "selecionar" ? "" : value })}
+                value={formData.estado || ""}
+                onValueChange={(value) => setFormData({ ...formData, estado: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="UF" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="selecionar">Selecione</SelectItem>
                   {estados.map(uf => (
                     <SelectItem key={uf} value={uf}>{uf}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="cep">CEP</Label>
+              <Input
+                id="cep"
+                value={formData.cep}
+                onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+              />
+            </div>
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="categoria">Categoria</Label>
             <Select
-              value={formData.categoria || "selecionar"}
-              onValueChange={(value) => setFormData({ ...formData, categoria: value === "selecionar" ? "" : value })}
+              value={formData.categoria || ""}
+              onValueChange={(value) => setFormData({ ...formData, categoria: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="selecionar">Selecione</SelectItem>
-                {categorias.map(categoria => (
+                {categoriasAcusticas.map(categoria => (
                   <SelectItem key={categoria} value={categoria}>{categoria}</SelectItem>
                 ))}
               </SelectContent>

@@ -1,7 +1,7 @@
 
 // Tipos relacionados a insumos
 export interface Insumo {
-  id: number;
+  id: string;
   codigo: string;
   nome: string;
   descricao: string;
@@ -12,6 +12,8 @@ export interface Insumo {
   fornecedor?: string;
   dataCadastro: string;
   podeSerRevendido: boolean;
+  ncm?: string;
+  custoMedio: number;
 }
 
 export interface InsumoVazio extends Omit<Insumo, "id"> {}
@@ -24,16 +26,24 @@ export interface InsumoProduto {
   observacao?: string;
 }
 
+// Categorias corretas do negócio acústico
 export const categoriasInsumo = [
-  "Madeira",
-  "Metal",
-  "Tecido",
-  "Fixação",
-  "Químico",
-  "Elétrico",
-  "Vidro",
-  "Plástico",
-  "Outro"
+  "Forro de Isolamento",
+  "Forro de Tratamento", 
+  "Divisória Acústica",
+  "Contra Parede Acústica",
+  "Revestimento Amadeirado",
+  "Revestimento de Espuma",
+  "Painéis Acústico de Madeira",
+  "Painéis Acústico de Tecido",
+  "Difusores Acústico de Madeira",
+  "Difusores Acústico de Espuma",
+  "Porta Acústica de Madeira",
+  "Porta Acústica Metálica",
+  "Atenuador de Ruído",
+  "Silencioso Hospitalar",
+  "Carenagem Acústica",
+  "Enclausuramento Acústico"
 ];
 
 // Status de estoque

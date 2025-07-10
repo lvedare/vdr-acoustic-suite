@@ -60,6 +60,10 @@ export const useMovimentacaoEstoque = () => {
       } else {
         await produtoAcabadoService.removerEstoque(produtoId, quantidade);
       }
+      
+      // Invalidar queries para atualizar os dados
+      queryClient.invalidateQueries({ queryKey: ['produtos-acabados'] });
+      
     } catch (error) {
       console.error('Erro ao atualizar estoque do produto:', error);
       throw error;
@@ -99,6 +103,10 @@ export const useMovimentacaoEstoque = () => {
       } else {
         await insumoService.removerEstoque(insumoId, quantidade);
       }
+      
+      // Invalidar queries para atualizar os dados
+      queryClient.invalidateQueries({ queryKey: ['insumos'] });
+      
     } catch (error) {
       console.error('Erro ao atualizar estoque do insumo:', error);
       throw error;

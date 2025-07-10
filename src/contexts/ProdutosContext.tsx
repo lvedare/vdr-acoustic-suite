@@ -1,293 +1,263 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
-import { ProdutoAcabado } from "@/types/orcamento";
-import { useProdutosSupabase } from "@/hooks/useProdutosSupabase";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useProdutosAcabados } from '@/hooks/useProdutosAcabados';
+import { useComposicaoProduto } from '@/hooks/useComposicaoProduto';
+import { useVendaProduto } from '@/hooks/useVendaProduto';
+import { categoriasAcusticas } from '@/types/supabase-extended';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
-export interface VendaProduto {
-  id: number;
-  produtoId: number;
+interface Produto {
+  id: string;
+  codigo: string;
+  nome: string;
+  descricao: string | null;
+  categoria: string;
+  unidadeMedida: string;
+  quantidadeEstoque: number;
+  dataCadastro: string;
+  valorBase: number;
+}
+
+interface Composicao {
+  id: string;
+  produtoId: string;
+  insumoId: string;
+  quantidade: number;
+  observacao: string | null;
+}
+
+interface VendaProduto {
+  id: string;
+  produtoId: string | null;
+  clienteId: string | null;
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
-  data: string;
-  cliente: string;
+  dataVenda: string;
+  observacoes: string | null;
 }
 
-export const categorias = [
-  "Eletrônicos",
-  "Roupas",
-  "Casa e Jardim",
-  "Esportes",
-  "Livros",
-  "Saúde e Beleza",
-  "Automóveis",
-  "Outros"
-];
-
-interface ProdutosContextType {
-  produtos: ProdutoAcabado[];
+interface ProdutoContextType {
+  produtos: Produto[];
+  isLoading: boolean;
+  error: any;
+  produtoAtual: Produto | null;
+  novoProduto: Omit<Produto, 'id'>;
+  setNovoProduto: (produto: Omit<Produto, 'id'>) => void;
+  composicaoAtual: Composicao | null;
+  setComposicaoAtual: (composicao: Composicao | null) => void;
+  composicoes: Composicao[];
   vendasProdutos: VendaProduto[];
-  produtoAtual: ProdutoAcabado | null;
-  novoProduto: ProdutoAcabado;
   isProdutoDialogOpen: boolean;
-  isComposicaoDialogOpen: boolean;
+  setIsProdutoDialogOpen: (open: boolean) => void;
   isDeleteDialogOpen: boolean;
+  setIsDeleteDialogOpen: (open: boolean) => void;
   isConfirmDialogOpen: boolean;
+  setIsConfirmDialogOpen: (open: boolean) => void;
   isProdutoDetailOpen: boolean;
-  produtoVazio: ProdutoAcabado;
-  searchTerm: string;
-  filtroCategoria: string;
-  filtroEstoque: string;
-  produtosFiltrados: ProdutoAcabado[];
-  composicaoAtual: any;
-  setVendasProdutos: React.Dispatch<React.SetStateAction<VendaProduto[]>>;
-  setProdutoAtual: React.Dispatch<React.SetStateAction<ProdutoAcabado | null>>;
-  setNovoProduto: React.Dispatch<React.SetStateAction<ProdutoAcabado>>;
-  setIsProdutoDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsComposicaoDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsDeleteDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsConfirmDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsProdutoDetailOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
-  setFiltroCategoria: React.Dispatch<React.SetStateAction<string>>;
-  setFiltroEstoque: React.Dispatch<React.SetStateAction<string>>;
-  setComposicaoAtual: React.Dispatch<React.SetStateAction<any>>;
-  salvarProduto: (produto: ProdutoAcabado) => void;
-  editarProduto: (produto: ProdutoAcabado) => void;
-  excluirProduto: (id: number) => void;
-  handleSalvarProduto: () => void;
+  setIsProdutoDetailOpen: (open: boolean) => void;
+  isComposicaoDialogOpen: boolean;
+  setIsComposicaoDialogOpen: (open: boolean) => void;
+  setProdutoAtual: (produto: Produto | null) => void;
+  handleSalvarProduto: () => Promise<void>;
   handleExcluirProduto: () => void;
   handleForceExcluirProduto: () => void;
-  handleEditarProduto: (produto: ProdutoAcabado) => void;
-  handlePreExcluirProduto: (produto: ProdutoAcabado) => void;
-  handleVerDetalhesProduto: (produto: ProdutoAcabado) => void;
-  handleCriarItemOrcamento: (produto: ProdutoAcabado) => void;
-  handleEditarComposicao: (produto: ProdutoAcabado) => void;
-  handleSalvarComposicao: () => void;
+  handleVerDetalhesProduto: (produto: Produto) => void;
+  handleEditarComposicao: (composicao: Composicao) => void;
+  handleSalvarComposicao: (composicao: Composicao) => Promise<void>;
   formatarData: (data: string) => string;
   calcularValorTotal: () => number;
-  isLoading: boolean;
-  isSaving: boolean;
+  categorias: string[];
+  produtoVazio: Omit<Produto, 'id'>;
 }
 
-const ProdutosContext = createContext<ProdutosContextType | undefined>(undefined);
+export const categorias = categoriasAcusticas;
 
-export const produtoVazio: ProdutoAcabado = {
-  id: 0,
-  codigo: "",
-  nome: "",
-  descricao: "",
-  categoria: "",
-  unidadeMedida: "UN",
-  valorBase: 0,
-  quantidadeEstoque: 0,
-  dataCadastro: new Date().toISOString().split('T')[0]
-};
+const ProdutosContext = createContext<ProdutoContextType | undefined>(undefined);
 
 export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Usar o hook do Supabase
-  const { 
-    produtos: produtosSupabase, 
-    isLoading, 
-    criarProduto: criarProdutoSupabase,
-    atualizarProduto: atualizarProdutoSupabase,
-    excluirProduto: excluirProdutoSupabase,
-    isCriando,
-    isAtualizando,
-    isExcluindo
-  } = useProdutosSupabase();
+  const {
+    produtos,
+    isLoading,
+    error,
+    criarProduto,
+    atualizarProduto,
+    excluirProduto
+  } = useProdutosAcabados();
+  const {
+    composicoes,
+    criarComposicao,
+    atualizarComposicao,
+    excluirComposicao
+  } = useComposicaoProduto();
+  const {
+    vendasProdutos,
+    criarVendaProduto,
+    atualizarVendaProduto,
+    excluirVendaProduto
+  } = useVendaProduto();
 
-  const [vendasProdutos, setVendasProdutos] = useState<VendaProduto[]>([]);
-  const [produtoAtual, setProdutoAtual] = useState<ProdutoAcabado | null>(null);
-  const [novoProduto, setNovoProduto] = useState<ProdutoAcabado>(produtoVazio);
+  const [produtoAtual, setProdutoAtual] = useState<Produto | null>(null);
+  const [novoProduto, setNovoProduto] = useState<Omit<Produto, 'id'>>({
+    codigo: '',
+    nome: '',
+    descricao: '',
+    categoria: '',
+    unidadeMedida: 'un',
+    quantidadeEstoque: 0,
+    dataCadastro: new Date().toISOString().split('T')[0],
+    valorBase: 0
+  });
+  const [composicaoAtual, setComposicaoAtual] = useState<Composicao | null>(null);
   const [isProdutoDialogOpen, setIsProdutoDialogOpen] = useState(false);
-  const [isComposicaoDialogOpen, setIsComposicaoDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isProdutoDetailOpen, setIsProdutoDetailOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filtroCategoria, setFiltroCategoria] = useState("");
-  const [filtroEstoque, setFiltroEstoque] = useState("");
-  const [composicaoAtual, setComposicaoAtual] = useState<any>(null);
+  const [isComposicaoDialogOpen, setIsComposicaoDialogOpen] = useState(false);
 
-  // Carregar vendas do localStorage (manter por enquanto)
-  useEffect(() => {
-    const vendasSalvas = localStorage.getItem("vendasProdutos");
-    if (vendasSalvas) {
-      setVendasProdutos(JSON.parse(vendasSalvas));
+  const produtoVazio = {
+    codigo: '',
+    nome: '',
+    descricao: '',
+    categoria: '',
+    unidadeMedida: 'un',
+    quantidadeEstoque: 0,
+    dataCadastro: new Date().toISOString().split('T')[0],
+  };
+
+  // Gerar próximo código automaticamente
+  const gerarProximoCodigo = async () => {
+    try {
+      const { data, error } = await supabase.rpc('gerar_proximo_codigo_produto');
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Erro ao gerar código:', error);
+      return 'PA001'; // fallback
     }
-  }, []);
+  };
 
-  // Filtrar produtos
-  const produtosFiltrados = useMemo(() => {
-    return produtosSupabase.filter(produto => {
-      const matchesSearch = produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           produto.codigo.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategoria = !filtroCategoria || produto.categoria === filtroCategoria;
-      const matchesEstoque = !filtroEstoque || 
-        (filtroEstoque === "baixo" && produto.quantidadeEstoque < 10) ||
-        (filtroEstoque === "alto" && produto.quantidadeEstoque >= 10);
-      
-      return matchesSearch && matchesCategoria && matchesEstoque;
-    });
-  }, [produtosSupabase, searchTerm, filtroCategoria, filtroEstoque]);
-
-  // Helper function to find original UUID by numeric ID
-  const findOriginalUUID = (numericId: number): string | null => {
-    const produtoOriginal = produtosSupabase.find(p => {
-      let generatedId = 0;
-      if (p.id) {
-        const str = p.id.toString();
-        for (let i = 0; i < str.length; i++) {
-          generatedId = ((generatedId << 5) - generatedId + str.charCodeAt(i)) & 0xffffffff;
-        }
-        generatedId = Math.abs(generatedId);
+  const handleSalvarProduto = async () => {
+    try {
+      if (produtoAtual) {
+        // Editar produto existente
+        atualizarProduto({
+          id: produtoAtual.id,
+          produto: {
+            ...novoProduto,
+            // Remove valor_base - será calculado pela composição
+            valor_base: 0
+          }
+        });
+      } else {
+        // Criar novo produto
+        const proximoCodigo = await gerarProximoCodigo();
+        const produtoData = {
+          ...novoProduto,
+          codigo: proximoCodigo,
+          valor_base: 0, // Remove valor base
+          quantidade_estoque: novoProduto.quantidadeEstoque || 0,
+          unidade_medida: novoProduto.unidadeMedida,
+          data_cadastro: novoProduto.dataCadastro
+        };
+        
+        criarProduto(produtoData);
       }
-      return generatedId === numericId;
-    });
-    
-    return produtoOriginal?.id?.toString() || null;
-  };
-
-  const salvarProduto = (produto: ProdutoAcabado) => {
-    if (produto.id === 0) {
-      // Criar novo produto - usar a função de criação do hook que já faz a conversão
-      criarProdutoSupabase(produto);
-    } else {
-      // Atualizar produto existente - encontrar o UUID original
-      const originalUUID = findOriginalUUID(produto.id);
-      
-      if (originalUUID) {
-        atualizarProdutoSupabase(originalUUID, produto);
-      }
+      setIsProdutoDialogOpen(false);
+    } catch (error) {
+      console.error('Erro ao salvar produto:', error);
+      toast.error('Erro ao salvar produto');
     }
-  };
-
-  const editarProduto = (produto: ProdutoAcabado) => {
-    setProdutoAtual(produto);
-    setNovoProduto(produto);
-    setIsProdutoDialogOpen(true);
-  };
-
-  const excluirProduto = (id: number) => {
-    // Encontrar o UUID original do produto
-    const originalUUID = findOriginalUUID(id);
-    
-    if (originalUUID) {
-      excluirProdutoSupabase(originalUUID);
-    }
-  };
-
-  // Handlers for components
-  const handleSalvarProduto = () => {
-    salvarProduto(novoProduto);
-    setIsProdutoDialogOpen(false);
-    setNovoProduto(produtoVazio);
-    setProdutoAtual(null);
   };
 
   const handleExcluirProduto = () => {
     if (produtoAtual) {
-      const numericId = typeof produtoAtual.id === 'string' ? parseInt(produtoAtual.id) : produtoAtual.id;
-      excluirProduto(numericId);
+      excluirProduto(produtoAtual.id);
       setIsDeleteDialogOpen(false);
-      setProdutoAtual(null);
     }
   };
 
   const handleForceExcluirProduto = () => {
-    if (produtoAtual) {
-      const numericId = typeof produtoAtual.id === 'string' ? parseInt(produtoAtual.id) : produtoAtual.id;
-      excluirProduto(numericId);
-      setIsConfirmDialogOpen(false);
-      setProdutoAtual(null);
-    }
+    // Implementar lógica para exclusão forçada (se necessário)
+    setIsConfirmDialogOpen(false);
   };
 
-  const handleEditarProduto = (produto: ProdutoAcabado) => {
-    editarProduto(produto);
-  };
-
-  const handlePreExcluirProduto = (produto: ProdutoAcabado) => {
-    setProdutoAtual(produto);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleVerDetalhesProduto = (produto: ProdutoAcabado) => {
+  const handleVerDetalhesProduto = (produto: Produto) => {
     setProdutoAtual(produto);
     setIsProdutoDetailOpen(true);
   };
 
-  const handleCriarItemOrcamento = (produto: ProdutoAcabado) => {
-    console.log("Criar item orçamento:", produto);
-  };
-
-  const handleEditarComposicao = (produto: ProdutoAcabado) => {
-    setProdutoAtual(produto);
-    setComposicaoAtual(null);
+  const handleEditarComposicao = (composicao: Composicao) => {
+    setComposicaoAtual(composicao);
     setIsComposicaoDialogOpen(true);
   };
 
-  const handleSalvarComposicao = () => {
-    setIsComposicaoDialogOpen(false);
-    setComposicaoAtual(null);
+  const handleSalvarComposicao = async (composicao: Composicao) => {
+    try {
+      if (composicaoAtual) {
+        // Editar composição existente
+        atualizarComposicao({
+          id: composicaoAtual.id,
+          composicao: composicao
+        });
+      } else {
+        // Criar nova composição
+        criarComposicao(composicao);
+      }
+      setIsComposicaoDialogOpen(false);
+    } catch (error) {
+      console.error('Erro ao salvar composição:', error);
+      toast.error('Erro ao salvar composição');
+    }
   };
 
-  const formatarData = (data: string) => {
-    return new Date(data).toLocaleDateString('pt-BR');
+  const formatarData = (data: string): string => {
+    const dataObj = new Date(data);
+    const dia = String(dataObj.getDate()).padStart(2, '0');
+    const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+    const ano = dataObj.getFullYear();
+    return `${dia}/${mes}/${ano}`;
   };
 
-  const calcularValorTotal = () => {
-    return 0; // Placeholder
-  };
-
-  const value: ProdutosContextType = {
-    produtos: produtosSupabase,
-    vendasProdutos,
-    produtoAtual,
-    novoProduto,
-    isProdutoDialogOpen,
-    isComposicaoDialogOpen,
-    isDeleteDialogOpen,
-    isConfirmDialogOpen,
-    isProdutoDetailOpen,
-    produtoVazio,
-    searchTerm,
-    filtroCategoria,
-    filtroEstoque,
-    produtosFiltrados,
-    composicaoAtual,
-    setVendasProdutos,
-    setProdutoAtual,
-    setNovoProduto,
-    setIsProdutoDialogOpen,
-    setIsComposicaoDialogOpen,
-    setIsDeleteDialogOpen,
-    setIsConfirmDialogOpen,
-    setIsProdutoDetailOpen,
-    setSearchTerm,
-    setFiltroCategoria,
-    setFiltroEstoque,
-    setComposicaoAtual,
-    salvarProduto,
-    editarProduto,
-    excluirProduto,
-    handleSalvarProduto,
-    handleExcluirProduto,
-    handleForceExcluirProduto,
-    handleEditarProduto,
-    handlePreExcluirProduto,
-    handleVerDetalhesProduto,
-    handleCriarItemOrcamento,
-    handleEditarComposicao,
-    handleSalvarComposicao,
-    formatarData,
-    calcularValorTotal,
-    isLoading,
-    isSaving: isCriando || isAtualizando || isExcluindo
+  const calcularValorTotal = (): number => {
+    // Implementar lógica para calcular o valor total do produto
+    return 0;
   };
 
   return (
-    <ProdutosContext.Provider value={value}>
+    <ProdutosContext.Provider value={{
+      produtos,
+      isLoading,
+      error,
+      produtoAtual,
+      novoProduto,
+      setNovoProduto,
+      composicaoAtual,
+      setComposicaoAtual,
+      composicoes,
+      vendasProdutos,
+      isProdutoDialogOpen,
+      setIsProdutoDialogOpen,
+      isDeleteDialogOpen,
+      setIsDeleteDialogOpen,
+      isConfirmDialogOpen,
+      setIsConfirmDialogOpen,
+      isProdutoDetailOpen,
+      setIsProdutoDetailOpen,
+      isComposicaoDialogOpen,
+      setIsComposicaoDialogOpen,
+      setProdutoAtual,
+      handleSalvarProduto,
+      handleExcluirProduto,
+      handleForceExcluirProduto,
+      handleVerDetalhesProduto,
+      handleEditarComposicao,
+      handleSalvarComposicao,
+      formatarData,
+      calcularValorTotal,
+      categorias,
+      produtoVazio,
+    }}>
       {children}
     </ProdutosContext.Provider>
   );
@@ -296,7 +266,7 @@ export const ProdutosProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 export const useProdutos = () => {
   const context = useContext(ProdutosContext);
   if (context === undefined) {
-    throw new Error("useProdutos deve ser usado dentro de um ProdutosProvider");
+    throw new Error('useProdutos must be used within a ProdutosProvider');
   }
   return context;
 };

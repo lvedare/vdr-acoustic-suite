@@ -7,31 +7,29 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { FornecedorDialog, Fornecedor } from '@/components/fornecedores/FornecedorDialog';
+import { FornecedorDialog } from '@/components/fornecedores/FornecedorDialog';
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
-
-// Mock fornecedores
-const mockFornecedores = [
-  { id: 1, nome: "Madeiras Brasil", cnpj: "12.345.678/0001-01", telefone: "(11) 1234-5678", email: "contato@madeirasbrasil.com", endereco: "Rua das Árvores, 123", cidade: "São Paulo", uf: "SP", categoria: "Madeira" },
-  { id: 2, nome: "Parafusos & Cia", cnpj: "23.456.789/0001-02", telefone: "(11) 2345-6789", email: "vendas@parafusoscia.com", endereco: "Av. Industrial, 456", cidade: "São Paulo", uf: "SP", categoria: "Fixação" },
-  { id: 3, nome: "Adesivos Industriais", cnpj: "34.567.890/0001-03", telefone: "(11) 3456-7890", email: "vendas@adesivosind.com", endereco: "Rua das Colas, 789", cidade: "Campinas", uf: "SP", categoria: "Adesivo" },
-  { id: 4, nome: "Ferragens Gerais", cnpj: "45.678.901/0001-04", telefone: "(11) 4567-8901", email: "contato@ferragensgerais.com", endereco: "Av. das Ferramentas, 101", cidade: "Guarulhos", uf: "SP", categoria: "Fixação" },
-  { id: 5, nome: "Tintas Premium", cnpj: "56.789.012/0001-05", telefone: "(11) 5678-9012", email: "vendas@tintaspremium.com", endereco: "Rua das Cores, 202", cidade: "Santo André", uf: "SP", categoria: "Pintura" },
-];
-
-const categorias = ['Madeira', 'Fixação', 'Adesivo', 'Pintura', 'Elétrico', 'Hidráulico', 'Ferragem', 'Outros'];
+import { useFornecedores } from '@/hooks/useFornecedores';
+import { categoriasAcusticas } from '@/types/supabase-extended';
 
 export const CadastroFornecedoresContent = () => {
-  const [fornecedores, setFornecedores] = useState<Fornecedor[]>(mockFornecedores);
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState<string | null>(null);
-  const [fornecedorSelecionado, setFornecedorSelecionado] = useState<Fornecedor | null>(null);
+  const [fornecedorSelecionado, setFornecedorSelecionado] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
+  const { 
+    fornecedores, 
+    isLoading, 
+    criarFornecedor, 
+    atualizarFornecedor, 
+    excluirFornecedor 
+  } = useFornecedores();
+  
   const fornecedoresFiltrados = fornecedores.filter(fornecedor => {
     const matchesSearch = fornecedor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          fornecedor.cnpj.toLowerCase().includes(searchTerm.toLowerCase());
+                          (fornecedor.cnpj && fornecedor.cnpj.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategoria = filtroCategoria ? fornecedor.categoria === filtroCategoria : true;
     
     return matchesSearch && matchesCategoria;
@@ -42,33 +40,31 @@ export const CadastroFornecedoresContent = () => {
     setIsDialogOpen(true);
   };
   
-  const handleEditarFornecedor = (fornecedor: Fornecedor) => {
+  const handleEditarFornecedor = (fornecedor: any) => {
     setFornecedorSelecionado(fornecedor);
     setIsDialogOpen(true);
   };
   
-  const handlePreExcluirFornecedor = (fornecedor: Fornecedor) => {
+  const handlePreExcluirFornecedor = (fornecedor: any) => {
     setFornecedorSelecionado(fornecedor);
     setIsDeleteDialogOpen(true);
   };
   
   const handleExcluirFornecedor = () => {
     if (fornecedorSelecionado) {
-      setFornecedores(fornecedores.filter(f => f.id !== fornecedorSelecionado.id));
-      toast.success("Fornecedor excluído com sucesso!");
+      excluirFornecedor(fornecedorSelecionado.id);
       setIsDeleteDialogOpen(false);
       setFornecedorSelecionado(null);
     }
   };
   
-  const handleSalvarFornecedor = (fornecedor: Fornecedor) => {
+  const handleSalvarFornecedor = (fornecedorData: any) => {
     if (fornecedorSelecionado) {
-      setFornecedores(fornecedores.map(f => f.id === fornecedor.id ? fornecedor : f));
-      toast.success("Fornecedor atualizado com sucesso!");
+      atualizarFornecedor({ id: fornecedorSelecionado.id, fornecedor: fornecedorData });
     } else {
-      setFornecedores([...fornecedores, fornecedor]);
-      toast.success("Fornecedor adicionado com sucesso!");
+      criarFornecedor(fornecedorData);
     }
+    setIsDialogOpen(false);
   };
   
   return (
@@ -77,13 +73,14 @@ export const CadastroFornecedoresContent = () => {
         <div>
           <CardTitle className="flex items-center">
             <Truck className="mr-2 h-5 w-5" />
-            Fornecedores
+            Fornecedores ({fornecedores.length})
           </CardTitle>
           <CardDescription>
             Gerencie o cadastro de fornecedores
+            {isLoading && " - Carregando..."}
           </CardDescription>
         </div>
-        <Button onClick={handleNovoFornecedor}>
+        <Button onClick={handleNovoFornecedor} disabled={isLoading}>
           <Plus className="mr-1 h-4 w-4" /> Novo Fornecedor
         </Button>
       </CardHeader>
@@ -107,7 +104,7 @@ export const CadastroFornecedoresContent = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas categorias</SelectItem>
-                {categorias.map(cat => (
+                {categoriasAcusticas.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                 ))}
               </SelectContent>
